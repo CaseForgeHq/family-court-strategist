@@ -1,5 +1,7 @@
 # Case Forge — public website
 
+Live on Cloudflare: https://case-forge.red-scene-4bab.workers.dev/ . See [deployment instructions](../cloudflare/README.md).
+
 Run `npm run website` from the repository root (Node 22.13+) and open http://127.0.0.1:4321/. This serves the website and working SQLite waitlist together. The private list is stored in `.local/waitlist.sqlite`, outside the public site.
 
 The site includes:

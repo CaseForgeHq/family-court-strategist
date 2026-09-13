@@ -1,5 +1,7 @@
 # Case Forge website and waitlist
 
+The public website uses the [Cloudflare Worker and D1 adapter](../../cloudflare/README.md). The Node service below remains the local-development and optional self-hosted version.
+
 `npm run website` starts the website at http://127.0.0.1:4321 with a working waitlist. Requires Node 22.13+ for built-in SQLite. No npm dependencies, email service or database account is needed for the local preview.
 
 The form saves name, normalized email, optional computer type, consent version and signup timestamp in `.local/waitlist.sqlite`. That private folder is outside `website/` and excluded from Git. Duplicate emails are ignored without disclosing list membership. The service sends no emails automatically.
@@ -30,7 +32,7 @@ HOST=0.0.0.0 PORT=8080 PUBLIC_ORIGIN=https://your-approved-domain.example WAITLI
 
 GitHub Pages can serve the website, setup guide, device images and downloadable toolkit, but cannot run SQLite or receive the form. Deploy this service separately, set `ALLOWED_ORIGINS` to the exact Pages origin (e.g. `https://your-account.github.io`), and set the repository Actions variable `WAITLIST_API_URL` to the deployed HTTPS `/api/waitlist` endpoint. The Pages workflow writes that public endpoint into `site-config.js`. It is a public URL, not a secret.
 
-Until an endpoint is configured, the static site keeps signup disabled and explains its availability. It never claims to have saved a name in browser storage. The local Node preview works now; no public deployment has been made by this implementation.
+Until an endpoint is configured, the static site keeps signup disabled and explains its availability. It never claims to have saved a name in browser storage. The local Node preview works independently. The primary public deployment uses Cloudflare Worker assets and D1; see the Cloudflare guide above.
 
 ## Verification
 

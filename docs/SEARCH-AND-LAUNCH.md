@@ -19,11 +19,13 @@ Google says the usual SEO foundations apply to AI Overviews and AI Mode; there i
 
 `llms.txt` is an optional content-index proposal, not a search submission mechanism. OpenAI's OAI-SearchBot controls ChatGPT Search crawling independently from its GPTBot training crawler. The website's public wildcard rule permits both; choose any different training policy explicitly at the public host. [llms.txt proposal](https://llmstxt.org/), [OpenAI crawler documentation](https://developers.openai.com/api/docs/bots)
 
-## Public launch prerequisites
+## Public launch status and remaining search setup
 
-At the audit, the repository is `CaseForgeHq/family-court-strategist`, its homepage setting is empty, and GitHub Pages is disabled. No custom domain or search-console verification configuration was found in the repository. Public indexing has not been submitted.
+Launched on Cloudflare on 13 September 2026: [https://case-forge.red-scene-4bab.workers.dev/](https://case-forge.red-scene-4bab.workers.dev/). The repository is `CaseForgeHq/family-court-strategist`; its homepage now links to the live site. The waitlist uses a private Cloudflare D1 database. No Case Forge custom domain was present in the account, so the initial launch uses the Cloudflare address. Google/Bing verification and sitemap submission remain to be completed; deployment does not imply search indexing.
 
 The repository transfer to CaseForgeHq has been verified. Public project links and generated metadata use that organisation. Kyle Fischer remains the creator; promotional creator credits do not link to a personal developer profile. Existing licence notices and Git history are retained. This wording change does not remove historic authorship or copies held elsewhere.
+
+The Cloudflare hosting, waitlist and public-build work below is complete. Items 4–6 cover remaining search-console setup and ongoing checks; item 7’s repository homepage is already set.
 
 1. Choose the real public address and hosting. For Pages, enable GitHub Actions as the Pages source. The workflow reads the actual Pages base URL; set `SITE_URL` only to override it with an approved custom address. For Node hosting, set the real HTTPS `SITE_URL` when building and `PUBLIC_ORIGIN` when running the service.
 2. Deploy the waitlist service with HTTPS, a private persistent database and the correct allowed origin. For a separate static site, set `WAITLIST_API_URL`. Validate a test signup and deletion before inviting real users; arrange launch-message unsubscribe handling before sending emails.
@@ -60,3 +62,8 @@ The final Lighthouse 12.8.2 mobile audit of a temporary local production build s
 The report is saved locally at `output/brand-preview/lighthouse-mobile.report.html` with its JSON beside it. The output directory is ignored by Git. Remaining lab opportunities include longer versioned-asset caching and smaller image transfers; the current one-day asset cache avoids indefinitely serving unversioned files.
 
 Four installer tests, five SEO/build tests and five waitlist/server tests passed. Isolated Chrome checks confirmed fonts, no horizontal page overflow at phone and desktop widths, preview switching, mobile navigation, copy-message/link/CLI actions and successful signup against a separate temporary database, with no JavaScript exceptions. Public guide links and assets resolve. Public-schema and sitemap tests include a project-path deployment. The running local website stays deliberately unindexed.
+
+
+## Public deployment verification
+
+The live homepage and six supporting pages return 200 with public canonical URLs. Sitemap, robots rules, AI content index, sharing image, setup guide and both download archives load. Missing and private paths return 404. A fresh Chrome profile verified desktop and mobile layouts, fonts, preview switching, setup-copy and successful signup through the real form. The synthetic signup was checked in D1 and removed; no launch email was sent. Cloudflare deployment instructions are in `cloudflare/README.md`.

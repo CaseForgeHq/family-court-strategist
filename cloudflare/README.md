@@ -1,6 +1,6 @@
 # Case Forge on Cloudflare
 
-The public marketing website runs as a Cloudflare Worker with static assets. Only waitlist requests and runtime site configuration invoke the Worker first. The local case app and case folders are not deployed.
+The public marketing website runs as a Cloudflare Worker with static assets. Waitlist requests, runtime site configuration and the homepage/index redirect invoke the Worker first. The local case app and case folders are not deployed.
 
 The `case-forge-waitlist` D1 database stores signup name, email, optional platform, consent version and timestamp. It has no public list/export/admin route. Cloudflare's native rate-limit binding restricts repeated signup attempts; the API also requires the exact configured origin, limits request size, validates fields and saves through a parameterised query. No email is sent automatically.
 

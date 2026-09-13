@@ -11,6 +11,11 @@ const json=(status,body)=>new Response(JSON.stringify(body),{status,headers});
 export default {
  async fetch(request,env){
   const url=new URL(request.url);
+  if(url.pathname==='/index.html')return Response.redirect(new URL('/'+url.search,url),308);
+  if(url.pathname==='/'){
+   if(!['GET','HEAD'].includes(request.method))return json(405,{error:'Method not allowed.'});
+   url.pathname='/index.html';return env.ASSETS.fetch(new Request(url,request));
+  }
   if(url.pathname==='/site-config.js'){
    if(!['GET','HEAD'].includes(request.method))return json(405,{error:'Method not allowed.'});
    return new Response(request.method==='HEAD'?null:'window.CASE_FORGE_SITE={waitlistEndpoint:"/api/waitlist",localPreview:false};\n',{headers:{...headers,'content-type':'text/javascript; charset=utf-8'}});

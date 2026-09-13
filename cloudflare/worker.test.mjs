@@ -11,6 +11,12 @@ function setup(t){
  return {db,env,send};
 }
 const person={name:'Deployment test',email:'test@example.test',platform:'mac',consent:true};
+test('homepage serves its asset and the duplicate index URL redirects to its canonical address',async t=>{
+ const s=setup(t);let requested;
+ s.env.ASSETS.fetch=async request=>{requested=request;return new Response('home')};
+ assert.equal(await(await worker.fetch(new Request(origin+'/'),s.env)).text(),'home');assert.equal(requested.url,origin+'/index.html');
+ const redirect=await worker.fetch(new Request(origin+'/index.html?source=readme'),s.env);assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),origin+'/?source=readme');
+});
 test('Cloudflare signup persists, deduplicates and keeps responses private',async t=>{
  const s=setup(t),one=await s.send(person),two=await s.send({...person,email:'TEST@example.test'});
  assert.equal(one.status,200);assert.deepEqual(await one.json(),await two.json());assert.equal(s.db.prepare('SELECT COUNT(*) n FROM waitlist').get().n,1);assert.equal(s.db.prepare('SELECT consent_version FROM waitlist').get().consent_version,'desktop-launch-v1');assert.equal(one.headers.get('cache-control'),'no-store');

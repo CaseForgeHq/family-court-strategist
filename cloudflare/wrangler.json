@@ -10,7 +10,7 @@
     "binding": "ASSETS",
     "html_handling": "none",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*", "/site-config.js"]
+    "run_worker_first": ["/", "/index.html", "/api/*", "/site-config.js"]
   },
   "vars": {
     "PUBLIC_ORIGIN": "https://case-forge.red-scene-4bab.workers.dev"
