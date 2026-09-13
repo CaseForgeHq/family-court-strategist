@@ -24,6 +24,10 @@ npx wrangler@4.131.1 d1 migrations apply case-forge-waitlist --remote --config c
 
 ## Waitlist owner access
 
+Public contact: **caseforgehq@proton.me**, matching the CaseForgeHq organisation profile. The site directs correction/removal requests there. Signup submissions are saved in D1; they do not currently email the owner or the subscriber.
+
+To view entries, open the Cloudflare dashboard, choose **Storage & databases → D1 → case-forge-waitlist**, then inspect the `waitlist` table. Only people with the appropriate Cloudflare account access can view these records.
+
 Use Cloudflare's authenticated D1 console or Wrangler. Never publish exports or credentials. For example, count signups without displaying contact details:
 
 ```sh
