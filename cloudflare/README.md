@@ -38,24 +38,12 @@ The local `services/waitlist/manage.mjs` commands apply to the development SQLit
 
 ## Domains and automation
 
-The current address is `https://case-forge.red-scene-4bab.workers.dev`. The requested custom domain is **caseforgehq.com**. Cutover is pending: the domain currently uses `ns17.domaincontrol.com` and `ns18.domaincontrol.com`, and no `caseforgehq.com` zone was visible in the authenticated Cloudflare account when checked. The Wrangler login can read zones and deploy Workers but cannot create a zone or change GoDaddy nameservers. The live origin remains unchanged until DNS is ready.
+The public address is **https://caseforgehq.com/**. Both `caseforgehq.com` and `www.caseforgehq.com` are bound to the `case-forge` Worker. GoDaddy remains the registrar; DNS is hosted by Cloudflare using `dan.ns.cloudflare.com` and `rachel.ns.cloudflare.com`.
 
-To complete the cutover:
+The imported GoDaddy placeholder website records were replaced with Worker domain bindings. The `_domainconnect` and `_dmarc` records were preserved. Cloudflare manages HTTPS certificates for the two custom domains.
 
-1. Add `caseforgehq.com` to the same Cloudflare account using the Free plan. Review imported DNS records, retaining any email/verification records. At the registrar, replace the current nameservers with the exact two assigned to this new zone. Wait for Cloudflare to show the zone as active.
-2. Review root and `www` DNS records for conflicts before attaching the Worker. Add these top-level settings to `cloudflare/wrangler.json`:
+`vars.PUBLIC_ORIGIN` is `https://caseforgehq.com`. The build uses this address for canonicals, sharing images, sitemap, robots and setup links; the waitlist API requires the same origin. GET/HEAD requests on `www` and the former `https://case-forge.red-scene-4bab.workers.dev` address redirect to the canonical domain, preserving paths and queries. Requests containing signup bodies on other origins are rejected. Keep `workers_dev: true` so previously shared links continue to work.
 
-   ```json
-   "routes": [
-     { "pattern": "caseforgehq.com", "custom_domain": true },
-     { "pattern": "www.caseforgehq.com", "custom_domain": true }
-   ]
-   ```
-
-   Change `vars.PUBLIC_ORIGIN` to `https://caseforgehq.com`. Keep `workers_dev: true` so previously shared links continue to work. The Worker redirects GET/HEAD requests on other origins to the public origin, preserving paths and queries, and rejects signup bodies sent to an old origin.
-3. Run the tests and deploy command above. Cloudflare manages the domain's DNS attachment and TLS certificate. The build updates canonical URLs, sharing images, sitemap, robots and setup links together with the signup-origin check.
-4. Verify HTTPS on root and `www`, old-host redirects for pages and assets, missing-page 404s, sharing-image metadata and a synthetic signup with subsequent deletion. Update the repository homepage, README links and launch status only once the new address is working.
-
-[Cloudflare custom-domain setup](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/) requires an active zone. Do not redirect the working site to the new address before that prerequisite is complete.
+[Cloudflare custom-domain documentation](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
 
 Publishing to GitHub does not automatically deploy Cloudflare. The command above performs deployment with the account's authenticated Wrangler session. No long-lived Cloudflare credential has been copied into GitHub. The old Pages workflow is disabled unless `ENABLE_GITHUB_PAGES=true` is deliberately configured.

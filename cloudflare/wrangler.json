@@ -5,6 +5,10 @@
   "compatibility_date": "2026-09-13",
   "workers_dev": true,
   "preview_urls": false,
+  "routes": [
+    { "pattern": "caseforgehq.com", "custom_domain": true },
+    { "pattern": "www.caseforgehq.com", "custom_domain": true }
+  ],
   "assets": {
     "directory": "../.dist/cloudflare/site",
     "binding": "ASSETS",
@@ -13,7 +17,7 @@
     "run_worker_first": true
   },
   "vars": {
-    "PUBLIC_ORIGIN": "https://case-forge.red-scene-4bab.workers.dev"
+    "PUBLIC_ORIGIN": "https://caseforgehq.com"
   },
   "d1_databases": [{
     "binding": "DB",

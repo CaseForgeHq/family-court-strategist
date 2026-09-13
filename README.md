@@ -2,7 +2,7 @@
 
 **Open-source case intelligence. Organise. Analyse. Prepare.**
 
-[Visit Case Forge](https://case-forge.red-scene-4bab.workers.dev/) · [Free setup guide](https://case-forge.red-scene-4bab.workers.dev/setup.md) · [Desktop app waitlist](https://case-forge.red-scene-4bab.workers.dev/#waitlist)
+[Visit Case Forge](https://caseforgehq.com/) · [Free setup guide](https://caseforgehq.com/setup.md) · [Desktop app waitlist](https://caseforgehq.com/#waitlist)
 
 A free toolkit and a local app in development for organising family-court documents, examining sources and preparing next steps. Built by Kyle Fischer. The repository and existing download identifiers remain `family-court-strategist`.
 
@@ -22,7 +22,7 @@ node cli/case-forge.mjs init "./My-Case"
 
 The installer adds the vault templates and AI guidance while preserving existing files. Conflicting paths stop setup before changes are made. Read `CASE-FORGE.md` in the new folder, or ask your AI to read it and help you begin.
 
-The [public website and desktop waitlist](https://case-forge.red-scene-4bab.workers.dev/) are live on Cloudflare. For a local preview, run `npm run website` (Node 22.13+) and open http://127.0.0.1:4321/. The downloadable paid desktop app remains in development. See [Cloudflare deployment and waitlist access](cloudflare/README.md) for the live service.
+The [public website and desktop waitlist](https://caseforgehq.com/) are live on Cloudflare. For a local preview, run `npm run website` (Node 22.13+) and open http://127.0.0.1:4321/. The downloadable paid desktop app remains in development. See [Cloudflare deployment and waitlist access](cloudflare/README.md) for the live service.
 
 The legacy [full prompt](THE-PROMPT.md) and [getting-started guide](GETTING-STARTED.md) remain available for the manual workflows.
 

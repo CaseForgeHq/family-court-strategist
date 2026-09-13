@@ -21,7 +21,7 @@ Google says the usual SEO foundations apply to AI Overviews and AI Mode; there i
 
 ## Public launch status and remaining search setup
 
-Launched on Cloudflare on 13 September 2026: [https://case-forge.red-scene-4bab.workers.dev/](https://case-forge.red-scene-4bab.workers.dev/). The repository is `CaseForgeHq/family-court-strategist`; its homepage now links to the live site. The waitlist uses a private Cloudflare D1 database. No Case Forge custom domain was present in the account, so the initial launch uses the Cloudflare address. Google/Bing verification and sitemap submission remain to be completed; deployment does not imply search indexing.
+Launched on Cloudflare on 13 September 2026: [https://caseforgehq.com/](https://caseforgehq.com/). The repository is `CaseForgeHq/family-court-strategist`; its homepage now links to the live site. The waitlist uses a private Cloudflare D1 database. The custom domain is caseforgehq.com; www and the original workers.dev address redirect to it. Google/Bing verification and sitemap submission remain to be completed; deployment does not imply search indexing.
 
 The repository transfer to CaseForgeHq has been verified. Public project links and generated metadata use that organisation. Kyle Fischer remains the creator; promotional creator credits do not link to a personal developer profile. Existing licence notices and Git history are retained. This wording change does not remove historic authorship or copies held elsewhere.
 
@@ -67,3 +67,7 @@ Four installer tests, five SEO/build tests and five waitlist/server tests passed
 ## Public deployment verification
 
 The live homepage and six supporting pages return 200 with public canonical URLs. Sitemap, robots rules, AI content index, sharing image, setup guide and both download archives load. Missing and private paths return 404. A fresh Chrome profile verified desktop and mobile layouts, fonts, preview switching, setup-copy and successful signup through the real form. The synthetic signup was checked in D1 and removed; no launch email was sent. Cloudflare deployment instructions are in `cloudflare/README.md`.
+
+## Custom domain verification
+
+Cloudflare marked caseforgehq.com active after the GoDaddy nameservers changed to dan.ns.cloudflare.com and rachel.ns.cloudflare.com. Both root and www are attached to the Case Forge Worker with HTTPS. Chrome loaded the homepage on the new domain and submitted a synthetic signup; D1 confirmed the record and it was deleted. Public pages, the toolkit ZIP and the 1200×630 sharing image returned 200; an unknown page returned 404. The www and original workers.dev addresses returned 308 redirects preserving guide paths and query strings. Direct HTTP checks used the authoritative Cloudflare addresses while this computer’s DNS cache was catching up.
