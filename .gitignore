@@ -2,3 +2,19 @@
 .DS_Store
 node_modules/
 .playwright-mcp/
+
+# Local visual checks can contain case previews; never publish them.
+output/brand-preview/
+
+# Private waitlist records and SQLite journals.
+.local/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Cloudflare local state and build output.
+.wrangler/
+.dist/
+.dev.vars*
+.env*

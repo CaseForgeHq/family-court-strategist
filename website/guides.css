@@ -1,0 +1,27 @@
+.guide-page .header-inner { flex-wrap:wrap; gap:16px 32px; }
+.guide-page nav { display:flex; flex-wrap:wrap; gap:12px 24px; }
+.guide-main { max-width:920px; padding-block:40px 80px; }
+.breadcrumbs { font-size:12px; color:var(--cf-graphite); margin-bottom:56px; display:flex; flex-wrap:wrap; gap:8px; }
+.guide-main h1 { font-size:clamp(40px,5vw,64px); max-width:19ch; }
+.article-meta { font-size:12px; color:var(--cf-graphite); margin:24px 0; }
+.guide-main .lead { margin:28px 0 40px; max-width:65ch; }
+.guide-main article>h2 { margin-top:40px; font-size:32px; }
+.guide-main article>p,.guide-main article>ul { margin-top:20px; line-height:1.8; }
+.guide-main article>ul { padding-left:24px; }
+.guide-main article>p a { text-underline-offset:4px; }
+.guide-main code { overflow-wrap:anywhere; font-size:.9em; }
+.guide-main blockquote { margin:28px 0; padding:24px; border-left:3px solid var(--cf-action); background:var(--cf-paper); }
+.guide-note { border-top:1px solid var(--cf-stone); padding-top:24px; color:var(--cf-graphite); font-size:13px; }
+.table-scroll { overflow-x:auto; margin:32px 0; border:1px solid var(--cf-stone); border-radius:6px; }
+.table-scroll table { width:100%; border-collapse:collapse; font-size:13px; min-width:550px; }
+.table-scroll caption { text-align:left; padding:16px; font-weight:500; background:var(--cf-paper); }
+.table-scroll th,.table-scroll td { padding:16px; text-align:left; vertical-align:top; border-top:1px solid var(--cf-stone); }
+.table-scroll th { font-weight:500; }
+.guide-next { margin-top:56px; padding:32px; background:var(--cf-ink); color:var(--cf-cream); border-radius:12px; }
+.guide-next .eyebrow,.guide-next .text-link { color:var(--cf-stone); }
+.guide-next h2 { font-size:36px; }
+.guide-next p:not(.eyebrow) { margin-top:20px; color:var(--cf-stone); }
+.guide-page .resource-grid { grid-template-columns:1fr; margin:32px 0; }
+.guide-page .resource-card { padding:28px 0; }
+.guide-page .resource-card h2 { font-size:32px; }
+@media(max-width:760px) { .guide-page .header-inner { padding-block:20px; }.guide-page .brand img { width:200px; }.guide-page nav { font-size:12px; }.guide-main { padding-top:24px; }.breadcrumbs { margin-bottom:32px; }.guide-next { padding:24px; } }

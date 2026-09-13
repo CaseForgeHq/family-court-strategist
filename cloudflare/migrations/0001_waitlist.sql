@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS waitlist (
+ id INTEGER PRIMARY KEY,
+ email TEXT NOT NULL UNIQUE,
+ name TEXT NOT NULL,
+ platform TEXT NOT NULL,
+ consent_version TEXT NOT NULL,
+ created_at TEXT NOT NULL
+);

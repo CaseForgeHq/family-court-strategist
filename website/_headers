@@ -1,0 +1,17 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+/style-guide.html
+  X-Robots-Tag: noindex, follow
+/404.html
+  X-Robots-Tag: noindex, follow
+/downloads/*
+  X-Robots-Tag: noindex, follow
+/setup.md
+  Content-Type: text/plain; charset=utf-8
+  X-Robots-Tag: noindex, follow
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+/sitemap.xml
+  Content-Type: application/xml; charset=utf-8

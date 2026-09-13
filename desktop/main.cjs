@@ -1,7 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require("electron");
 const { join } = require("node:path");
 const { pathToFileURL } = require("node:url");
-const { readFileSync, writeFileSync, existsSync } = require("node:fs");
+const { readFileSync, writeFileSync, existsSync, mkdirSync, cpSync, realpathSync } = require("node:fs");
 
 // Locate the bundled app + sample case in both dev and packaged builds.
 const base = app.isPackaged ? process.resourcesPath : join(__dirname, "..");
@@ -33,7 +33,7 @@ async function pickFolder(reloadWindow = true) {
   const parent = liveWindow();
   const options = {
     title: "Choose your case vault folder",
-    message: "Pick the folder that holds your Family Court Strategist vault.",
+    message: "Pick the folder that holds your case vault.",
     properties: ["openDirectory", "createDirectory"],
   };
   const r = parent
@@ -60,8 +60,8 @@ function createWindow() {
     height: 840,
     minWidth: 900,
     minHeight: 600,
-    title: "Family Court Strategist",
-    backgroundColor: "#1a2740",
+    title: "Case Forge",
+    backgroundColor: "#F8F4EC",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     webPreferences: {
       contextIsolation: true,
@@ -75,9 +75,12 @@ function createWindow() {
     if (win === browserWindow) win = null;
   });
 
+  const appOrigin = `http://127.0.0.1:${serverPort}`;
+  browserWindow.webContents.on("will-navigate", (event, url) => {
+    if (new URL(url).origin !== appOrigin) event.preventDefault();
+  });
   browserWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("http://127.0.0.1")) return { action: "allow" };
-    shell.openExternal(url);
+    if (url === "https://github.com/CaseForgeHq/family-court-strategist") shell.openExternal(url);
     return { action: "deny" };
   });
 
@@ -109,7 +112,7 @@ function buildMenu() {
     {
       role: "help",
       submenu: [
-        { label: "Project on GitHub", click: () => shell.openExternal("https://github.com/odin33g/family-court-strategist") },
+        { label: "Project on GitHub", click: () => shell.openExternal("https://github.com/CaseForgeHq/family-court-strategist") },
       ],
     },
   ];
@@ -117,10 +120,26 @@ function buildMenu() {
 }
 
 app.whenReady().then(async () => {
+  mkdirSync(app.getPath("userData"), { recursive: true });
+  // Development gets a writable copy, never the bundled sample itself.
+  if (!app.isPackaged && currentVault === sampleCase) {
+    const preview = join(app.getPath("userData"), "preview-case");
+    if (!existsSync(preview)) cpSync(sampleCase, preview, { recursive: true });
+    currentVault = preview;
+  }
   const { createServer } = await import(pathToFileURL(serverPath).href);
-  const server = createServer(() => currentVault); // dynamic vault path
+  const server = createServer(() => currentVault, {
+    // Packaged builds fail closed until a real billing entitlement is integrated.
+    enableClaudeCode: !app.isPackaged && process.env.STRATEGIST_CLAUDE_CODE_PREVIEW === "1",
+    getAccess: (root) => {
+      const canWrite = !app.isPackaged && root !== realpathSync(sampleCase);
+      return { canWrite, mode: canWrite ? "development" : "read-only",
+        message: canWrite ? "Development preview · billing is not connected" : "Read-only · subscription activation is not available in this build" };
+    },
+  });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   serverPort = server.address().port;
+  app.on("before-quit", () => { server.inbox.close(); server.close(); });
 
   ipcMain.handle("vault:choose-folder", (event) => {
     const currentWindow = liveWindow();

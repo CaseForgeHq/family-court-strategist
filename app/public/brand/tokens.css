@@ -1,0 +1,4 @@
+/* Case Forge / brand guide v1. Local assets only. */
+@font-face{font-family:Inter;src:url('./fonts/InterVariable.woff2') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:'EB Garamond';src:url('./fonts/EBGaramond-Variable.ttf') format('truetype');font-style:normal;font-weight:400 800;font-display:swap}
+:root{--cf-ink:#0D0D0D;--cf-cream:#F8F4EC;--cf-copper:#C65A2E;--cf-action:#A84424;--cf-graphite:#444444;--cf-stone:#D9D5CC;--cf-paper:#FFFFFF;--cf-display:'EB Garamond',Georgia,serif;--cf-ui:Inter,system-ui,sans-serif;--cf-control-radius:6px;--cf-card-radius:12px}

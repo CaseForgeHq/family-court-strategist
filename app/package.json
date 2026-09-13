@@ -3,9 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local web workspace for the Family Court Strategist vault. Zero dependencies.",
+  "description": "Local case workspace with document intake and reviewed AI findings.",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "start": "node server.js",
+    "preview": "node server.js --preview",
     "test": "node --test"
+  },
+  "dependencies": {
+    "pdfjs-dist": "6.3.289"
+  },
+  "devDependencies": {
+    "jsdom": "29.1.1"
   }
 }

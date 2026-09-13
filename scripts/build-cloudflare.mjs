@@ -1,0 +1,13 @@
+import {cpSync,mkdirSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import {join} from 'node:path';
+import {buildSeo} from './build-seo.mjs';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const config=JSON.parse(readFileSync(join(root,'cloudflare/wrangler.json'),'utf8'));
+const directory=join(root,'.dist/cloudflare/site');
+rmSync(directory,{recursive:true,force:true});mkdirSync(directory,{recursive:true});
+cpSync(join(root,'website'),directory,{recursive:true});
+const result=buildSeo({directory,siteURL:config.vars.PUBLIC_ORIGIN});
+if(!result.public)throw new Error('Cloudflare requires a public website address.');
+writeFileSync(join(directory,'site-config.js'),'window.CASE_FORGE_SITE={waitlistEndpoint:"/api/waitlist",localPreview:false};\n');
+console.log(`Cloudflare production site prepared for ${result.base}. Local previews remain unchanged.`);

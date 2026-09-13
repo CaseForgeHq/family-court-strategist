@@ -1,26 +1,28 @@
-# Family Court Strategist
+# Case Forge
 
-**A free, open-source legal intelligence toolkit for parents navigating family court.**
+**Open-source case intelligence. Organise. Analyse. Prepare.**
 
-Built by **Kyle Fischer** — a father who spent 18 months in the system and realised the tools to fight properly didn't exist. So he built them and gave them away for free.
+A free toolkit and a local app in development for organising family-court documents, examining sources and preparing next steps. Built by Kyle Fischer. The repository and existing download identifiers remain `family-court-strategist`.
+
+The website and local app share the [Case Forge brand rules](docs/BRAND-RULES.md). See the [website](website/README.md) for the design-system preview and the [local app](app/README.md) for the document import and review workflow.
 
 ---
 
-## Download Now (No Tech Skills Needed)
+## Start with the free toolkit
 
-**You do NOT need to be technical to use this.** No terminal. No code. Just download, unzip, and open.
+The [website setup guide](website/setup.md) gives a folder-capable AI the steps to install Case Forge and help you get started. The website includes a copyable setup message, a one-command CLI and a ZIP download.
 
-**Easiest option:** Open [THE-PROMPT.md](THE-PROMPT.md), copy the prompt, paste it into [Claude](https://claude.ai/download), and it builds everything for you. Nothing to download.
+From this checkout:
 
-**Or download the files:**
-**Step 1:** Click **[Releases](../../releases)** (right side of this page)
-**Step 2:** Download these two files:
-- `family-court-vault-template.zip` — your evidence vault (works on its own, no AI needed)
-- `family-court-strategist.plugin` — the AI assistant (optional, needs the [Claude desktop app](https://claude.ai/download))
+```sh
+node cli/case-forge.mjs init "./My-Case"
+```
 
-**Step 3:** Unzip the vault, open it in [Obsidian](https://obsidian.md) (free app), and start with `HOME.md`
+The installer adds the vault templates and AI guidance while preserving existing files. Conflicting paths stop setup before changes are made. Read `CASE-FORGE.md` in the new folder, or ask your AI to read it and help you begin.
 
-Full instructions in [GETTING-STARTED.md](GETTING-STARTED.md).
+For the website and desktop-app waitlist, run `npm run website` (Node 22.13+) and open http://127.0.0.1:4321/. The downloadable paid desktop app remains in development. Public waitlist deployment is described in [the waitlist service guide](services/waitlist/README.md).
+
+The legacy [full prompt](THE-PROMPT.md) and [getting-started guide](GETTING-STARTED.md) remain available for the manual workflows.
 
 ---
 
@@ -105,15 +107,17 @@ Don't want to download anything? Open [THE-PROMPT.md](THE-PROMPT.md), copy the e
 
 ### Option 3: The Local Web App (beta — a nicer view than Obsidian)
 
-Prefer software to markdown? The toolkit now ships a **local web app** that renders your vault as a polished dashboard in your browser. It runs entirely on your computer — no accounts, no uploads, no internet — and in this first version it's **read-only** (it never changes your files).
+Prefer software to Markdown? The **local web app** displays your case in a browser. Its development preview supports importing PDFs and text files, requesting AI analysis, reviewing source passages and saving selected findings into your local case. Ordinary viewing remains read-only. Cloud AI receives only the extracted document text you explicitly select and confirm.
 
 ```bash
 cd app
+npm ci
 node server.js                 # see a bundled sample case
 node server.js /path/to/vault  # see your own vault
+node server.js --preview        # try intake with a writable COPY of the sample
 ```
 
-Requires [Node.js](https://nodejs.org) 18+. Details in [app/README.md](app/README.md).
+Requires [Node.js](https://nodejs.org) 22.13+. Connections include a Claude API key, a local Ollama model, and an opt-in Claude Code sign-in bridge for development. Public subscription login, Stripe billing and signed installers are not ready. Details in [app/README.md](app/README.md) and [desktop/README.md](desktop/README.md).
 
 ---
 
@@ -196,4 +200,4 @@ If this helps one parent stay in their kid's life, it was worth building. If it 
 
 ---
 
-*Built by [Kyle Fischer](https://github.com/odin33g). For parents. Open source forever.*
+*Created by Kyle Fischer. Published by [Case Forge](https://github.com/CaseForgeHq). For parents. Open source forever.*

@@ -1,0 +1,23 @@
+{
+  "name": "case-forge-setup",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Set up the free Case Forge toolkit in a folder you own.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "case-forge": "cli/case-forge.mjs" },
+  "files": ["cli/case-forge.mjs", "cli/CASE-FORGE.md", "obsidian-vault", "plugin", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test:setup": "node --test cli/tests/*.test.mjs",
+    "test:waitlist": "node --test services/waitlist/tests/*.test.mjs",
+    "test:seo": "node --test scripts/tests/seo.test.mjs",
+    "test:cloudflare": "node --test cloudflare/worker.test.mjs",
+    "build:cloudflare": "node scripts/sync-brand.mjs && node scripts/build-downloads.mjs && node scripts/build-cloudflare.mjs",
+    "deploy:cloudflare": "npm run build:cloudflare && npx --yes wrangler@4.131.1 deploy --config cloudflare/wrangler.json",
+    "build:seo": "node scripts/build-seo.mjs",
+    "build:site": "node scripts/configure-site.mjs && node scripts/build-seo.mjs",
+    "build:downloads": "node scripts/build-downloads.mjs",
+    "website": "node services/waitlist/server.mjs"
+  }
+}

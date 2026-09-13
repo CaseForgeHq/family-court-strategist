@@ -1,0 +1,30 @@
+{
+  "name": "case-forge",
+  "account_id": "de8533550e529156fcf98b863b7142bf",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-09-13",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "../.dist/cloudflare/site",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/site-config.js"]
+  },
+  "vars": {
+    "PUBLIC_ORIGIN": "https://case-forge.red-scene-4bab.workers.dev"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "case-forge-waitlist",
+    "database_id": "d4b8eff0-05b3-4af2-b3fb-c569d695e57c",
+    "migrations_dir": "migrations"
+  }],
+  "ratelimits": [{
+    "name": "WAITLIST_RATE_LIMIT",
+    "namespace_id": "2609134321",
+    "simple": { "limit": 12, "period": 60 }
+  }],
+  "observability": { "enabled": false }
+}

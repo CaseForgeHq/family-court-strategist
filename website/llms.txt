@@ -1,0 +1,24 @@
+# Case Forge
+
+> Free, open-source case organisation toolkit for parents in family court. Files live in a folder the user controls. A paid desktop app is in development; public installers, pricing and billing are not available yet.
+
+## Product and setup
+
+- [Website](./): Free toolkit download and desktop waitlist.
+- [Setup instructions](setup.md): Folder-aware AI or manual installation, prerequisites and file-preservation rules.
+- [About and availability](about.html): Product scope, source and limitations.
+- [Source repository](https://github.com/CaseForgeHq/family-court-strategist): MIT-licensed source code.
+
+## Practical guides
+
+- [How to Organise Family Court Documents](organise-family-court-documents.html): A practical filing workflow: preserve original documents, assign source references, build a document index and keep working notes separate from the record.
+- [How to Build a Case Timeline with Sources](build-case-timeline.html): Build a source-linked case chronology. Separate event and document dates, record uncertainty and use a fictional example to check your timeline.
+- [How to Check AI Document Review](ai-document-review.html): Check AI summaries against original documents, review source quotations and understand local storage versus cloud processing before sharing case material.
+
+## Privacy and limits
+
+- [Waitlist privacy](privacy.html): Signup details only; no case material.
+- Cloud AI processes material shared with the selected provider. Local storage does not mean cloud analysis stays on-device. AI output needs source checking.
+- Case Forge is not a law firm and does not provide legal representation or promise outcomes. Phone images are a responsive preview, not a released iPhone app.
+
+This file is an optional public content index, not an instruction to AI systems or a guarantee of search inclusion.

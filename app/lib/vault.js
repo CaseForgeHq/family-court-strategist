@@ -89,7 +89,12 @@ export function buildCaseModel(vaultDir) {
     court,
     stats,
     timeline,
-    evidence: [], // populated from EVIDENCE-MATRIX in a later version
+    evidence: notes.filter((n) => n.data.type === "evidence").map((n) => ({
+      claim: n.title,
+      source: `${n.data.source_name || n.data.source_file || "Source not recorded"}${n.data.source_page ? ` · page ${n.data.source_page}` : ""}`,
+      status: "UNRESOLVED",
+      strength: null,
+    })),
     people,
     patterns,
     empty: timeline.length === 0 && people.length === 0 && stats.documentsAnalysed === 0,

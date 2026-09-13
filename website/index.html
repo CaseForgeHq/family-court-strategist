@@ -1,164 +1,151 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Family Court Strategist — Fight properly for your kid</title>
-<meta name="description" content="A free, open-source legal intelligence toolkit for parents navigating family court. The vault and local app keep your case files on your computer; the optional Claude workflow uses your Claude account.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>%E2%9A%96</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
-<script>document.documentElement.classList.add('js')</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="brand/tokens.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="home.css">
+<!-- SEO:START -->
+<title>Case Forge | Family Court Document &amp; Evidence Organiser</title>
+<meta name="description" content="Organise family court documents, build a source-linked timeline and review AI findings. Download the free Case Forge toolkit or join the desktop app waitlist.">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#F8F4EC">
+<meta property="og:site_name" content="Case Forge">
+<meta property="og:locale" content="en_AU">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Case Forge | Family Court Document &amp; Evidence Organiser">
+<meta property="og:description" content="Organise family court documents, build a source-linked timeline and review AI findings. Download the free Case Forge toolkit or join the desktop app waitlist.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Case Forge | Family Court Document &amp; Evidence Organiser">
+<meta name="twitter:description" content="Organise family court documents, build a source-linked timeline and review AI findings. Download the free Case Forge toolkit or join the desktop app waitlist.">
+<link rel="preload" href="brand/fonts/Inter-Latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="brand/fonts/EBGaramond-Latin.woff2" as="font" type="font/woff2" crossorigin>
+<!-- SEO:END -->
 </head>
-<body>
-
-<canvas id="bg-canvas" aria-hidden="true"></canvas>
-
-<header class="nav" id="nav">
-  <a class="brand" href="#top">
-    <span class="crest">⚖</span>
-    <span class="brand-name">Family Court Strategist</span>
-  </a>
-  <nav class="nav-links" aria-label="Primary">
-    <a href="#problem">The problem</a>
-    <a href="#method">The method</a>
-    <a href="#toolkit">The toolkit</a>
-    <a href="#get" class="nav-cta">Get it free</a>
-  </nav>
-</header>
-
-<main id="top">
-
-  <!-- HERO -->
-  <section class="hero" id="hero">
-    <div class="hero-inner">
-      <p class="eyebrow reveal-hero">Free · open source · local vault and app</p>
-      <h1 class="hero-title">
-        <span class="line"><span>Fight properly</span></span>
-        <span class="line"><span>for your <em>kid.</em></span></span>
-      </h1>
-      <p class="hero-lede reveal-hero">Family court is a document war — and most parents walk in unarmed. This toolkit turns the chaos of your case into organised, court-ready evidence. Built by a father who lived it.</p>
-      <div class="hero-cta reveal-hero">
-        <a href="#get" class="btn btn-gold">Get the toolkit — free</a>
-        <a href="#method" class="btn btn-ghost">See how it works</a>
-      </div>
-    </div>
-    <div class="scroll-cue reveal-hero" aria-hidden="true"><span></span>scroll</div>
-  </section>
-
-  <!-- PROBLEM -->
-  <section class="band problem" id="problem">
-    <div class="wrap">
-      <p class="section-label reveal">The problem</p>
-      <h2 class="big reveal">The system rewards the parent who's <em>organised</em> — not the one who's right.</h2>
-      <div class="problem-grid">
-        <div class="stat-block reveal"><span class="num" data-count="18">0</span><span class="num-suffix">months</span><p>The average parent drowns in paperwork for over a year with no system to make sense of it.</p></div>
-        <div class="stat-block reveal"><span class="num" data-count="1000">0</span><span class="num-suffix">s of pages</span><p>Affidavits, reports, orders, messages — buried evidence that nobody has time to cross-reference.</p></div>
-        <div class="stat-block reveal"><span class="num" data-count="0">0</span><span class="num-suffix">tools</span><p>Until now, nothing existed that treats parents like capable adults who can drive their own case.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- STORY -->
-  <section class="band story" id="story">
-    <div class="wrap narrow">
-      <p class="section-label reveal">Why it exists</p>
-      <blockquote class="quote reveal">
-        <p>“I spent eighteen months in the family court system and realised the tools to fight properly didn't exist. So I built them — and gave them away for free.”</p>
-        <cite>— Kyle Fischer, creator</cite>
-      </blockquote>
-      <p class="story-body reveal">No parent should have to pay to fight properly for their child. Every part of this toolkit exists because something went wrong without it.</p>
-    </div>
-  </section>
-
-  <!-- METHOD -->
-  <section class="band method" id="method">
-    <div class="wrap">
-      <p class="section-label reveal">The method</p>
-      <h2 class="big reveal">Turn scattered documents into a case that holds up.</h2>
-      <div class="method-grid">
-        <article class="m-card reveal">
-          <span class="m-num">13</span>
-          <h3>Point forensic protocol</h3>
-          <p>Every document analysed for facts, claims, contradictions, patterns, and opportunities — the way a barrister would.</p>
-        </article>
-        <article class="m-card reveal">
-          <span class="m-ic">⊞</span>
-          <h3>Evidence Matrix</h3>
-          <p>Map every allegation against every piece of evidence. See at a glance what's proven, disputed, or missing.</p>
-        </article>
-        <article class="m-card reveal">
-          <span class="m-ic">⚇</span>
-          <h3>Contradiction engine</h3>
-          <p>Cross-reference the whole case to find where the other side's story changes — and where credibility breaks.</p>
-        </article>
-        <article class="m-card reveal">
-          <span class="m-ic">◷</span>
-          <h3>Pattern detection</h3>
-          <p>Repetition may be relevant, but no fixed count proves a legal pattern. Assess dated sources, context, contrary evidence, and reasonable alternative explanations.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- TOOLKIT -->
-  <section class="band toolkit" id="toolkit">
-    <div class="wrap">
-      <p class="section-label reveal">The toolkit</p>
-      <h2 class="big reveal">Three ways to run it. All free. All yours.</h2>
-      <div class="tk-grid">
-        <article class="tk-card reveal">
-          <h3>The Evidence Vault</h3>
-          <p>A structured Obsidian system — templates, dashboards, and the full methodology, ready on day one.</p>
-        </article>
-        <article class="tk-card reveal feature">
-          <span class="tag">new</span>
-          <h3>The Local Web App</h3>
-          <p>Your vault as a clear dashboard in your browser — timeline, case overview, and printable draft chronology PDFs. Verify accuracy and completeness before use. Runs entirely on your machine.</p>
-        </article>
-        <article class="tk-card reveal">
-          <h3>The Claude Plugin</h3>
-          <p>An optional AI strategist that analyses documents, finds contradictions, and builds strategy using your Claude account. Content you share is processed by Claude under your account and provider policies.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- PRIVACY -->
-  <section class="band privacy" id="privacy">
-    <div class="wrap narrow center">
-      <p class="section-label reveal">Privacy for the local tools</p>
-      <h2 class="big reveal">Your vault and local app stay <em>on your computer.</em></h2>
-      <p class="story-body reveal">The Evidence Vault, local web app, and desktop app do not upload your case files to our servers. If you choose the Claude plugin or paste content into Claude, that content is sent to Claude and processed under your Claude account and provider policies. Open source, MIT licensed, free forever.</p>
-    </div>
-  </section>
-
-  <!-- GET -->
-  <section class="band get" id="get">
-    <div class="wrap center">
-      <h2 class="big huge reveal">Start building your case tonight.</h2>
-      <p class="story-body reveal">Download the vault, install the plugin, or paste one prompt into Claude. Whatever fits — it's free.</p>
-      <div class="hero-cta reveal">
-        <a href="https://github.com/odin33g/family-court-strategist" class="btn btn-gold">Get it on GitHub</a>
-        <a href="https://github.com/odin33g/family-court-strategist#quick-start" class="btn btn-ghost">Read the guide</a>
-      </div>
-      <p class="disclaimer reveal">A case-organisation and evidence-analysis tool — not legal advice. Always seek independent legal advice for major decisions.</p>
-    </div>
-  </section>
-
-</main>
-
-<footer class="footer">
-  <div class="wrap footer-in">
-    <span>⚖ Family Court Strategist</span>
-    <span>Built by Kyle Fischer · MIT · Open source forever</span>
+<body class="brand-home">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Case Forge home"><img src="brand/logo.svg" alt="Case Forge" width="280" height="80"></a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="main-nav">Menu</button>
+    <nav id="main-nav" aria-label="Main navigation">
+      <a href="#toolkit">Toolkit</a>
+      <a href="#app-preview">App preview</a>
+      <a href="#waitlist">Desktop waitlist</a>
+      <a class="button compact" href="#get-started">Get started</a>
+    </nav>
   </div>
-</footer>
+</header>
+<main id="main">
+  <section class="identity-hero" aria-labelledby="hero-title">
+    <div class="identity-copy">
+      <p class="eyebrow">Open-source case intelligence.</p>
+      <span class="copper-rule" aria-hidden="true"></span>
+      <h1 id="hero-title">Build your case<br> from the evidence.</h1>
+      <p class="lead">Organise your family-court records. Examine the details. Prepare your questions and next steps.</p>
+      <div class="actions">
+        <a class="button" href="#get-started">Set up the free toolkit <span aria-hidden="true">↓</span></a>
+        <a class="button secondary" href="#waitlist">Join the desktop waitlist</a>
+      </div>
+      <p class="identity-note">Free, open-source materials. Use with your chosen tools.</p>
+    </div>
+    <div class="identity-mark" aria-hidden="true">
+      <span class="identity-caption">Evidence brought into structure.</span>
+      <img src="brand/symbol.svg" alt="" width="390" height="501">
+      <p>Evidence.<br>Structure.<br>Clarity.</p>
+    </div>
+  </section>
 
-<script src="vendor/gsap.min.js"></script>
-<script src="vendor/ScrollTrigger.min.js"></script>
-<script type="module" src="main.js"></script>
+  <section class="brand-intro wrap" id="about">
+    <p class="eyebrow">Clarity before argument.</p>
+    <div>
+      <h2>A difficult process.<br> A clearer way to prepare.</h2>
+      <p>When you’re navigating family court, the records can be hard to keep on top of. Letters, messages, orders and notes all tell part of the story.</p>
+      <p>Case Forge helps parents bring those parts together: an evidence vault, reusable prompts and an optional AI workflow. So you can understand your material and have a clearer conversation about what comes next.</p>
+    </div>
+  </section>
+
+  <section class="product-section" id="app-preview" aria-labelledby="preview-title">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">A look inside Case Forge</p><h2 id="preview-title">Your case.<br> A place to see it clearly.</h2></div><p>From the big picture to the original document. These are screens from the working app preview, using a fictional case.</p></div>
+      <div class="preview-controls" role="group" aria-label="Choose an app preview"><button type="button" data-preview="overview" aria-pressed="true">Case overview</button><button type="button" data-preview="review" aria-pressed="false">Document review</button></div>
+      <div class="device-stage">
+        <div class="desktop-device"><div class="device-toolbar"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Case Forge · Desktop preview</span><span class="device-local">Local workspace</span></div><img id="desktop-preview" srcset="media/desktop-overview-small.webp 720w, media/desktop-overview.webp 1440w" sizes="(max-width:760px) calc(100vw - 94px), (max-width:1100px) calc(100vw - 220px), 1042px" src="media/desktop-overview.webp" alt="Case Forge desktop overview showing a fictional case timeline and document workspace" width="1440" height="1000" loading="lazy"></div>
+        <div class="phone-device"><div class="phone-camera" aria-hidden="true"></div><img id="phone-preview" srcset="media/phone-overview-small.webp 240w, media/phone-overview.webp 390w" sizes="(max-width:760px) 112px, (max-width:1100px) 186px, 216px" src="media/phone-overview.webp" alt="Responsive Case Forge overview displayed inside an iPhone-style frame" width="390" height="780" loading="lazy"><span class="phone-home" aria-hidden="true"></span></div>
+      </div>
+      <div class="preview-caption"><p id="preview-description" aria-live="polite">Case overview · see your timeline, records and questions in one workspace.</p><p>Desktop app in development. Phone shows a responsive layout preview; an iPhone app is not available.</p></div>
+    </div>
+  </section>
+
+  <section class="toolkit-section" id="toolkit">
+    <div class="wrap">
+      <div class="section-head">
+        <div><p class="eyebrow">The open-source toolkit</p><h2>Organise.<br> Analyse. Prepare.</h2></div>
+        <p>A practical structure for the work in front of you. Start with your records and keep the source close to every note.</p>
+      </div>
+      <div class="toolkit-grid">
+        <article>
+          <div class="toolkit-number"><span>01 / ORGANISE</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 6h6l2 3h10v11H3zM3 6V4h6l2 2h8v3" stroke-linejoin="round"/></svg></div>
+          <h3>Evidence Vault</h3><p>Bring documents, correspondence and working notes into a folder structure you can navigate.</p>
+          <span class="toolkit-detail">Records. References. One place to begin.</span>
+        </article>
+        <article>
+          <div class="toolkit-number"><span>02 / ANALYSE</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 3v18M3 15h18"/></svg></div>
+          <h3>Evidence Matrix</h3><p>Set out claims, supporting sources and questions. Compare accounts and examine what still needs checking.</p>
+          <span class="toolkit-detail">Separate the record from interpretation.</span>
+        </article>
+        <article>
+          <div class="toolkit-number"><span>03 / PREPARE</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 3v18M10 6h10M10 12h7M10 18h10"/><circle cx="7" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="7" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="7" cy="18" r="2" fill="currentColor" stroke="none"/></svg></div>
+          <h3>Case Timeline</h3><p>Put events in date order. Use the chronology to see gaps and prepare questions for your next discussion.</p>
+          <span class="toolkit-detail">Dates. Context. Practical next steps.</span>
+        </article>
+      </div>
+      <a class="text-link toolkit-link" href="https://github.com/CaseForgeHq/family-court-strategist">Explore the files and templates on GitHub ↗</a>
+    </div>
+  </section>
+
+  <section class="principle-section wrap">
+    <div class="principle-title"><p class="eyebrow">Careful work. Clear boundaries.</p><h2>Your records.<br> Your understanding.</h2><span class="copper-rule" aria-hidden="true"></span></div>
+    <div class="principle-rows">
+      <article><span>01</span><div><h3>Keep your files close.</h3><p>Your case folder lives on your computer. Keep the original documents, work from copies and make your own backups.</p></div></article>
+      <article><span>02</span><div><h3>Choose how you use AI.</h3><p>The toolkit can be used with your preferred tools. Cloud AI processes the material you share with that provider. Check its privacy settings, access requirements and costs.</p></div></article>
+      <article><span>03</span><div><h3>Stay connected to the source.</h3><p>An AI suggestion is something to review. Check the original words, their context and any contrary evidence before relying on an interpretation.</p></div></article>
+    </div>
+  </section>
+
+  <section class="setup-section wrap" id="get-started" aria-labelledby="setup-title">
+    <div class="section-head"><div><p class="eyebrow">Free toolkit · Get started</p><h2 id="setup-title">Give your AI the link.<br> Let it help you set up.</h2></div><p>Choose a folder on your computer. Give the setup message to an AI that can work with local files, and it can install the structure and guide you from there.</p></div>
+    <div class="setup-layout">
+      <div class="setup-steps" id="guides"><article><span>01</span><div><h3>Choose your folder</h3><p>Create a new case folder or select one you already use. Existing files are preserved.</p></div></article><article><span>02</span><div><h3>Paste the setup message</h3><p>Use an AI assistant with folder access. A regular browser chat can explain the steps, but cannot install files for you.</p></div></article><article><span>03</span><div><h3>Start with one document</h3><p>Your AI reads the included guidance and helps you find your first useful step.</p></div></article></div>
+      <div class="setup-copy-card"><p class="eyebrow">Copy. Paste. Get organised.</p><label for="setup-message">Give this message to your AI</label><textarea id="setup-message" rows="5" readonly>Read the Case Forge setup guide at setup.md and help me install the free toolkit in a folder I choose. Preserve my existing files, then read CASE-FORGE.md and help me get started.</textarea><div class="copy-actions"><button class="button" type="button" data-copy="setup-message">Copy setup message <span aria-hidden="true">↗</span></button><button class="text-link copy-link" type="button" id="copy-setup-link">Copy link only</button></div><p class="copy-status" id="copy-status" role="status" aria-live="polite"></p><p class="setup-local-note" id="setup-local-note" hidden>This preview link works only on this computer. Use a local AI with folder access; the public link will be shareable after launch.</p><a class="text-link" href="setup.md">Read the setup instructions ↗</a>
+      <details class="cli-details"><summary>Prefer a terminal? Copy one command.</summary><p>Requires Node.js 18+ and npm. Replace <code>./My-Case</code> with your folder.</p><label class="sr-only" for="setup-command">Installation command</label><textarea id="setup-command" rows="4" readonly></textarea><button class="button secondary compact" type="button" data-copy="setup-command">Copy command</button><p>The installer adds the toolkit and AI guidance. It stops if files would conflict.</p></details>
+      <div class="manual-download"><span>No AI or terminal?</span><a class="text-link" href="downloads/case-forge-toolkit.zip" download>Download the folder ZIP ↓</a></div></div>
+    </div>
+  </section>
+
+  <section class="waitlist-section" id="waitlist" aria-labelledby="waitlist-title"><div class="wrap waitlist-layout">
+    <div class="waitlist-copy"><p class="eyebrow">The simpler option · Coming next</p><h2 id="waitlist-title">Just want<br> the app?</h2><p>The free toolkit is there if you want to set things up yourself. We’re building a paid desktop app for people who want one place to add documents, connect their AI and get to work.</p><ul><li>Download an app for your computer</li><li>Keep your folders and files locally</li><li>Choose your AI connection</li><li>Monthly subscription · cancel and keep your files</li></ul><p class="waitlist-detail">Planned product features. Pricing and launch date are still to be confirmed. Your AI provider’s costs are separate.</p></div>
+    <div class="waitlist-form-card"><p class="eyebrow">Early access</p><h3>Be first to hear when it’s ready.</h3><p>Leave your name and email for a desktop app launch update. No payment required.</p><form id="waitlist-form"><div class="field"><label for="waitlist-name">Your name</label><input id="waitlist-name" name="name" autocomplete="given-name" maxlength="100" required placeholder="First name"></div><div class="field"><label for="waitlist-email">Email address</label><input id="waitlist-email" name="email" type="email" autocomplete="email" maxlength="254" required placeholder="you@example.com"></div><div class="field"><label for="waitlist-platform">Your computer <span>(optional)</span></label><select id="waitlist-platform" name="platform"><option value="not-sure">Choose an option</option><option value="mac">Mac</option><option value="windows">Windows</option><option value="linux">Linux</option></select></div><div class="honey" aria-hidden="true"><label for="waitlist-company">Company</label><input id="waitlist-company" name="company" tabindex="-1" autocomplete="off"></div><label class="waitlist-consent"><input type="checkbox" name="consent" required><span>Email me when the Case Forge desktop app is ready to try.</span></label><button class="button" id="waitlist-submit" type="submit" disabled>Join the desktop waitlist <span aria-hidden="true">→</span></button><p id="waitlist-status" role="status" aria-live="polite">Checking signup availability…</p><noscript><p>Enable JavaScript to submit this form. You can still download the free toolkit above.</p></noscript></form><p class="waitlist-privacy">Only your signup details are collected here. Please don’t include case information. <a href="privacy.html">How we use your details</a></p></div>
+  </div></section>
+
+  <section class="questions-section wrap" aria-labelledby="questions-title">
+    <div><p class="eyebrow">Before you begin</p><h2 id="questions-title">A few things<br> to know.</h2></div>
+    <div class="questions-list">
+      <details open><summary>What is free?</summary><p>The open-source toolkit materials are free. Optional third-party applications, AI subscriptions and API usage may have their own costs.</p></details>
+      <details><summary>Is there an all-in-one app?</summary><p>A local Case Forge app is in development. Join the desktop waitlist above for a launch update. Public installers and monthly billing are not available yet.</p><p>The intended paid app will let you cancel and keep your files, with working features requiring an active subscription. Pricing and a public subscription-based AI connection are still to be confirmed.</p><a class="text-link" data-local-preview href="#get-started" hidden>Open the local app preview →</a></details>
+      <details><summary>Does everything stay on my computer?</summary><p>Your local case folder stays on your computer. If you choose cloud AI, the material you share is processed by that provider. The local app preview asks for consent before sending selected document text for cloud analysis; it also supports a local model option.</p></details>
+      <details><summary>Can this replace legal advice?</summary><p>Case Forge is an organisation and analysis tool. It helps you prepare your material and questions. Check sources and obtain qualified advice for legal decisions.</p></details>
+    </div>
+  </section>
+
+  <section class="resources-section wrap" aria-labelledby="resources-title"><div class="section-head"><div><p class="eyebrow">A useful place to start</p><h2 id="resources-title">Less searching.<br>Clearer preparation.</h2></div><p>Simple guides for organising your records and checking the work as you go.</p></div><div class="resource-grid"><a class="resource-card" href="organise-family-court-documents.html"><span class="eyebrow">01 / Organise</span><h3>Put your documents in order.</h3><p>Keep originals safe and build an index you can follow.</p><span class="text-link">Document organisation guide →</span></a><a class="resource-card" href="build-case-timeline.html"><span class="eyebrow">02 / Prepare</span><h3>Build a clearer timeline.</h3><p>Connect dates to sources and see what still needs checking.</p><span class="text-link">Case timeline guide →</span></a><a class="resource-card" href="ai-document-review.html"><span class="eyebrow">03 / Review</span><h3>Check what your AI finds.</h3><p>Review quotations and decide what belongs in your notes.</p><span class="text-link">AI document review guide →</span></a></div></section>
+
+  <section class="brand-signoff"><div class="wrap"><img src="brand/logo-reversed.svg" loading="lazy" alt="Case Forge" width="440" height="126"><p>Open-source case intelligence.</p><span class="signoff-line">Organise. Analyse. Prepare.</span></div></section>
+</main>
+<footer class="wrap footer"><p>Case organisation and preparation.<br> Not legal advice.</p><div><a href="guides.html">Preparation guides</a><a href="about.html">About</a><a href="#questions-title">Limitations</a><a href="privacy.html">Privacy</a><a href="https://github.com/CaseForgeHq/family-court-strategist">GitHub ↗</a></div></footer>
+<script src="site-config.js" defer></script>
+<script src="main.js" defer></script>
 </body>
 </html>

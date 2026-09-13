@@ -1,0 +1,3 @@
+# Local/unconfigured preview. Rebuild with SITE_URL before public launch.
+User-agent: *
+Disallow: /

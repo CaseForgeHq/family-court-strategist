@@ -1,6 +1,6 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "../server.js";
@@ -44,9 +44,11 @@ test("vault.js uses no network or fs-write APIs", async () => {
   }
 });
 
-test("server.js performs no outbound requests", async () => {
-  const src = await readFile(new URL("../server.js", import.meta.url), "utf8");
-  assert.equal(src.includes("fetch("), false);
-  const nonLoopback = src.replace(/http:\/\/127\.0\.0\.1/g, "");
-  assert.equal(/https?:\/\//.test(nonLoopback), false);
+test("opening the default viewer does not create case storage or connect a provider", async () => {
+  const before = await readdir(sampleCase);
+  const session = await (await fetch(`http://127.0.0.1:${port}/api/session`)).json();
+  assert.equal(session.access.canWrite, false);
+  assert.equal(session.connection, null);
+  assert.equal(session.claudeCodeEnabled, false);
+  assert.deepEqual(await readdir(sampleCase), before);
 });

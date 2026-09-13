@@ -8,6 +8,12 @@ on:
     branches: [main]
     paths:
       - "website/**"
+      - "cli/**"
+      - "obsidian-vault/**"
+      - "plugin/**"
+      - "scripts/**"
+      - "brand/**"
+      - "package.json"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -22,13 +28,31 @@ concurrency:
 
 jobs:
   deploy:
+    # Cloudflare is the primary host. Enable this only for an intentional Pages deployment.
+    if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run test:setup
+      - run: npm run test:seo
+      - run: node scripts/sync-brand.mjs
+      - run: npm run build:downloads
+      - id: pages
+        uses: actions/configure-pages@v5
+      - run: npm run build:site
+        env:
+          WAITLIST_API_URL: ${{ vars.WAITLIST_API_URL }}
+          SITE_URL: ${{ vars.SITE_URL || steps.pages.outputs.base_url }}
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+          BING_SITE_VERIFICATION: ${{ vars.BING_SITE_VERIFICATION }}
+      - name: Require public SEO configuration
+        run: node --input-type=module -e "import {readFileSync} from 'node:fs'; if(!readFileSync('website/index.html','utf8').includes('rel=\"canonical\"')) process.exit(1)"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: website

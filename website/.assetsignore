@@ -1,0 +1,9 @@
+README.md
+media/README.md
+media/desktop-*.png
+media/phone-*.png
+vendor/
+brand/fonts/*.ttf
+brand/fonts/InterVariable.woff2
+brand/fonts/EBGaramond-Variable.woff2
+.nojekyll

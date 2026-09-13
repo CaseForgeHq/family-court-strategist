@@ -1,16 +1,42 @@
-// Client: fetch the case model once, then render interactive views. Read-only.
+import { createInbox } from "./inbox.js";
+// Case notes remain portable Markdown. Document intake uses the protected local API.
 const STATUS_CLASS = { PROVEN: "proven", DISPUTED: "disp", UNRESOLVED: "unres", DISPROVEN: "dispr" };
 const TYPE_CLASS = {
   court: "court", contact: "contact", incident: "incident",
   legal: "court", professional: "pro", communication: "com",
 };
 const VIEW_TITLES = {
-  dashboard: "Case overview", timeline: "Master timeline", evidence: "Evidence matrix",
-  patterns: "Patterns", people: "People", documents: "Document Studio", legal: "Legal research",
+  dashboard: "Case overview", timeline: "Case timeline", evidence: "Evidence matrix",
+  patterns: "Patterns", people: "People", documents: "Evidence Vault", exports: "Document Studio", legal: "Legal research",
 };
 
 let MODEL = null;
 let current = "dashboard";
+let SESSION = null;
+
+async function api(path, options = {}) {
+  const headers = { "x-case-id": SESSION?.caseKey || "" };
+  if (options.method === "POST") {
+    headers["x-strategist-token"] = SESSION?.token || "";
+    headers["content-type"] = options.raw ? "application/octet-stream" : "application/json";
+  }
+  const response = await fetch(path, { method: options.method || "GET", headers,
+    body: options.body === undefined ? undefined : options.raw ? options.body : JSON.stringify(options.body) });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.error || "The local app could not complete this request.");
+  }
+  return options.blob ? response.blob() : response.json();
+}
+
+const inbox = createInbox({ api, getSession: () => SESSION, updateSession: (s) => { SESSION = s; },
+  showModal: openModal, closeModal, onSaved: refreshCase });
+
+async function refreshCase() {
+  MODEL = await api("/api/case");
+  applyChrome(MODEL);
+  if (current !== "documents") go(current);
+}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -35,16 +61,17 @@ function timelineRows(items, limit) {
 }
 
 function viewDashboard(m) {
-  const pillar = (name) => `<div class="plr"><div class="t"><span>${name}</span><span style="color:var(--amber)">Build</span></div><div class="meter"><i style="width:40%;background:var(--amber)"></i></div></div>`;
+  const pillar = (name) => `<div class="plr"><div class="t"><span>${name}</span><span style="color:var(--soft)">Review sources</span></div></div>`;
   const pat = m.patterns[0]
     ? `<div class="top"><span class="nm">${esc(m.patterns[0].name)}</span><span class="ct">tracked</span></div>
        <div class="desc">Repetition may be relevant, but no fixed count proves a legal pattern.</div>
        <div class="leg">Assess dated sources, context, contrary evidence, and reasonable alternative explanations.</div>`
     : `<p class="empty">No patterns tracked yet.</p>`;
   return `
+  <div class="card intake-shortcut"><div><h2>Add a document to your case</h2><p>Read it locally, analyse with your chosen AI, and review sourced findings.</p></div><button class="btn primary" data-go="documents" type="button">Open document inbox</button></div>
   <div class="stats">
-    ${statCard("Documents analysed", m.stats.documentsAnalysed, "type: legal")}
-    ${statCard("Open contradictions", m.stats.openContradictions, "flagged in frontmatter", "var(--red)")}
+    ${statCard("Documents analysed", m.stats.documentsAnalysed, "document notes in your case")}
+    ${statCard("Open contradictions", m.stats.openContradictions, "flagged for review", "var(--red)")}
     ${statCard("Patterns tracked", m.stats.patternsTracked, "assess sources, context &amp; alternatives")}
     ${statCard("Timeline events", m.stats.timelineEvents, "dated &amp; identified")}
   </div>
@@ -69,9 +96,9 @@ function statCard(k, v, d, color) {
     <div class="v"${color ? ` style="color:${color}"` : ""}>${v}</div><div class="d neu">${d}</div></div>`;
 }
 function evidenceRows(items) {
-  if (!items.length) return `<tr><td colspan="3" class="empty">Evidence-matrix display is not available in this version. You can still open and edit <code>EVIDENCE-MATRIX.md</code> directly in your vault.</td></tr>`;
+  if (!items.length) return `<tr><td colspan="3" class="empty">Reviewed claims will appear here after you save findings from the document inbox. Existing handwritten evidence matrices are not imported yet.</td></tr>`;
   return items.map((r) => `<tr><td class="claim">${esc(r.claim)}<div class="src">${esc(r.source)}</div></td>
-    <td><span class="pill ${STATUS_CLASS[r.status] || "unres"}">${titleCase(r.status)}</span></td><td>${stars(r.strength)}</td></tr>`).join("");
+    <td><span class="pill ${STATUS_CLASS[r.status] || "unres"}">${titleCase(r.status)}</span></td><td>${r.strength ? stars(r.strength) : "Not assessed"}</td></tr>`).join("");
 }
 function docStudioCard() {
   return `<div class="card"><div class="docs">
@@ -128,7 +155,7 @@ function viewLegal() {
 
 const VIEWS = {
   dashboard: viewDashboard, timeline: viewTimeline, evidence: viewEvidence,
-  patterns: viewPatterns, people: viewPeople, documents: viewDocuments, legal: viewLegal,
+  patterns: viewPatterns, people: viewPeople, documents: () => "", exports: viewDocuments, legal: viewLegal,
 };
 
 /* ---------- routing ---------- */
@@ -136,36 +163,25 @@ const VIEWS = {
 function go(view) {
   if (!VIEWS[view]) view = "dashboard";
   current = view;
+  inbox.unmount();
   $("view").innerHTML = VIEWS[view](MODEL);
   $("view-title").textContent = VIEW_TITLES[view];
   $("crumb-view").textContent = VIEW_TITLES[view];
-  document.querySelectorAll(".nav").forEach((n) => n.classList.toggle("on", n.dataset.view === view));
+  document.querySelectorAll(".nav").forEach((n) => {
+    const active = n.dataset.view === view;
+    n.classList.toggle("on", active);
+    if (active) n.setAttribute("aria-current", "page");
+    else n.removeAttribute("aria-current");
+  });
+  document.querySelector(".main").scrollTop = 0;
+  if (view === "documents") inbox.mount($("view"));
   window.scrollTo(0, 0);
 }
 
-/* ---------- Ask Claude (honest v1 side-by-side guidance) ---------- */
+/* ---------- Shared modal host ---------- */
 
 function openModal(htmlStr) { $("modal-body").innerHTML = htmlStr; $("modal-back").hidden = false; }
 function closeModal() { $("modal-back").hidden = true; }
-
-function askClaude() {
-  const prompt = "Using my Family Court Strategist vault in this folder, analyse the most recent document I add and update the timeline, evidence matrix, and patterns. Flag any contradictions.";
-  openModal(`
-    <h2 class="modal-title">Ask Claude — side by side</h2>
-    <p class="modal-p">In this version, the analysis runs in your <b>Claude desktop / Cowork</b> session, working on the same vault files. Refresh this app to see supported vault updates. Evidence-matrix display and in-app AI buttons arrive in a later version.</p>
-    <p class="modal-p"><b>Privacy:</b> Content you share with Claude is sent to Claude and processed under your Claude account and provider policies. The local app itself does not upload your case files.</p>
-    <ol class="modal-steps">
-      <li>Open the Claude desktop app with this case folder as your workspace.</li>
-      <li>Paste the starter prompt below, or just say <i>"set up my case"</i> / <i>"analyse this".</i></li>
-      <li>Come back here and refresh to see supported updates such as new timeline entries.</li>
-    </ol>
-    <div class="prompt-box"><code id="starter">${esc(prompt)}</code></div>
-    <button class="btn" id="copy-prompt">Copy starter prompt</button>`);
-  $("copy-prompt").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(prompt); $("copy-prompt").textContent = "Copied ✓"; }
-    catch { $("copy-prompt").textContent = "Select the text above to copy"; }
-  });
-}
 
 async function chooseCurrentMatter() {
   const chooseFolder = window.strategistDesktop?.chooseCaseFolder;
@@ -173,7 +189,7 @@ async function chooseCurrentMatter() {
     openModal(`
       <h2 class="modal-title">Choose a case folder in the desktop app</h2>
       <p class="modal-p">A web browser cannot safely choose a folder for this local workspace.</p>
-      <p class="modal-p">Open <b>Family Court Strategist</b> on your computer, then click its <b>Current matter</b> button or choose <b>File → Open Case Folder…</b>.</p>`);
+      <p class="modal-p">Open <b>Case Forge</b> on your computer, then click its <b>Current matter</b> button or choose <b>File → Open Case Folder…</b>.</p>`);
     return;
   }
 
@@ -195,18 +211,24 @@ async function chooseCurrentMatter() {
 
 /* ---------- Document Studio: chronology → print/PDF ---------- */
 
-function generateChronology() {
-  const m = MODEL;
+async function generateChronology() {
+  let m;
+  try { m = await api("/api/exports/chronology", { method: "POST", body: {} }); }
+  catch (error) {
+    openModal(`<h2 class="modal-title">Could not generate chronology</h2><p class="modal-p">${esc(error.message)}</p>`);
+    return;
+  }
   const rows = m.timeline.length
     ? [...m.timeline].reverse().map((e) => `<tr><td>${esc(e.date)}</td><td>${esc(e.title)}</td><td>${esc(e.type)}</td><td>${esc(e.eventId)}</td></tr>`).join("")
     : `<tr><td colspan="4">No dated events recorded.</td></tr>`;
   $("print-area").innerHTML = `
     <div class="doc">
+      <img class="brand-print" src="/brand/logo.svg" alt="Case Forge">
       <h1 class="doc-h1">Draft Chronology of Events</h1>
       <p class="doc-meta">${esc(m.court || m.caseName || "Family law matter")}</p>
       <table class="doc-table"><thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Ref</th></tr></thead>
       <tbody>${rows}</tbody></table>
-      <p class="doc-foot">Prepared with Family Court Strategist · printable draft only. Verify accuracy and completeness before use. This is a case-organisation document, not legal advice.</p>
+      <p class="doc-foot">Prepared with Case Forge · printable draft only. Verify accuracy and completeness before use. This is a case-organisation document, not legal advice.</p>
     </div>`;
   document.body.classList.add("printing");
   const cleanup = () => { document.body.classList.remove("printing"); window.removeEventListener("afterprint", cleanup); };
@@ -219,7 +241,7 @@ function generateChronology() {
 function bind() {
   document.querySelectorAll(".nav").forEach((n) => n.addEventListener("click", () => go(n.dataset.view)));
   $("current-matter").addEventListener("click", chooseCurrentMatter);
-  $("ask-claude").addEventListener("click", askClaude);
+  $("ask-claude").addEventListener("click", () => inbox.connectionModal());
   $("modal-x").addEventListener("click", closeModal);
   $("modal-back").addEventListener("click", (e) => { if (e.target === $("modal-back")) closeModal(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
@@ -236,7 +258,7 @@ function bind() {
 }
 
 function filterTimeline(q) {
-  if (current !== "timeline" && current !== "dashboard") go("timeline");
+  go("timeline");
   q = q.trim().toLowerCase();
   const filtered = !q ? MODEL.timeline : MODEL.timeline.filter((e) => (e.title + " " + e.eventId + " " + e.type).toLowerCase().includes(q));
   const host = $("view").querySelector(".tl")?.parentElement;
@@ -254,7 +276,7 @@ function applyChrome(m) {
   const b = $("data-banner");
   if (m.empty) {
     b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01" stroke-linecap="round"/></svg>
-      <span><b>This vault looks empty.</b> Add notes with frontmatter (date, type, event_id) and they'll appear here. Nothing is uploaded.</span>`;
+      <span><b>Start building your case.</b> Open Documents to add a file and review sourced findings. Existing compatible case notes also appear here.</span>`;
   } else if (m.caseName !== "sample-case") {
     b.hidden = true;
   }
@@ -262,14 +284,18 @@ function applyChrome(m) {
 
 async function main() {
   try {
-    const res = await fetch("/api/case");
-    MODEL = await res.json();
+    SESSION = await api("/api/session");
+    MODEL = await api("/api/case");
   } catch {
     $("view").innerHTML = `<p class="empty">Could not load the vault.</p>`;
     return;
   }
   applyChrome(MODEL);
   bind();
-  go("dashboard");
+  go(Object.hasOwn(VIEW_TITLES, window.location.hash.slice(1)) ? window.location.hash.slice(1) : "dashboard");
+  window.addEventListener("hashchange", () => {
+    const view = window.location.hash.slice(1);
+    if (Object.hasOwn(VIEW_TITLES, view)) go(view);
+  });
 }
 main();

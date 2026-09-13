@@ -2,7 +2,7 @@
   "name": "family-court-strategist-desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Desktop wrapper for the Family Court Strategist local workspace. Everything stays on the user's machine.",
+  "description": "Local case workspace with document intake and optional user-selected AI analysis.",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
@@ -14,10 +14,10 @@
   },
   "build": {
     "appId": "org.familycourtstrategist.app",
-    "productName": "Family Court Strategist",
+    "productName": "Case Forge",
     "files": ["main.cjs", "preload.cjs"],
     "extraResources": [
-      { "from": "../app", "to": "app", "filter": ["**/*", "!tests/**", "!**/*.test.js"] },
+      { "from": "../app", "to": "app", "filter": ["server.js", "package.json", "lib/**", "public/**", "node_modules/pdfjs-dist/**", "node_modules/@napi-rs/**"] },
       { "from": "../sample-case", "to": "sample-case" }
     ],
     "mac": { "category": "public.app-category.productivity", "target": "dmg" },

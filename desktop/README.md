@@ -1,47 +1,53 @@
-# Family Court Strategist — Desktop App
+# Case Forge — desktop development preview
 
-A double-click desktop wrapper (Electron) around the local web workspace. It opens
-the dashboard in its own app window and adds a native **File → Open Case Folder…**
-picker, so a parent never touches a terminal or a file path. Everything stays on
-the machine — no accounts, no uploads.
+Electron hosts the local case workspace and adds a native case-folder picker.
+Original documents and case notes stay on the computer. Cloud analysis sends only
+the extracted document text selected and confirmed by the user.
 
-## Run it (development)
+## Run
 
-```bash
-cd desktop
-npm install     # one time — downloads Electron
-npm start       # opens the app window
-```
-
-First launch shows the bundled **sample case**. Use **File → Open Case Folder…**
-(⌘O) to point it at your own vault; it remembers your choice next time.
-
-> Note: must be run from a normal desktop session. Headless/CI environments that set
-> `ELECTRON_RUN_AS_NODE=1` or have no display cannot open the window — that's expected.
-
-## How it works
-
-- Reuses the exact same local server as [`../app`](../app) (`createServer`), passing a
-  *dynamic* vault path so the folder picker can switch cases without a restart.
-- Loads `http://127.0.0.1:<random-port>` in the window — same UI, same read-only,
-  local-only guarantees.
-- Remembers the last vault in the OS user-data folder (`config.json`).
-
-## Build installers (later)
+Use Node.js 22.13+ for installing dependencies and running the web tests.
 
 ```bash
-npm run dist    # electron-builder → .dmg / .exe / .AppImage
+cd app
+npm ci
+cd ../desktop
+npm ci
+npm start
 ```
 
-Bundles `../app` and `../sample-case` as resources. **Code-signing/notarisation** is
-required for a warning-free install on macOS and Windows — that's the main step
-between "works on my machine" and "a stranger can double-click it safely."
+The first development launch copies the fictional sample case into `preview-case`
+inside Electron's user-data directory. It never writes to the bundled sample.
+Use **Current matter** or **File → Open Case Folder…** to choose your own case.
+The last selected folder is remembered.
 
-## If anything goes wrong
-
-The browser version always works as a fallback:
+To opt into the existing Claude Code sign-in bridge during development on macOS
+or Linux:
 
 ```bash
-cd ../app && node server.js            # sample case
-cd ../app && node server.js /your/vault
+STRATEGIST_CLAUDE_CODE_PREVIEW=1 npm start
 ```
+
+Claude Code must be installed and signed in separately. This is not a public
+subscription login. See [the app README](../app/README.md) for connection limits,
+provider approval requirements, privacy, storage and testing instructions.
+
+## Build status
+
+```bash
+npm run dist
+```
+
+Installer targets are configured for macOS, Windows and Linux. Install the app's
+production dependencies on each target build platform first: PDF.js includes an
+optional native canvas package. The packaging filter includes PDF.js and canvas,
+and excludes DOM test dependencies. Revisit it when adding runtime dependencies.
+
+**Packaged builds remain read-only** until a verified subscription entitlement
+service is implemented. Development flags cannot enable the subscription bridge
+in a packaged build. Stripe, account activation, signed licences, signing,
+notarisation and automatic updates are not delivered by this preview.
+
+The same local server powers the browser and desktop versions. Context isolation
+is enabled, Node integration is disabled, and navigation away from the app origin
+is blocked. The app cancels its jobs on quit; interrupted work can be retried.
