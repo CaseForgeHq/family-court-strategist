@@ -14,6 +14,12 @@ test('public build preserves a deployment subpath across canonical, schema, soci
  assert.equal((sitemap.match(/<loc>/g)||[]).length,7);assert.doesNotMatch(sitemap,/localhost|style-guide|404|api\//);
  for(const p of pages){const html=readFileSync(join(directory,p.file),'utf8');assert.equal((html.match(/<title>/g)||[]).length,1);assert.match(html,new RegExp(`<meta name="robots" content="${p.noindex?'noindex':'index'}`));const canonical=html.match(/rel="canonical" href="([^"]+)"/)[1];assert.equal(canonical,new URL(p.path??p.file,base).href);assert.match(html,/og:image:width" content="1200/);const schema=JSON.parse(html.match(/application\/ld\+json">(.*?)<\/script>/s)[1]);assert.equal(schema['@graph'][0].name,'Case Forge');assert.equal(schema['@graph'][1].url,base);if(p.article)assert.ok(schema['@graph'].some(item=>item['@type']==='BreadcrumbList'));}
  assert.match(readFileSync(join(directory,'robots.txt'),'utf8'),/Sitemap: https:\/\/example.test\/case-forge\/sitemap.xml/);
+ const html=readFileSync(join(directory,'index.html'),'utf8');
+ const imageURL=html.match(/property="og:image" content="([^"]+)"/)[1];
+ assert.match(imageURL,/\/media\/case-forge-social-[a-f0-9]{12}\.png$/);
+ assert.ok(html.includes(`property="og:image:secure_url" content="${imageURL}"`));
+ assert.match(html,/property="og:image:type" content="image\/png"/);
+ assert.deepEqual(readFileSync(join(directory,'media',new URL(imageURL).pathname.split('/').at(-1))),readFileSync(join(source,'media/case-forge-social.png')));
  const first=readFileSync(join(directory,'index.html'),'utf8');buildSeo({directory,siteURL:base});assert.equal(readFileSync(join(directory,'index.html'),'utf8'),first);
 });
 test('unconfigured builds cannot advertise indexing or stale public canonicals',t=>{

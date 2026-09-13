@@ -1,8 +1,13 @@
-import {readFileSync,writeFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {resolve,join} from 'node:path';
+import {createHash} from 'node:crypto';
 
 export const repository='https://github.com/CaseForgeHq/family-court-strategist';
+const socialSource=new URL('../website/media/case-forge-social.png',import.meta.url);
+const socialImage=readFileSync(socialSource);
+const socialVersion=createHash('sha256').update(socialImage).digest('hex').slice(0,12);
+const socialPath=`media/case-forge-social-${socialVersion}.png`;
 export const pages=[
  {file:'index.html',path:'',title:'Case Forge | Family Court Document & Evidence Organiser',description:'Organise family court documents, build a source-linked timeline and review AI findings. Download the free Case Forge toolkit or join the desktop app waitlist.'},
  {file:'guides.html',title:'Document Organisation & Case Preparation Guides | Case Forge',description:'Practical guides to organising family court documents, building a case timeline and checking AI document review. Start with records and sources you can verify.'},
@@ -23,17 +28,19 @@ export function siteBase(value){
 }
 export function buildSeo({directory=fileURLToPath(new URL('../website/',import.meta.url)),siteURL=process.env.SITE_URL,googleVerification=process.env.GOOGLE_SITE_VERIFICATION,bingVerification=process.env.BING_SITE_VERIFICATION}={}){
  const base=siteBase(siteURL),url=path=>new URL(path,base).href;
+ mkdirSync(join(directory,'media'),{recursive:true});
+ writeFileSync(join(directory,socialPath),socialImage);
  for(const page of pages){
   const indexable=!!base&&!page.noindex,canonical=base?url(page.path??page.file):null;
   const head=[`<title>${escape(page.title)}</title>`,`<meta name="description" content="${escape(page.description)}">`,`<meta name="robots" content="${indexable?'index, follow, max-image-preview:large':'noindex, follow'}">`,`<meta name="theme-color" content="#F8F4EC">`,`<meta property="og:site_name" content="Case Forge">`,`<meta property="og:locale" content="en_AU">`,`<meta property="og:type" content="${page.article?'article':'website'}">`,`<meta property="og:title" content="${escape(page.title)}">`,`<meta property="og:description" content="${escape(page.description)}">`,`<meta name="twitter:card" content="summary_large_image">`,`<meta name="twitter:title" content="${escape(page.title)}">`,`<meta name="twitter:description" content="${escape(page.description)}">`];
   if(canonical){
-   head.push(`<link rel="canonical" href="${escape(canonical)}">`,`<meta property="og:url" content="${escape(canonical)}">`,`<meta property="og:image" content="${escape(url('media/case-forge-social.png'))}">`,`<meta property="og:image:width" content="1200">`,`<meta property="og:image:height" content="630">`,`<meta property="og:image:alt" content="Case Forge. Organise your records. Build a clearer picture. Free toolkit and desktop app waitlist.">`,`<meta name="twitter:image" content="${escape(url('media/case-forge-social.png'))}">`);
+   head.push(`<link rel="canonical" href="${escape(canonical)}">`,`<meta property="og:url" content="${escape(canonical)}">`,`<meta property="og:image" content="${escape(url(socialPath))}">`,`<meta property="og:image:secure_url" content="${escape(url(socialPath))}">`,`<meta property="og:image:type" content="image/png">`,`<meta property="og:image:width" content="1200">`,`<meta property="og:image:height" content="630">`,`<meta property="og:image:alt" content="Case Forge logo and brand symbol. Organise your records. Build a clearer picture.">`,`<meta name="twitter:image" content="${escape(url(socialPath))}">`,`<meta name="twitter:image:alt" content="Case Forge logo and brand symbol. Organise your records. Build a clearer picture.">`);
    const org={'@type':'Organization','@id':url('#organisation'),name:'Case Forge',email:'caseforgehq@proton.me',url:url(''),logo:url('brand/logo.svg'),sameAs:[repository]};
    const site={'@type':'WebSite','@id':url('#website'),name:'Case Forge',url:url(''),publisher:{'@id':org['@id']},inLanguage:'en-AU'};
    const webPage={'@type':'WebPage','@id':canonical+'#page',url:canonical,name:page.title,description:page.description,isPartOf:{'@id':site['@id']},inLanguage:'en-AU'};
    const graph=[org,site,webPage];
    if(page.article){
-    const article={'@type':'Article',headline:page.title.replace(/ \| Case Forge$/,''),description:page.description,mainEntityOfPage:{'@id':webPage['@id']},author:{'@id':org['@id']},publisher:{'@id':org['@id']},datePublished:'2026-09-13',dateModified:'2026-09-13',image:url('media/case-forge-social.png')};
+    const article={'@type':'Article',headline:page.title.replace(/ \| Case Forge$/,''),description:page.description,mainEntityOfPage:{'@id':webPage['@id']},author:{'@id':org['@id']},publisher:{'@id':org['@id']},datePublished:'2026-09-13',dateModified:'2026-09-13',image:url(socialPath)};
     const crumbs={'@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Home',item:url('')},{'@type':'ListItem',position:2,name:'Guides',item:url('guides.html')},{'@type':'ListItem',position:3,name:article.headline,item:canonical}]};
     graph.push(article,crumbs);
    }

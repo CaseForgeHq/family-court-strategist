@@ -1,2 +1,2 @@
 9cd42a0f7426ba2afb826b1b37a09cd6f3581b98b290b454361d79dc8dbfc27c  case-forge-setup-0.1.0.tgz
-32a37c5abdcfb923cb69f998433395d30c5864f84e32c194382f7e9dc2d63136  case-forge-toolkit.zip
+608cba0453e4fab4b42c1158e52afc7228c01ad486c60f032977d6e967e8c16f  case-forge-toolkit.zip
