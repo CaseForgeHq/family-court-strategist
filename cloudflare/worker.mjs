@@ -11,6 +11,14 @@ const json=(status,body)=>new Response(JSON.stringify(body),{status,headers});
 export default {
  async fetch(request,env){
   const url=new URL(request.url);
+  // Keep shared links and downloads working when the public domain changes.
+  if(url.origin!==env.PUBLIC_ORIGIN){
+   if(!['GET','HEAD'].includes(request.method))return json(403,{error:'Refresh the page and try again.'});
+   const destination=new URL(env.PUBLIC_ORIGIN);
+   destination.pathname=url.pathname==='/index.html'?'/':url.pathname;
+   destination.search=url.search;
+   return Response.redirect(destination,308);
+  }
   if(url.pathname==='/index.html')return Response.redirect(new URL('/'+url.search,url),308);
   if(url.pathname==='/'){
    if(!['GET','HEAD'].includes(request.method))return json(405,{error:'Method not allowed.'});

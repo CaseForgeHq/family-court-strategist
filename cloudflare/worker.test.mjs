@@ -11,6 +11,25 @@ function setup(t){
  return {db,env,send};
 }
 const person={name:'Deployment test',email:'test@example.test',platform:'mac',consent:true};
+test('domain migration redirects old links and www without redirecting signup bodies',async t=>{
+ const s=setup(t);s.env.PUBLIC_ORIGIN='https://caseforgehq.com';
+ s.env.ASSETS.fetch=()=>{throw new Error('A redirect must not fetch assets')};
+ for(const host of ['https://case-forge.red-scene-4bab.workers.dev','https://www.caseforgehq.com','http://caseforgehq.com']){
+  for(const path of ['/','/guides.html?source=shared','/downloads/case-forge-toolkit.zip','/media/case-forge-social.png','//other.example/path']){
+   for(const method of ['GET','HEAD']){
+    const response=await worker.fetch(new Request(host+path,{method}),s.env);
+    assert.equal(response.status,308);assert.equal(response.headers.get('location'),'https://caseforgehq.com'+path);
+   }
+  }
+  const index=await worker.fetch(new Request(host+'/index.html?source=shared'),s.env);
+  assert.equal(index.headers.get('location'),'https://caseforgehq.com/?source=shared');
+  const post=await worker.fetch(new Request(host+'/api/waitlist',{method:'POST',body:JSON.stringify(person)}),s.env);
+  assert.equal(post.status,403);assert.equal(post.headers.get('location'),null);
+ }
+ assert.equal(s.db.prepare('SELECT COUNT(*) n FROM waitlist').get().n,0);
+ const config=JSON.parse(readFileSync(new URL('./wrangler.json',import.meta.url),'utf8'));
+ assert.equal(config.assets.run_worker_first,true,'Static assets must also reach the host redirect');
+});
 test('homepage serves its asset and the duplicate index URL redirects to its canonical address',async t=>{
  const s=setup(t);let requested;
  s.env.ASSETS.fetch=async request=>{requested=request;return new Response('home')};
