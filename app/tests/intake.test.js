@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { createServer } from "../server.js";
 import { buildCaseModel } from "../lib/vault.js";
 import { samplePdf, findings } from "./helpers.js";
+import { FactRegistry } from "../lib/facts.js";
 
 async function setup(t, overrides = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "strategist-test-")));
@@ -87,7 +88,20 @@ test("read-only access does not write any files and rejects imports", async (t) 
   assert.deepEqual((await (await request("/api/documents")).json()).documents, []);
   assert.equal((await request("/api/documents?name=letter.pdf", samplePdf())).status, 403);
   assert.equal((await request("/api/exports/chronology", {})).status, 403);
+  assert.deepEqual(await (await request("/api/facts")).json(), { facts: [] });
   assert.deepEqual(readdirSync(root), []);
+});
+
+test("fact API exposes reviewed revisions with case isolation and no verification endpoint", async (t) => {
+  const { root, request } = await setup(t);
+  writeFileSync(join(root, "source.txt"), "A fictional source passage.");
+  const registry = new FactRegistry(root);
+  const fact = registry.propose({ actor: "test-agent", statement: "The source contains a fictional passage.", sources: [{ sourceId: "SRC-1", path: "source.txt", locator: "line 1", quote: "A fictional source passage." }] });
+  assert.equal((await request("/api/facts", undefined, { "x-case-id": "old-case" })).status, 409);
+  const detail = await (await request(`/api/facts/${fact.id}`)).json();
+  assert.equal(detail.revisions[0].status, "PROPOSED");
+  assert.equal((await request(`/api/facts/${fact.id}/verify`, { confirmVerified: true })).status, 404);
+  assert.equal((await request("/api/facts/FACT-99999")).status, 404);
 });
 
 test("rejects cross-origin requests, rebinding hosts, missing tokens and stale case IDs", async (t) => {

@@ -63,3 +63,7 @@ All quotes follow strict legal documentation standards:
 - PARAGRAPH/PAGE REFERENCE
 
 This prevents misattribution — one of the most common and dangerous mistakes in family court preparation.
+
+## Verified facts
+
+The skills preserve canonical verified facts and route corrections through explicit human review. The toolkit bundles a runnable registry command; see the [verified-fact convention](../obsidian-vault/_system/verified-facts.md). Original locking and propagation idea: [@bambam624, issue #1](https://github.com/CaseForgeHq/family-court-strategist/issues/1).

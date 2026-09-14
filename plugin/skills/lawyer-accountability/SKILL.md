@@ -14,6 +14,8 @@ metadata:
 
 Help the user systematically track, evaluate, and hold their legal representation accountable. Whether they currently have a solicitor or are reviewing past representation, this skill builds an evidence-based assessment.
 
+Read `_system/verified-facts.md` when present. Reuse canonical references for verified dates, amounts, statements and communications. Never paraphrase their factual value, edit registry JSON or alter generated lock blocks. Record competing evidence as a conflict for explicit human review. Do not infer verification from a quote match or self-verify. Run the toolkit fact command's `check` before sharing dependent documents; preserve existing locks if the command is unavailable.
+
 ## What to Track
 
 ### 1. Communication Log

@@ -13,6 +13,10 @@ metadata:
 
 Walk the user through setting up a complete family court evidence vault. This is the foundation everything else builds on.
 
+## Verified-fact setup
+
+Use the current Case Forge toolkit installer when available; it includes `_system/verified-facts.md` and `.case-forge/tools/facts-cli.mjs`. Preserve existing registries and evidence. Read the verified-fact convention before creating case records. Do not prepopulate VERIFIED facts or manufacture reviewer identities. Verification is a separate explicit human review; source-matched claims remain proposals. For manually assembled vaults without the command, preserve any existing lock markers and explain that registry enforcement and rendering require the toolkit command.
+
 ## Step 1: Gather Case Basics
 
 Ask the user (use AskUserQuestion) for:
@@ -39,7 +43,8 @@ Create an Obsidian vault in the user's workspace folder with this structure:
 ├── patterns.md                — Behavioural pattern catalogue
 ├── _system/
 │   ├── analysis-framework.md  — 13-point forensic protocol
-│   └── attribution-standards.md — Quote accuracy standards
+│   ├── attribution-standards.md — Quote accuracy standards
+│   └── verified-facts.md      — Canonical facts, locking and correction review
 ├── _templates/                — 8 document templates
 │   ├── incident.md
 │   ├── communication.md

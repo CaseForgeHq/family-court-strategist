@@ -139,3 +139,7 @@ read-only enforcement, origin/token checks, symlink rejection, cancellation,
 restart recovery, case switching, provider adapters and DOM interactions. Desktop
 signing, installer behaviour and live provider authentication require separate
 end-to-end verification.
+
+## Verified facts (development)
+
+The shared fact registry is available through `node facts-cli.mjs <case-folder> --help` and read-only, case-scoped `GET /api/facts` and `GET /api/facts/FACT-00001` endpoints. See [the feature guide](../docs/VERIFIED-FACTS.md) for the workflow and attribution to @bambam624's original proposal. App-approved source-matched findings remain unresolved; verification is a separate human review through the toolkit command. A dedicated app review screen is not included yet.

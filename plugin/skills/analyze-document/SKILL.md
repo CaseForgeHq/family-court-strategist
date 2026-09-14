@@ -14,6 +14,12 @@ metadata:
 
 Apply the full 13-point forensic analysis protocol to any family court document. Think like a legal strategist, not a note taker.
 
+## Protect verified facts
+
+Read the case's `_system/verified-facts.md` when present. Source matching is not truth verification. Treat extracted claims as proposals; preserve existing VERIFIED statements exactly and use canonical fact references in downstream notes. Competing evidence requires a conflict review, never an overwrite. Do not run verification or conflict-resolution commands without the user's explicit review of the exact statement and sources. Never edit registry JSON or generated lock blocks directly. Use the toolkit fact command and run `check` before sharing generated documents. If the toolkit command is unavailable, preserve existing locks and report the conflict without changing the registry.
+
+Original fact-locking and propagation proposal: [@bambam624, issue #1](https://github.com/CaseForgeHq/family-court-strategist/issues/1).
+
 ## The 13-Point Protocol
 
 For every document, extract and organise:

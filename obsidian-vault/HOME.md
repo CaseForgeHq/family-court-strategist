@@ -39,6 +39,7 @@
 - [[legal-research/INDEX|Legal Research]] — Case law and statutory references
 - [[_system/analysis-framework|Analysis Framework]] — 13-point forensic protocol
 - [[_system/attribution-standards|Attribution Standards]] — How to record quotes accurately
+- [[_system/verified-facts|Verified Facts]] — Protect reviewed facts, reference them consistently and review corrections
 
 ---
 

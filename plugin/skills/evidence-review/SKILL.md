@@ -14,6 +14,8 @@ metadata:
 
 Perform a comprehensive cross-document analysis of the user's case vault. This is where individual document analyses get connected into case-level insights.
 
+Read `_system/verified-facts.md` when present. Preserve VERIFIED facts and use their canonical references. Conflicting evidence must become a conflict review with the new source, never a silent replacement of the existing fact. Source-matched findings remain proposals until explicit human verification. Do not self-verify, resolve conflicts without human review, edit registry JSON or alter generated lock blocks. Use the toolkit fact command and run `check` before sharing dependent documents; if unavailable, preserve locks and report conflicts without changing the registry.
+
 ## What to Do
 
 ### 1. Read the Vault

@@ -8,6 +8,10 @@ A free toolkit and a local app in development for organising family-court docume
 
 The website and local app share the [Case Forge brand rules](docs/BRAND-RULES.md). See the [website](website/README.md) for the design-system preview and the [local app](app/README.md) for the document import and review workflow.
 
+## Verified fact locking (development branch)
+
+This branch adds a canonical fact registry, deliberate verification, conflict review and exact Markdown references. The original locking and propagation idea was proposed by **[@bambam624](https://github.com/bambam624)** in [issue #1](https://github.com/CaseForgeHq/family-court-strategist/issues/1). See [implementation and usage](docs/VERIFIED-FACTS.md). The first version is available through the bundled toolkit command; app review screens are still to come.
+
 ---
 
 ## Start with the free toolkit

@@ -11,6 +11,7 @@ import { AppError, publicError } from "./lib/errors.js";
 import { Providers } from "./lib/providers.js";
 import { Inbox } from "./lib/inbox.js";
 import { MAX_UPLOAD } from "./lib/extraction.js";
+import { FactRegistry } from "./lib/facts.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, "public");
@@ -74,6 +75,9 @@ export function createServer(vaultDir, options = {}) {
         }
         if (url.pathname !== "/api/case" && req.headers["x-case-id"] !== caseKey) throw new AppError("The active case has changed. Reload before continuing.", 409);
         if (req.method === "GET" && url.pathname === "/api/case") return json(200, buildCaseModel(root));
+        if (req.method === "GET" && url.pathname === "/api/facts") return json(200, { facts: new FactRegistry(root).list() });
+        const factMatch = url.pathname.match(/^\/api\/facts\/(FACT-\d{5,})$/);
+        if (req.method === "GET" && factMatch) return json(200, new FactRegistry(root).get(factMatch[1]));
         if (req.method === "GET" && url.pathname === "/api/documents") return json(200, { documents: inbox.list(root), access: getAccess(root) });
         if (req.method === "POST" && url.pathname === "/api/documents") {
           assertWritable(root);

@@ -6,9 +6,10 @@
   "type": "module",
   "license": "MIT",
   "bin": { "case-forge": "cli/case-forge.mjs" },
-  "files": ["cli/case-forge.mjs", "cli/CASE-FORGE.md", "obsidian-vault", "plugin", "LICENSE"],
+  "files": ["cli/case-forge.mjs", "cli/CASE-FORGE.md", "app/facts-cli.mjs", "app/lib/facts.js", "app/lib/files.js", "app/lib/errors.js", "obsidian-vault", "plugin", "LICENSE"],
   "engines": { "node": ">=18" },
   "scripts": {
+    "test:facts": "node --test app/tests/facts.test.js cli/tests/facts.test.mjs",
     "test:setup": "node --test cli/tests/*.test.mjs",
     "test:waitlist": "node --test services/waitlist/tests/*.test.mjs",
     "test:seo": "node --test scripts/tests/seo.test.mjs",
