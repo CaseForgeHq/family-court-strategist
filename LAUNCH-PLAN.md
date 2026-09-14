@@ -134,8 +134,9 @@ Your roadmap from "files on a computer" to "changing the industry."
 - This is how you go from an Australian tool to a global one
 
 ### Version Roadmap
-- v0.2.0: Community-contributed templates + first international jurisdiction
-- v0.3.0: Enhanced plugin skills (mediation prep, financial analysis)
+- v0.2.0: Legal framework updated to the post-May-2024 / June-2025 Australian law, digital-evidence and AI-verification attribution rules, security & privacy guide, reproducible release builds
+- v0.3.0: Community-contributed templates + first international jurisdiction
+- v0.4.0: Enhanced plugin skills (hearing/mediation preparation, subpoena tracker, financial and property analysis under the June 2025 reforms)
 - v1.0.0: Full multi-jurisdiction support + comprehensive documentation
 
 ---

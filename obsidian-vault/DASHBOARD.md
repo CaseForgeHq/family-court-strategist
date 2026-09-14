@@ -24,11 +24,11 @@ WHERE contains(issue, "contact") OR contains(issue, "visitation")
 SORT date ASC
 ```
 
-## Alienation Indicators
+## Relationship Interference Indicators
 ```dataview
 TABLE date AS "Date", event_id AS "ID", file.name AS "Source"
 FROM ""
-WHERE contains(issue, "alienation") OR contains(issue, "programming")
+WHERE contains(issue, "alienation") OR contains(issue, "programming") OR contains(issue, "interference")
 SORT date ASC
 ```
 

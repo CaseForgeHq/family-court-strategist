@@ -6,7 +6,7 @@ description: >
   "help me build a case", "create my evidence vault", or is beginning a new
   family court matter and needs structure.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Case Setup
@@ -44,7 +44,8 @@ Create an Obsidian vault in the user's workspace folder with this structure:
 ├── _system/
 │   ├── analysis-framework.md  — 13-point forensic protocol
 │   ├── attribution-standards.md — Quote accuracy standards
-│   └── verified-facts.md      — Canonical facts, locking and correction review
+│   ├── verified-facts.md      — Canonical facts, locking and correction review
+│   └── security-and-privacy.md — Protecting the vault and the case
 ├── _templates/                — 8 document templates
 │   ├── incident.md
 │   ├── communication.md
@@ -84,9 +85,10 @@ Fill in CASE-DETAILS.md with the information gathered in Step 1. Create initial 
 ## Step 4: Guide Next Steps
 
 Tell the user:
-1. Open the vault folder in Obsidian
-2. Install the Dataview community plugin (needed for the Dashboard)
-3. Start by uploading their first document and using the "analyze document" skill
-4. Build the timeline as they go
+1. Read `_system/security-and-privacy.md` first — disk encryption, fresh passwords, deliberate sync choices, and the warning that publishing case material (including on social media) is an offence in Australia
+2. Open the vault folder in Obsidian
+3. Install the Dataview community plugin (needed for the Dashboard)
+4. Start by uploading their first document and using the "analyze document" skill
+5. Build the timeline as they go
 
 Emphasise: the vault is only as strong as the evidence in it. Every claim needs a source. Every quote needs attribution. The system works when you feed it.

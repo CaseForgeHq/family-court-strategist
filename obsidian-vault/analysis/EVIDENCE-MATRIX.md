@@ -39,7 +39,9 @@ type: analysis
 
 ---
 
-## Alienation Indicators
+## Relationship Interference Indicators
+
+> Track behaviours, not the label — see the caution note in [[patterns]].
 
 | Indicator | Source | Evidence | Contradictions | Status | Strength |
 |-----------|--------|----------|----------------|--------|----------|

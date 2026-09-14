@@ -8,7 +8,7 @@ description: >
   my variation application", or needs strategic guidance on their family
   court matter.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Case Strategy
@@ -40,10 +40,12 @@ Summarise clearly:
 
 ### 2. Legal Framework Mapping
 For the user's jurisdiction and situation, identify:
-- The relevant test (e.g., Rice v Asplund for variations, s60CC for best interests)
+- The relevant test (e.g., s65DAAA — the codified Rice v Asplund rule — for variations, s60CC for best interests)
 - What elements need to be proven
 - Which elements the evidence already supports
 - Which elements need more evidence
+
+**Legal currency check (mandatory):** Before mapping arguments to legal provisions, verify the provisions are current law. Australian family law was substantially amended in May 2024 (best interests test restructured, presumption of equal shared parental responsibility repealed, equal-time pathway repealed, Rice v Asplund codified as s65DAAA) and June 2025 (property and family violence reforms). See `references/australian-family-law.md` for the current framework. If the user's existing documents, advice, or vault notes cite repealed provisions (old s60CC(2)/(3) structure, s61DA, s65DAA), flag it explicitly — citing repealed law in court damages credibility. For non-Australian jurisdictions, research the current law before advising; do not rely on memory alone.
 
 ### 3. Argument Development
 For each potential argument:
@@ -70,7 +72,7 @@ Be honest about:
 - Cross-examination points for the other party's evidence
 - Questions the judge might ask
 
-**For a Variation Application (Rice v Asplund):**
+**For a Variation Application (s65DAAA — Rice v Asplund codified):**
 - What has changed since the original orders
 - Evidence that the change is material
 - Evidence that the original orders are no longer in the child's best interests

@@ -23,7 +23,7 @@ Before we get into setup, here's what each piece of the toolkit does for you in 
 | **The evidence matrix** | A blank tracker you fill in | Lets you map every allegation against every piece of evidence so you can see at a glance what's proven, disputed, or missing |
 | **The contradiction engine** | A structured analysis sheet | Gives you a way to find where the other party's story changes between documents or conflicts with professional findings |
 | **The 8 templates** | Fill-in-the-blank formats for each document type | You don't have to figure out what information to capture — incidents, communications, affidavits, court orders, patterns, legal letters, strategy notes, person profiles are all pre-structured |
-| **The dashboard** | Auto-updating queries across your vault | As you add documents, patterns surface automatically — contact blocking, alienation indicators, system failures all show up in one view |
+| **The dashboard** | Auto-updating queries across your vault | As you add documents, patterns surface automatically — contact blocking, relationship interference indicators, system failures all show up in one view |
 | **The Claude plugin** | AI assistant training file | Turns Claude from a general assistant into something that understands family court methodology and can analyse documents, find contradictions, and build strategy with you |
 
 ### How it works without the AI (Vault only)
@@ -60,8 +60,9 @@ A ready-to-go folder structure that turns Obsidian (a free note-taking app) into
 1. **Download Obsidian** from [obsidian.md](https://obsidian.md) (free for personal use)
 2. Copy the `obsidian-vault` folder to your computer and rename it to your case name
 3. Open Obsidian → "Open folder as vault" → select your folder
-4. Install the **Dataview** community plugin (Settings → Community plugins → Browse → search "Dataview" → Install → Enable)
+4. Install the **Dataview** community plugin (Settings → Community plugins → Browse → search "Dataview" → Install → Enable). *Newer versions of Obsidian also include a built-in feature called **Bases** that can build similar live tables from your notes' properties — the included dashboard uses Dataview, but Bases is there if you prefer to stay on core features.*
 5. Open `HOME.md` — this is your starting point
+6. Read `_system/security-and-privacy.md` before adding any documents — five minutes of setup (disk encryption, passwords, sync choices) protects the most sensitive folder on your computer
 
 ### First Steps
 
@@ -75,7 +76,7 @@ A ready-to-go folder structure that turns Obsidian (a free note-taking app) into
 
 | Folder | Purpose |
 |--------|---------|
-| `_system/` | Analysis framework (13-point protocol) and attribution standards |
+| `_system/` | Analysis framework (13-point protocol), attribution standards, and the security & privacy guide |
 | `_templates/` | 8 templates for different document types |
 | `analysis/` | Evidence matrix, contradiction engine, coincidence map |
 | `legal-documents/` | Court filings, affidavits, reports, orders |
@@ -145,9 +146,11 @@ This system helps you:
 - This is a case organisation and analysis tool, not legal advice
 - Always seek independent legal advice for major decisions
 - Based on Australian family law but the methodology works in any jurisdiction
+- The included Australian reference was reviewed 7 September 2026. Verify current provisions and transitional rules before relying on them.
+- Read `_system/security-and-privacy.md` before sharing case material or choosing cloud sync and AI services.
 - The vault and local app are local-only; content shared with Claude is processed under your Claude account and provider policies
 - The system is only as strong as the evidence you put into it
 
 ---
 
-*Built by a father. For fathers. And any parent who refuses to be a passenger in their own case.*
+*Built by a father. For every parent who refuses to be a passenger in their own case.*

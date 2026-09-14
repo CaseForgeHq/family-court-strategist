@@ -7,7 +7,7 @@ description: >
   "update the evidence matrix", "what am I missing", "analyse my whole case",
   or wants a strategic overview of their evidence position.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Evidence Review
@@ -45,7 +45,7 @@ Run every document against every other document looking for:
 
 Look across all evidence for:
 - Contact blocking or avoidance patterns (track frequency, excuses, timing)
-- Alienation indicators (child's language, loyalty conflicts, rejection without cause)
+- Relationship interference indicators — often called "alienation" (child's adult-directed language, loyalty conflicts, rejection without cause). Track the behaviours with dates and sources; advise the user that courts are cautious about the "alienation" label, so the evidence should lead with documented behaviour, not the label
 - Allegation timing (do new allegations appear before court dates?)
 - System failures (recommendations not followed, assessments incomplete)
 - Communication patterns (response rates, tone shifts, silence periods)

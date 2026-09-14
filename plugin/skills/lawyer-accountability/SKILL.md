@@ -7,7 +7,7 @@ description: >
   properly represented", "review the settlement process", "check my legal bills",
   or has concerns about their solicitor's conduct or advice.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Lawyer Accountability
@@ -77,7 +77,7 @@ Flag any of these to the user:
 - Billing for work that wasn't done or didn't advance the case
 - Not explaining the implications of consent orders
 - Failing to follow up on expert recommendations
-- Not raising alienation when evidence supports it
+- Not raising relationship interference (contact obstruction, influence on the child's views) when documented evidence supports it
 
 ## For Self-Represented Parents
 

@@ -8,9 +8,9 @@ A free toolkit and a local app in development for organising family-court docume
 
 The website and local app share the [Case Forge brand rules](docs/BRAND-RULES.md). See the [website](website/README.md) for the design-system preview and the [local app](app/README.md) for the document import and review workflow.
 
-## Verified fact locking (development branch)
+## Verified fact locking
 
-This branch adds a canonical fact registry, deliberate verification, conflict review and exact Markdown references. The original locking and propagation idea was proposed by **[@bambam624](https://github.com/bambam624)** in [issue #1](https://github.com/CaseForgeHq/family-court-strategist/issues/1). See [implementation and usage](docs/VERIFIED-FACTS.md). The first version is available through the bundled toolkit command; app review screens are still to come.
+The toolkit includes a canonical fact registry, deliberate verification, conflict review and exact Markdown references. The original locking and propagation idea was proposed by **[@bambam624](https://github.com/bambam624)** in [issue #1](https://github.com/CaseForgeHq/family-court-strategist/issues/1). See [implementation and usage](docs/VERIFIED-FACTS.md). The first version is available through the bundled toolkit command; app review screens are still to come.
 
 ---
 
@@ -69,8 +69,10 @@ A ready-to-go evidence system with:
 | **Coincidence Map** | Tracks suspicious timing alignments between events |
 | **8 Document Templates** | Incidents, communications, affidavits, court orders, patterns, legal letters, strategy notes, person profiles |
 | **Dataview Dashboard** | Live queries that surface patterns across your entire vault automatically |
-| **Attribution Standards** | Legal-grade protocol for recording quotes accurately — because one misattribution can tank your credibility |
+| **Attribution Standards** | Legal-grade protocol for recording quotes accurately — including screenshots, recordings, and AI-extracted quotes — because one misattribution can tank your credibility |
+| **Security & Privacy Guide** | Five-minute setup that protects the most sensitive folder on your computer — encryption, passwords, sync choices, and the legal lines you must not cross |
 | **Lawyer Accountability Tracker** | Track every piece of advice, every cost, and every action your solicitor takes or doesn't take |
+| **Current Legal Research** | The Australian framework as it stands after the May 2024 and June 2025 reforms — pre-loaded, in plain language, with a "law current as at" stamp |
 
 ### The Claude Plugin (`/plugin/`)
 
@@ -180,7 +182,7 @@ This is an open project. If you've been through family court and have insights t
 
 ## Disclaimer
 
-This is a case organisation and evidence analysis tool. **It is not legal advice.** Always seek independent legal advice for major decisions in your matter. The methodology is based on Australian family law (Family Law Act 1975) but the analytical framework applies to family courts in any jurisdiction.
+This is a case organisation and evidence analysis tool. **It is not legal advice.** Always seek independent legal advice for major decisions in your matter. The methodology is based on Australian family law — the Family Law Act 1975 as amended, including the major reforms that commenced in May 2024 and June 2025 (the included parenting-law reference was reviewed 7 September 2026) — but the analytical framework applies to family courts in any jurisdiction. Family law changes: verify any section reference against the current Act before relying on it in court.
 
 ---
 

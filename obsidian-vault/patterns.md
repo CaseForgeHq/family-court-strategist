@@ -18,11 +18,13 @@ Use this as a checklist — not every pattern will apply to your case, but knowi
 - **Gatekeeping** — Controlling when, where, and how contact happens beyond what orders require
 - **Last-Minute Cancellations** — Repeatedly cancelling contact with short notice or shifting excuses
 
-### Alienation Indicators
+### Relationship Interference Indicators (often called "alienation")
 - **Denigration** — The child repeating negative language about a parent that sounds adult-directed
 - **Loyalty Conflicts** — The child feeling they must choose sides
 - **Rejection Without Cause** — The child refusing contact without a proportionate reason
 - **Programming** — The child using phrases or expressing beliefs that mirror one parent's position exactly
+
+> ⚠️ **A note on the word "alienation":** courts are cautious about the label and sceptical of parents who lead with it. The label proves nothing — the *behaviours* do. Track each indicator above as dated, sourced instances ("on [date], [child] said '[exact words]' — per [source], Para X"), and let the pattern speak. In current Australian law these behaviours are relevant under s60CC(2)(e) (benefit of a safe relationship), s60CC(2)(b) (what shaped the child's views) and s60CC(2)(d) (capacity to meet the child's emotional needs) — see [[legal-research/INDEX]].
 
 ### Legal & Strategic Patterns
 - **Allegation Timing** — New allegations surfacing right before court dates

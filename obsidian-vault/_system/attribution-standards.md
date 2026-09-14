@@ -63,6 +63,55 @@ Every quote or paraphrased statement MUST include:
 
 ---
 
+## DIGITAL EVIDENCE
+
+Most evidence in modern cases arrives as screenshots, messages, and recordings. The attribution rules apply, plus these:
+
+### Screenshots (SMS, WhatsApp, Messenger, etc.)
+- Capture the **full thread context**, not just the single message — a cropped message is easy to challenge
+- The screenshot must show **sender identification and timestamp**; if the app hides them, capture the contact/info screen too
+- Record: which device the screenshot was taken on, when, and by whom
+- Reference format: "[Name] sent to [Name]: '[exact words]' — SMS, [date, time], screenshot taken [date], original on [device]"
+
+### Social Media Posts
+- Capture the post, the account name/handle, and the date — and note that accounts can be deleted, so capture early
+- Note whether the post was public or in a private group (this matters for how it was obtained)
+- ⚠️ Do NOT post or share court material on social media yourself — in Australia this can be an offence (Part XIVB, formerly s121)
+
+### Voice Messages and Recordings
+- Transcribe exactly, mark unclear words as [inaudible], and keep the original audio file
+- Note: recording laws differ by state — get advice before relying on a recording the other party didn't know about
+
+### Emails
+- Preserve the full email including headers where possible (date, sender address, recipients)
+- Forwarded text is NOT the same as the original — note the chain
+
+---
+
+## SOURCE INTEGRITY
+
+The markdown notes in this vault are your **analysis**. They are not evidence. The original files are the evidence.
+
+1. **Keep every original** — PDF, image, audio, export — unaltered, alongside or linked from its analysis note
+2. **Fill in `source_file`** in the YAML frontmatter of every note so the analysis always points back to its source
+3. **Never quote from memory** — open the source document and copy the exact words
+4. **Never edit an original** — annotations, highlights, and commentary belong in your analysis note, not the source file
+5. **Record how you obtained each document** (served on you, subpoena return, your own records, third party) — provenance questions come up in court
+
+---
+
+## AI-ASSISTED ANALYSIS
+
+If you use an AI assistant (such as the Family Court Strategist plugin) to analyse documents, these rules are mandatory:
+
+1. **Verify every AI-extracted quote against the source document before relying on it.** AI can mis-transcribe words and paragraph numbers — exactly the errors this protocol exists to prevent.
+2. **Treat AI output as a draft**, not a record. It becomes part of your case file only after you've checked the quotes, the attributions, and the paragraph references.
+3. **Spot-check paragraph references** — open the source at the cited paragraph and confirm the words are there, said by the person the note says said them.
+4. **Log corrections** in the audit log below, the same as any other error.
+5. AI analysis is `reliability: analysis` in the frontmatter — never `primary`.
+
+---
+
 ## COMMON ERRORS TO AVOID
 
 | Error | Why It's Dangerous | Fix |
