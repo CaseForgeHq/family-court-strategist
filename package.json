@@ -1,12 +1,12 @@
 {
   "name": "case-forge-setup",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Set up the free Case Forge toolkit in a folder you own.",
   "type": "module",
   "license": "MIT",
   "bin": { "case-forge": "cli/case-forge.mjs" },
-  "files": ["cli/case-forge.mjs", "cli/CASE-FORGE.md", "app/facts-cli.mjs", "app/lib/facts.js", "app/lib/files.js", "app/lib/errors.js", "obsidian-vault", "plugin", "LICENSE"],
+  "files": ["cli/case-forge.mjs", "cli/CASE-FORGE.md", "app/facts-cli.mjs", "app/lib/facts.js", "app/lib/files.js", "app/lib/errors.js", "docs/VERIFIED-FACTS.md", "obsidian-vault", "plugin", "LICENSE"],
   "engines": { "node": ">=18" },
   "scripts": {
     "test:facts": "node --test app/tests/facts.test.js cli/tests/facts.test.mjs",

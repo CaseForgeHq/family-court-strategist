@@ -9,9 +9,9 @@ const source=fileURLToPath(new URL('../../website/',import.meta.url));
 function fixture(t){const directory=mkdtempSync(join(tmpdir(),'case-forge-seo-'));for(const p of pages)copyFileSync(join(source,p.file),join(directory,p.file));t.after(()=>rmSync(directory,{recursive:true,force:true}));return directory;}
 test('public build preserves a deployment subpath across canonical, schema, social and sitemap URLs',t=>{
  const directory=fixture(t),base='https://example.test/case-forge/';
- assert.deepEqual(buildSeo({directory,siteURL:base}),{public:true,base,pages:7});
+ assert.deepEqual(buildSeo({directory,siteURL:base}),{public:true,base,pages:8});
  const sitemap=readFileSync(join(directory,'sitemap.xml'),'utf8');
- assert.equal((sitemap.match(/<loc>/g)||[]).length,7);assert.doesNotMatch(sitemap,/localhost|style-guide|404|api\//);
+ assert.equal((sitemap.match(/<loc>/g)||[]).length,8);assert.doesNotMatch(sitemap,/localhost|style-guide|404|api\//);
  for(const p of pages){const html=readFileSync(join(directory,p.file),'utf8');assert.equal((html.match(/<title>/g)||[]).length,1);assert.match(html,new RegExp(`<meta name="robots" content="${p.noindex?'noindex':'index'}`));const canonical=html.match(/rel="canonical" href="([^"]+)"/)[1];assert.equal(canonical,new URL(p.path??p.file,base).href);assert.match(html,/og:image:width" content="1200/);const schema=JSON.parse(html.match(/application\/ld\+json">(.*?)<\/script>/s)[1]);assert.equal(schema['@graph'][0].name,'Case Forge');assert.equal(schema['@graph'][1].url,base);if(p.article)assert.ok(schema['@graph'].some(item=>item['@type']==='BreadcrumbList'));}
  assert.match(readFileSync(join(directory,'robots.txt'),'utf8'),/Sitemap: https:\/\/example.test\/case-forge\/sitemap.xml/);
  const html=readFileSync(join(directory,'index.html'),'utf8');

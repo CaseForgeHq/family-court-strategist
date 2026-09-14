@@ -18,7 +18,7 @@ if (['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname)) {
 }
 
 const setupURL = new URL('setup.md', document.baseURI).href;
-const packageURL = new URL('downloads/case-forge-setup-0.1.0.tgz', document.baseURI).href;
+const packageURL = new URL('downloads/case-forge-setup-0.2.0.tgz', document.baseURI).href;
 const setupMessage = document.getElementById('setup-message');
 if (setupMessage) setupMessage.value = `Read the Case Forge setup guide at ${setupURL} and help me install the free toolkit in a folder I choose. Preserve my existing files, then read CASE-FORGE.md and help me get started.`;
 const setupCommand = document.getElementById('setup-command');

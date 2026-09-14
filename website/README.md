@@ -1,6 +1,6 @@
 # Case Forge — public website
 
-Live on Cloudflare: https://case-forge.red-scene-4bab.workers.dev/ . See [deployment instructions](../cloudflare/README.md).
+Live on Cloudflare: https://caseforgehq.com/ . See [deployment instructions](../cloudflare/README.md).
 
 Run `npm run website` from the repository root (Node 22.13+) and open http://127.0.0.1:4321/. This serves the website and working SQLite waitlist together. The private list is stored in `.local/waitlist.sqlite`, outside the public site.
 
@@ -10,6 +10,7 @@ The site includes:
 - A copyable AI setup message linking to `setup.md`, plus a one-command CLI and manual ZIP.
 - A paid-desktop-app waitlist that confirms success only after the backend saves the signup.
 - A visual design system at `style-guide.html` and an explanation of waitlist data at `privacy.html`.
+- A features and availability page covering verified facts, correction review, draft rendering and the distinction between the toolkit and app preview.
 - Three preparation guides, an about page, public search metadata, social preview, structured data, sitemap and optional AI-readable content index.
 
 ## Downloads and assets

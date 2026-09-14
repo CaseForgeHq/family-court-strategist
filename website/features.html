@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="brand/tokens.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="guides.css">
+  <title>What Case Forge Can Do | Features &amp; Availability</title>
+</head>
+<body class="guide-page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner"><a class="brand" href="./" aria-label="Case Forge home"><img src="brand/logo.svg" alt="Case Forge" width="244" height="70"></a><nav aria-label="Main navigation"><a href="guides.html">Guides</a><a href="./#get-started">Free toolkit</a><a href="./#waitlist">Desktop waitlist</a></nav></div></header>
+<main id="main" class="wrap guide-main">
+  <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="./">Home</a> / <span aria-current="page">Features &amp; availability</span></nav>
+  <article>
+    <p class="eyebrow">What you can use today</p>
+    <h1>From scattered records to facts you can trace.</h1>
+    <p class="lead">Case Forge helps you organise evidence, examine accounts and prepare drafts with their sources close at hand. The free toolkit is available now. The all-in-one desktop app is still in development.</p>
+    <p class="article-meta">Updated 15 September 2026 · Free toolkit v0.2.0</p>
+
+    <h2>A working case folder</h2>
+    <p>The toolkit gives you folders for originals and working notes, eight document templates, a timeline, an evidence matrix, people profiles and guides for reviewing documents. You can use the Markdown files yourself or work with an AI assistant that has access to your chosen folder.</p>
+    <ul>
+      <li><strong>Organise documents:</strong> keep originals, correspondence and analysis in a structure you can navigate.</li>
+      <li><strong>Compare accounts:</strong> record claims, supporting passages, conflicting material and unanswered questions.</li>
+      <li><strong>Prepare your next step:</strong> assemble a chronology, questions for your lawyer and source-linked working drafts.</li>
+      <li><strong>Keep context:</strong> track people, communications, legal advice, costs and follow-up tasks.</li>
+      <li><strong>Handle evidence carefully:</strong> use digital-evidence attribution, source-checking, privacy and backup guidance. The included Australian parenting-law reference reflects the post-2024 framework and links to official sources; check current law before relying on it.</li>
+    </ul>
+    <p>These are templates and guided workflows. Your chosen AI performs any analysis, and you review the result. The toolkit does not automatically establish what happened.</p>
+
+    <h2 id="verified-facts">Keep reviewed facts from drifting</h2>
+    <p>A date or time should not change just because a draft is rewritten. The toolkit now includes a verified-fact registry: one master record for a statement, its supporting evidence and the review that confirmed its exact wording.</p>
+    <blockquote><p><strong>Example:</strong> you verify that a message records arrival at <strong>4:37 pm</strong>. Reference that fact in your chronology and case summary, and both receive the same exact wording when you generate a draft. An AI rewrite to “around 4:30” is a change the checks can flag.</p></blockquote>
+    <ul>
+      <li><strong>Propose:</strong> record an exact statement, source IDs, quotations and page or timestamp references.</li>
+      <li><strong>Verify:</strong> a person reviews the evidence and records their name and reason. Matching a quote alone does not verify that an event happened.</li>
+      <li><strong>Reuse:</strong> reference the fact’s ID across draft templates, then generate documents from its stored wording.</li>
+      <li><strong>Review corrections:</strong> competing evidence becomes a conflict. An accepted correction creates a new version while retaining the old one.</li>
+      <li><strong>Check:</strong> flag changed sources, altered exports, damaged fact locks, missing references and drafts that use an older version.</li>
+    </ul>
+    <p><strong>Available now through the toolkit command.</strong> It needs Node.js 18+ and can be used by you or an assistant with local folder access. Read <code>_system/verified-facts.md</code> in the download for the full workflow and examples. A dedicated app review screen is still to come.</p>
+    <p>Updates flow into new drafts when their reference templates are rendered. Existing exports remain snapshots; signed or filed documents are not silently rewritten. Ordinary Markdown editors display the reference until you render it.</p>
+    <p>File fingerprints help detect changes. They do not make evidence tamper-proof, authenticate a reviewer or replace checking the source. Quotes from PDFs, recordings and images require manual inspection in this first version.</p>
+    <p>The original fact-locking and propagation idea was proposed by <a href="https://github.com/bambam624">@bambam624</a> in <a href="https://github.com/CaseForgeHq/family-court-strategist/issues/1">GitHub issue #1</a>.</p>
+
+    <h2>Availability at a glance</h2>
+    <div class="table-scroll" role="region" aria-label="Feature availability" tabindex="0"><table>
+      <caption>Choose the workflow that fits how you work.</caption>
+      <thead><tr><th scope="col">Capability</th><th scope="col">Status</th><th scope="col">How to use it</th></tr></thead>
+      <tbody>
+        <tr><td>Case folders, templates, timeline and evidence matrix</td><td>Available now · free</td><td>Download the toolkit and open its files in your preferred editor.</td></tr>
+        <tr><td>Document-review and preparation guidance</td><td>Available now · free</td><td>Use the prompts or plugin with your chosen AI; provider costs are separate.</td></tr>
+        <tr><td>Verified facts, conflict review and drift checks</td><td>Available now · toolkit command</td><td>Use Node.js 18+ and the included instructions. Human review is required.</td></tr>
+        <tr><td>PDF/TXT/Markdown intake, selected-document AI analysis and reviewed findings</td><td>Working local app preview · source checkout</td><td>Developers can run the preview from GitHub. Scanned PDFs need a text layer; OCR is not included.</td></tr>
+        <tr><td>All-in-one desktop installer and fact-review screen</td><td>In development</td><td>Join the waitlist. Public installers, pricing and billing are not available yet.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2>Start with one document</h2>
+    <p><a href="./#get-started">Download the current toolkit</a>, read <code>CASE-FORGE.md</code> and preserve your original document. Build an attributed note, check it against the source, then choose whether a statement is ready for deliberate verification.</p>
+    <p>Already using Case Forge? The installer does not overwrite conflicting files. Keep your existing case and registry backed up, install this version into a separate folder, and compare the updated guidance and tools before bringing changes into your case. Do not replace your case with the empty template.</p>
+    <p class="guide-note">Case Forge supports organisation and preparation. It does not determine legal truth, provide representation or promise an outcome. Cloud AI processes the content you choose to share; storing your folder locally is a separate choice.</p>
+  </article>
+  <aside class="guide-next"><p class="eyebrow">Free and open source</p><h2>Keep the source close.</h2><p>Get the current toolkit, or explore the implementation and its tests on GitHub.</p><div class="actions"><a class="button" href="./#get-started">Set up the free toolkit →</a><a class="text-link" href="https://github.com/CaseForgeHq/family-court-strategist/blob/main/docs/VERIFIED-FACTS.md">Read the implementation guide</a></div></aside>
+</main>
+<footer class="wrap footer"><p>Case organisation and preparation.<br>Not legal advice.<br><a href="mailto:caseforgehq@proton.me">caseforgehq@proton.me</a></p><div><a href="guides.html">Guides</a><a href="about.html">About</a><a href="privacy.html">Privacy</a><a href="https://github.com/CaseForgeHq/family-court-strategist">Source on GitHub ↗</a></div></footer>
+</body>
+</html>
