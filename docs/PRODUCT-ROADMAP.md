@@ -4,8 +4,11 @@ This records the September 2026 discussion. Build and review one usable feature
 at a time. Items below are planned unless explicitly marked implemented; they
 must not be advertised as available on the public website before release.
 
-**Current increment:** item 1 is implemented on `feat/case-journal` in the local
-app preview. See [the journal guide](CASE-JOURNAL.md). Items 2–10 remain planned.
+**Current increment:** item 1 is merged into `main` in the local app preview.
+See [the journal guide](CASE-JOURNAL.md). Item 2 is implemented for review on
+`feat/tasks-deadlines`; see [the tasks guide](TASKS-AND-DEADLINES.md). Its reminders
+are in-app calendar-date notices, with no external notifications or automatic
+court deadline calculations. Items 3–10 remain planned.
 
 | Order | Feature | First useful outcome | Completion boundary |
 | --- | --- | --- | --- |
