@@ -1,4 +1,5 @@
 import { createInbox } from "./inbox.js";
+import { createJournal } from "./journal.js";
 // Case notes remain portable Markdown. Document intake uses the protected local API.
 const STATUS_CLASS = { PROVEN: "proven", DISPUTED: "disp", UNRESOLVED: "unres", DISPROVEN: "dispr" };
 const TYPE_CLASS = {
@@ -7,7 +8,7 @@ const TYPE_CLASS = {
 };
 const VIEW_TITLES = {
   dashboard: "Case overview", timeline: "Case timeline", evidence: "Evidence matrix",
-  patterns: "Patterns", people: "People", documents: "Evidence Vault", exports: "Document Studio", legal: "Legal research",
+  patterns: "Patterns", people: "People", documents: "Evidence Vault", journal: "Case journal", exports: "Document Studio", legal: "Legal research",
 };
 
 let MODEL = null;
@@ -31,6 +32,7 @@ async function api(path, options = {}) {
 
 const inbox = createInbox({ api, getSession: () => SESSION, updateSession: (s) => { SESSION = s; },
   showModal: openModal, closeModal, onSaved: refreshCase });
+const journal = createJournal({ api, getSession: () => SESSION });
 
 async function refreshCase() {
   MODEL = await api("/api/case");
@@ -155,7 +157,7 @@ function viewLegal() {
 
 const VIEWS = {
   dashboard: viewDashboard, timeline: viewTimeline, evidence: viewEvidence,
-  patterns: viewPatterns, people: viewPeople, documents: () => "", exports: viewDocuments, legal: viewLegal,
+  patterns: viewPatterns, people: viewPeople, documents: () => "", journal: () => "", exports: viewDocuments, legal: viewLegal,
 };
 
 /* ---------- routing ---------- */
@@ -164,6 +166,7 @@ function go(view) {
   if (!VIEWS[view]) view = "dashboard";
   current = view;
   inbox.unmount();
+  journal.unmount();
   $("view").innerHTML = VIEWS[view](MODEL);
   $("view-title").textContent = VIEW_TITLES[view];
   $("crumb-view").textContent = VIEW_TITLES[view];
@@ -175,6 +178,7 @@ function go(view) {
   });
   document.querySelector(".main").scrollTop = 0;
   if (view === "documents") inbox.mount($("view"));
+  if (view === "journal") void journal.mount($("view"));
   window.scrollTo(0, 0);
 }
 

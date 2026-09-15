@@ -12,6 +12,7 @@ import { Providers } from "./lib/providers.js";
 import { Inbox } from "./lib/inbox.js";
 import { MAX_UPLOAD } from "./lib/extraction.js";
 import { FactRegistry } from "./lib/facts.js";
+import { Journal, journalTargets } from "./lib/journal.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, "public");
@@ -49,7 +50,7 @@ export function createServer(vaultDir, options = {}) {
     message: options.preview === true ? "Development preview · billing is not connected" : "Read-only workspace · choose a writable development case to try document intake",
   };
   const assertWritable = (root) => {
-    if (getAccess(root).canWrite !== true) throw new AppError("This workspace is read-only. An active app entitlement is required to import, analyse or save findings.", 403);
+    if (getAccess(root).canWrite !== true) throw new AppError("This workspace is read-only. An active app entitlement is required to import, analyse or save changes.", 403);
   };
   const inbox = new Inbox({ providers, assertWritable, ...(options.extract ? { extract: options.extract } : {}) });
   const server = httpCreate(async (req, res) => {
@@ -75,6 +76,11 @@ export function createServer(vaultDir, options = {}) {
         }
         if (url.pathname !== "/api/case" && req.headers["x-case-id"] !== caseKey) throw new AppError("The active case has changed. Reload before continuing.", 409);
         if (req.method === "GET" && url.pathname === "/api/case") return json(200, buildCaseModel(root));
+        const journal = new Journal(root, { assertWritable, getTargets: () => journalTargets(root, inbox.list(root)) });
+        if (req.method === "GET" && url.pathname === "/api/journal") return json(200, { entries: journal.list(), access: getAccess(root) });
+        if (req.method === "GET" && url.pathname === "/api/journal/targets") return json(200, { targets: journal.getTargets() });
+        const journalMatch = url.pathname.match(/^\/api\/journal\/([a-f0-9-]{36})$/);
+        if (req.method === "GET" && journalMatch) return json(200, journal.get(journalMatch[1]));
         if (req.method === "GET" && url.pathname === "/api/facts") return json(200, { facts: new FactRegistry(root).list() });
         const factMatch = url.pathname.match(/^\/api\/facts\/(FACT-\d{5,})$/);
         if (req.method === "GET" && factMatch) return json(200, new FactRegistry(root).get(factMatch[1]));
@@ -101,6 +107,7 @@ export function createServer(vaultDir, options = {}) {
           catch (error) { if (error instanceof AppError) throw error; throw new AppError("Invalid request."); }
           if (!body || typeof body !== "object" || Array.isArray(body)) throw new AppError("Invalid request.");
           if (caseRoot(resolveVault()) !== root) throw new AppError("The active case changed. Reload before continuing.", 409);
+          if (url.pathname === "/api/journal") return json(200, journal.save(body));
           if (url.pathname === "/api/providers/connect") {
             assertWritable(root);
             return json(200, await providers.connect(body));
@@ -118,7 +125,7 @@ export function createServer(vaultDir, options = {}) {
       }
       if (req.method !== "GET") throw new AppError("Method not allowed.", 405);
       const rel = url.pathname === "/" ? "/index.html" : url.pathname;
-      if (!["/index.html", "/app.css", "/app.js", "/inbox.js", "/brand/tokens.css", "/brand/logo.svg", "/brand/logo-reversed.svg", "/brand/symbol.svg", "/brand/favicon.svg", "/brand/fonts/InterVariable.woff2", "/brand/fonts/EBGaramond-Variable.ttf"].includes(rel)) throw new AppError("Not found.", 404);
+      if (!["/index.html", "/app.css", "/app.js", "/inbox.js", "/journal.js", "/brand/tokens.css", "/brand/logo.svg", "/brand/logo-reversed.svg", "/brand/symbol.svg", "/brand/favicon.svg", "/brand/fonts/InterVariable.woff2", "/brand/fonts/EBGaramond-Variable.ttf"].includes(rel)) throw new AppError("Not found.", 404);
       const full = join(PUBLIC, rel);
       const body = await readFile(full);
       res.writeHead(200, { "content-type": TYPES[extname(full)] || "application/octet-stream" });
