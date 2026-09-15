@@ -253,3 +253,13 @@ input[type=checkbox]{accent-color:var(--accent);margin-top:3px;flex:none;width:1
 .journal-links small{display:block;color:var(--soft);font-size:11px}.journal-links ul,ul.journal-links{padding-left:20px}.journal-links li+li{margin-top:12px}
 #journal-latest-copy:not(:empty){border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:12px}
 @media(max-width:600px){.journal-fields{grid-template-columns:1fr}.journal-form h2{font-size:26px}.journal-actions .btn{width:100%}}
+
+/* Reviewed tasks and calendar-date reminders */
+.task-counts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.task-count{display:flex;flex-direction:column;gap:6px;text-align:left;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:18px;color:var(--ink);cursor:pointer}
+.task-count strong{font:400 32px var(--disp)}.task-count span{font-size:12px;color:var(--soft)}
+.task-list-heading{flex-wrap:wrap}.task-list-heading label{font-size:12px}.task-list-heading select{max-width:100%;min-width:0;padding:8px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink);font:12px var(--ui)}
+.task-badge{display:inline-block;margin:9px 6px 0 0;padding:3px 7px;border-radius:4px;font-size:11px;background:var(--panel-2);color:var(--ink-2)}
+.task-badge.review,.task-badge.today{background:var(--amber-bg)}.task-badge.overdue{background:var(--red-bg);color:var(--red)}.task-badge.done{background:var(--green-bg);color:var(--green)}
+#tasks-form h3{margin-top:8px}.task-latest-copy:not(:empty){border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:12px}
+@media(max-width:600px){.task-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.task-count{padding:14px}}

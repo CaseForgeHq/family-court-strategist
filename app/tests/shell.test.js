@@ -67,4 +67,24 @@ test("actual app shell imports documents and saves a journal draft across naviga
   const entries = await (await previous.fetch(`${origin}/api/journal`, { headers })).json();
   assert.equal(entries.entries.length, 1);
   assert.doesNotMatch(JSON.stringify(await (await previous.fetch(`${origin}/api/case`)).json()), /quiet handover|felt relieved/);
+  document.querySelector('[data-view="tasks"]').click();
+  await until(() => document.querySelector("#tasks-list")?.textContent.includes("No tasks yet"));
+  document.querySelector("#tasks-new").click();
+  const taskInput = (name, value) => {
+    const field = document.querySelector(`#tasks-form [name="${name}"]`);
+    if (field.type === "checkbox") field.checked = value; else field.value = value;
+    field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  };
+  const source = document.querySelector('#task-sourceId option[value^="document:"]').value;
+  for (const [name, value] of [["title", "Prepare records"], ["assignee", "Applicant"], ["actor", "Reviewer"], ["kind", "obligation"], ["sourceId", source], ["sourceLocator", "Page 1"], ["dueDate", "2026-09-22"], ["deadlineStatus", "confirmed"], ["dateOrigin", "source"], ["deadlineBasis", "Checked the source document"], ["reviewObligation", true], ["confirmDeadline", true]]) taskInput(name, value);
+  document.querySelector('[data-view="journal"]').click();
+  document.querySelector('[data-view="tasks"]').click();
+  await until(() => document.querySelector('#tasks-form [name="title"]')?.value === "Prepare records");
+  document.querySelector("#tasks-form").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+  await until(() => document.querySelector("#tasks-edit"));
+  assert.match(document.querySelector("#tasks-detail").textContent, /Recorded obligation/);
+  const tasks = await (await previous.fetch(`${origin}/api/tasks`, { headers })).json();
+  assert.equal(tasks.entries.length, 1);
+  assert.equal(tasks.entries[0].deadlineStatus, "confirmed");
+  assert.doesNotMatch(JSON.stringify(await (await previous.fetch(`${origin}/api/case`)).json()), /Prepare records|felt relieved/);
 });

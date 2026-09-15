@@ -64,6 +64,18 @@ storage and recovery. Back up hidden `.case-forge/journal` storage with your cas
 This feature is available in the writable local development preview; ordinary
 read-only mode can view existing entries.
 
+## Tasks and deadlines
+
+Open **Tasks & deadlines** to record actions, responsible people and source-linked
+obligations. Proposed dates remain separate from explicitly confirmed dates.
+Changed sources require review; completion, reopening and cancellation retain
+history. Reminders appear in this screen while the app is open.
+
+This is a calendar-date tracker: it does not calculate court deadlines or assume
+cut-off times, and sends no external notifications. See [the tasks guide](../docs/TASKS-AND-DEADLINES.md)
+for confirmation, source checks, privacy, drafts and storage recovery. Include
+hidden `.case-forge/tasks` storage in case backups.
+
 ## AI connections
 
 - **Existing Claude sign-in**, shown first: opt-in development bridge to the
