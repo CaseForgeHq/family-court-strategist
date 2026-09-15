@@ -52,6 +52,18 @@ Quote matching verifies that a passage exists on a page, **not** that a claim is
 true or a legal conclusion is justified. No automatic evidence-strength score is
 assigned. Findings are saved with unresolved status and attribution.
 
+## Case journal
+
+Open **Case journal** to record personal accounts, remembered words and optional
+reflections. Event timing is separate from the recording timestamp. Corrections
+preserve previous versions; linked records provide context without verifying an
+account. Journal entries stay outside current AI analysis and chronology exports.
+
+See [the journal guide](../docs/CASE-JOURNAL.md) for the workflow, draft behaviour,
+storage and recovery. Back up hidden `.case-forge/journal` storage with your case.
+This feature is available in the writable local development preview; ordinary
+read-only mode can view existing entries.
+
 ## AI connections
 
 - **Existing Claude sign-in**, shown first: opt-in development bridge to the
