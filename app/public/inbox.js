@@ -284,6 +284,15 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
     if (scan && !scan.disabled) { event.preventDefault(); if (scan.dataset.scanned === 'true') await onOpenScan?.(scan.dataset.scanDocument); else await command(scan.dataset.scanDocument, 'scan'); return; }
     const action = event.target.closest('[data-scan-action]');
     if (action && !action.disabled) { action.disabled = true; await command(action.dataset.id, action.dataset.scanAction, action.dataset.scanAction === 'scan'); return; }
+    const nativeRow = event.target.closest('[data-native-document]');
+    if (nativeRow && !event.target.closest('[data-document]')) {
+      const context = sourceContext();
+      try {
+        await api(`${endpoint(nativeRow.dataset.nativeDocument)}/open-native`, { method: 'POST', body: {} });
+        if (currentSource(context)) notice('Opened in your default app.');
+      } catch (error) { if (currentSource(context)) notice(error.message, true); }
+      return;
+    }
     const original = event.target.closest('[data-open-document]'); if (original) { await openDocument(original.dataset.openDocument); return; }
     const source = event.target.closest('[data-source-document]'); if (source) { await openSource(source.dataset.sourceDocument, Number(source.dataset.sourcePage), source.dataset.reportId, source.dataset.sourceMatch); return; }
     const button = event.target.closest('[data-file-action]'); if (!button || button.disabled) return;

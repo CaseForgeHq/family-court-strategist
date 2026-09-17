@@ -129,6 +129,7 @@ async function startWorkspace(generation) {
   if (!validFolder(currentVault)) throw new Error('Your case folder is unavailable. Choose it again.');
   capability = randomBytes(32).toString('hex');
   server = createServer(() => currentVault, {
+    openNativeDocument: file => shell.openPath(file),
     scanDocument:(request,options)=>chatGPT.scan(request,options),
     fileReferences:new FileReferences({root:app.getPath('userData'),relativePath:'file-references.json'}),
     desktopToken: capability, isUnlocked: () => unlocked, enableClaudeCode: false,

@@ -206,3 +206,23 @@ test('report text is escaped, law links are HTTPS only and legacy reports remain
   assert.match(scanLabel({ state: 'sign_in_required' }), /Sign in/);
   dom.window.close();
 });
+
+test('Case desk row and keyboard button open native originals while Scan stays separate', async t => {
+  const f = setup(t); f.inbox.mountDesk(f.host);
+  await until(() => f.document.querySelector('.register-name'));
+  f.document.querySelector('.register-name').click();
+  await until(() => f.calls.some(c => c.path.endsWith('/open-native')));
+  f.document.querySelector('button[data-native-document]').click();
+  await until(() => f.calls.filter(c => c.path.endsWith('/open-native')).length === 2);
+  f.document.querySelector('[data-scan-document]').click();
+  await until(() => f.calls.some(c => c.path.endsWith('/scan')));
+  assert.equal(f.calls.filter(c => c.path.endsWith('/open-native')).length, 2);
+  assert.equal(f.document.querySelector('#modal').textContent, '');
+});
+
+test('native open failure is displayed in the file register', async t => {
+  const f = setup(t, { api: path => path.endsWith('/open-native') ? Promise.reject(new Error('No default app installed.')) : undefined });
+  f.inbox.mountDesk(f.host); await until(() => f.document.querySelector('.register-name'));
+  f.document.querySelector('.register-name').click();
+  await until(() => /No default app/.test(f.document.querySelector('#inbox-message').textContent));
+});

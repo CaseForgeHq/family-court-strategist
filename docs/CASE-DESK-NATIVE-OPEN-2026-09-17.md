@@ -1,0 +1,9 @@
+# Case desk native original opening — 17 September 2026
+
+Click a Case desk file row or its keyboard-accessible file-number button to open the registered original in the operating system's default application. Scan remains independent. The desktop host uses Electron shell.openPath; the renderer supplies only a document ID through a POST protected by the existing desktop capability, session token and active-case key. The server resolves the registered original through safePath and permits supported document extensions. Native launch failures appear in the desk status message.
+
+Validation: 21 focused UI/server/access tests passed (`node --test app/tests/native-original.test.js app/tests/ui.test.js app/tests/desktop-access.test.js`); desktop main syntax check and git diff whitespace check passed. Tests mock the OS launch and verify original bytes/path and access boundaries. Actual Windows application launch and installed build remain unverified. No installer, publication or installation performed.
+
+Changed implementation: app/public/file-register.js, app/public/inbox.js, app/public/files-ai.css, app/server.js, desktop/main.cjs. Tests: app/tests/ui.test.js, app/tests/native-original.test.js. Existing unrelated checkout changes preserved.
+
+Release 0.14.21 verification: 433 tests passed, four conditional reader skips. Real Electron row click and native Enter key sequence reached the OS-open callback using fictional files; seven layout captures passed. OS launch is stubbed in this UI rehearsal. Registration updater arrival, shared message card, download, keyboard and three native layouts passed. Final installer verified against 141 source files. Real disposable resource-switch restart reached ready in 7196ms; five-second performance assertion failed. Installer Authenticode is NotSigned. No customer installation or real case used.

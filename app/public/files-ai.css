@@ -91,3 +91,7 @@
   .scan-settings-body { max-height: 155px; }
 }
 @media (prefers-reduced-motion:reduce) { .scan-spinner { animation: none; } }
+
+/* Case desk originals open in the operating system default application. */
+.register-rows tr[data-native-document] { cursor: pointer; }
+.register-rows tr[data-native-document]:hover, .register-rows tr[data-native-document]:focus-within { background: rgba(128, 180, 205, .10); }

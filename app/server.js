@@ -6,11 +6,11 @@ import { randomBytes, createHash } from "node:crypto";
 import { mkdtemp, cp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { buildCaseModel } from "./lib/vault.js";
-import { caseRoot, readLocal } from "./lib/files.js";
+import { caseRoot, readLocal, safePath } from "./lib/files.js";
 import { AppError, publicError } from "./lib/errors.js";
 import { Providers } from "./lib/providers.js";
 import { FilesAI } from "./lib/files-ai.js";
-import { MAX_DOCUMENT_BYTES } from "./lib/document-readers.js";
+import { MAX_DOCUMENT_BYTES, SUPPORTED_EXTENSIONS } from "./lib/document-readers.js";
 import { getReaderStatus, provisionReaders } from "./lib/reader-dependencies.js";
 import { FactRegistry } from "./lib/facts.js";
 import { Journal, journalTargets } from "./lib/journal.js";
@@ -172,7 +172,17 @@ export function createServer(vaultDir, options = {}) {
           if (caseRoot(resolveVault()) !== root) throw new AppError("The active case changed during import. Add the document again.", 409);
           return json(201, await inbox.import(root, url.searchParams.get("name"), bytes));
         }
-        const match = url.pathname.match(/^\/api\/documents\/([a-f0-9]{64})(?:\/(scan|pause|resume|next|analyse|approve|cancel|retry|original|source|image|report))?$/);
+        const match = url.pathname.match(/^\/api\/documents\/([a-f0-9]{64})(?:\/(scan|pause|resume|next|analyse|approve|cancel|retry|open-native|original|source|image|report))?$/);
+        if (match && req.method === 'POST' && match[2] === 'open-native') {
+          if (!options.openNativeDocument) throw new AppError('Open this file from the Case Forge desktop app.', 400);
+          const document = inbox.record(root, match[1]);
+          const file = safePath(root, document.original);
+          if (!SUPPORTED_EXTENSIONS.includes(extname(file).toLowerCase())) throw new AppError('This file type cannot be opened from Case Forge.', 400);
+          if (caseRoot(resolveVault()) !== root || (options.isUnlocked && !options.isUnlocked())) throw new AppError('The workspace changed. Reopen the file.', 409);
+          const error = await options.openNativeDocument(file);
+          if (error) throw new AppError('Windows could not open this file. Check that it still exists and a default app is installed for this file type.', 400);
+          return json(200, { opened: true });
+        }
         if (match && req.method === "GET" && !match[2]) return json(200, await inbox.detail(root, match[1]));
         if (match && req.method === 'GET' && match[2] === 'source') {
           const detail=await inbox.detail(root,match[1]),page=Number(url.searchParams.get('page'));
