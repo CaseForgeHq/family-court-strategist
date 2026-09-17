@@ -54,6 +54,17 @@ const env = { ...process.env, CASEFORGE_TEST_USER_DATA: profile }; delete env.EL
     assert.deepEqual(await page.locator('.updates-message p').allTextContents(), ['People connections updated.','File search updated.','Notebook updated.']);
     assert.equal(await page.locator('[data-update-action]').count(),1);
     assert.equal(await page.locator('#updates-popover').isVisible(),true);
+    await app.evaluate(({ BrowserWindow }) => {
+      global.fixtureUpdate = { ...global.fixtureUpdate, phase:'current', version:null, message:'' };
+      BrowserWindow.getAllWindows()[0].webContents.send('updates:status-changed',global.fixtureUpdate);
+    });
+    await page.waitForFunction(() => document.querySelector('#updates-popover').dataset.phase === 'current');
+    assert.equal(await page.locator('[data-update-action]').isVisible(),true,'History ahead of metadata still offers Download');
+    await app.evaluate(({ BrowserWindow }) => {
+      global.fixtureUpdate = { ...global.fixtureUpdate, phase:'available', version:'0.15.2' };
+      BrowserWindow.getAllWindows()[0].webContents.send('updates:status-changed',global.fixtureUpdate);
+    });
+    await page.waitForFunction(() => document.querySelector('#updates-popover').dataset.phase === 'available');
     await page.screenshot({ path: join(out,'independent-messages.png') }); captures.push('independent-messages');
     await page.keyboard.press('Escape');
     await app.evaluate(({ BrowserWindow }) => {

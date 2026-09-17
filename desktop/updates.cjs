@@ -54,7 +54,11 @@ function createUpdates({ updater, version, enabled, now = () => new Date().toISO
   }
   async function download() {
     if (downloading) return downloading;
-    if (!enabled || state.phase !== 'available') return status();
+    if (!enabled) return status();
+    if (state.phase !== 'available') {
+      if (state.notices.length && !active()) set({ phase: 'error', error: 'Update details are still loading. Please try Download again shortly.' });
+      return status();
+    }
     if (state.notices.some(notice => require('./update-messages.cjs').compare(notice.version, state.version) > 0)) {
       set({ phase: 'error', error: 'A newer update is available. Please try Download again shortly.' }); return status();
     }
@@ -103,7 +107,8 @@ function closeForUpdate(target, install) {
   });
 }
 async function downloadAndInstall(updates, install) {
-  if (['error', 'available'].includes(updates.status().phase)) await updates.check();
+  const state = updates.status();
+  if (['error', 'available'].includes(state.phase) || (state.notices?.length && ['idle','checking','current'].includes(state.phase))) await updates.check();
   const result = await updates.download();
   return result.phase === 'ready' ? install() : result;
 }

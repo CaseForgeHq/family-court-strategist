@@ -49,3 +49,13 @@ test('slow startup cache cannot erase newer fetched messages', async () => {
   const old=updates.refreshMessages(true); await updates.refreshMessages(); finish([]); await old;
   assert.equal(updates.status().notices[0].version,'0.14.20');
 });
+test('a message ahead of installer metadata keeps an actionable retry and selects the newest target', async () => {
+  const updater=new EventEmitter(); let live=false,downloaded=false,installed=false;
+  updater.checkForUpdates=async()=>updater.emit(live?'update-available':'update-not-available',{version:live?'0.14.20':'0.14.18'});
+  updater.downloadUpdate=async()=>{downloaded=true;updater.emit('update-downloaded',{version:'0.14.20'});};
+  const updates=createUpdates({updater,version:'0.14.18',enabled:true,messages:{refresh:async()=>[entry('0.14.20')]}});
+  await updates.check(); await updates.refreshMessages();
+  await downloadAndInstall(updates,()=>{installed=true;});
+  assert.equal(updates.status().phase,'error'); assert.equal(downloaded,false); assert.equal(installed,false);
+  live=true; await downloadAndInstall(updates,()=>{installed=true;}); assert.equal(installed,true);
+});

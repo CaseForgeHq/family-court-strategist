@@ -56,10 +56,11 @@ export function createUpdates({ desktop, format = 'popover' }) {
     $('.updates-sigil').textContent = hasRelease ? '!' : phase === 'current' ? '✓' : '·';
     panel.dataset.phase = phase;
     const action = $('[data-update-action]');
-    action.hidden = !['available', 'downloading', 'verifying', 'preparing', 'ready', 'restarting', 'installing'].includes(phase) && !(phase === 'error' && state.version);
+    action.hidden = !hasRelease;
     action.textContent = phase === 'ready' ? 'Restart and install' : phase === 'downloading' ? (state.fullDownload ? 'Downloading…' : `${Math.round(state.progress || 0)}%`) : phase === 'preparing' ? 'Preparing…' : phase === 'verifying' ? 'Verifying…' : ['restarting', 'installing'].includes(phase) ? 'Restarting…' : 'Download';
     action.disabled = busy || ['downloading', 'verifying', 'preparing', 'restarting', 'installing'].includes(phase);
     if (transferring && notices[0]?.version && state.version !== notices[0].version) action.textContent = `Updating v${state.version}`;
+    if (phase === 'ready' && notices[0]?.version && state.version !== notices[0].version) action.textContent = `Restart v${state.version}`;
     const available = hasRelease;
     trigger.hidden = format === 'notification' && !available;
     if (trigger.hidden) close();

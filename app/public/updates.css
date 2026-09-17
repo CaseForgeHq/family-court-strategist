@@ -60,7 +60,7 @@
 
 /* Compact game-chat whisper: one frame, one message, one action. */
 .updates-popover{width:min(440px,calc(100vw - 24px));color:#edf4fb;background:linear-gradient(135deg,#142936f7,#0c1b28fa);border:1px solid #3989df99;border-radius:11px;box-shadow:0 12px 36px #030b1855,inset 0 1px 0 #ffffff0a;backdrop-filter:blur(18px)}
-.updates-popover[data-phase="current"]{width:min(330px,calc(100vw - 24px))}
+.updates-popover[data-phase="current"]:not(.has-update){width:min(330px,calc(100vw - 24px))}
 .updates-body{padding:0}
 .updates-message{border:0;background:none;border-radius:0;box-shadow:none;padding:13px 14px;gap:12px;align-items:center}
 .updates-copy{flex:1;min-width:0}
@@ -68,7 +68,7 @@
 .updates-sender[hidden]{display:none}
 .updates-message p{font:500 13px/1.55 var(--ui);color:#edf4fb;margin:0;max-height:200px}
 .updates-sigil{flex:none;width:18px;text-align:center;color:#f3ce75;font:700 25px/1 Georgia,serif;text-shadow:0 0 10px #e9ad3840}
-[data-phase="current"] .updates-sigil{font:600 17px/1 var(--ui);color:#73b7ff;text-shadow:none}
+[data-phase="current"]:not(.has-update) .updates-sigil{font:600 17px/1 var(--ui);color:#73b7ff;text-shadow:none}
 .updates-message .updates-close{color:#a5bdce;width:24px;height:26px}
 .updates-message .updates-close:hover{background:#ffffff12;color:#fff}
 .updates-popover .btn.primary{min-height:32px;padding:6px 11px;font-size:11px;border-radius:7px;background:#287bea;border-color:#4996ff}
@@ -79,7 +79,7 @@
 /* An invitation on arrival; motion and progress begin after Download. */
 .update-dot{width:23px;height:25px;right:-7px;top:-8px;border:2px solid #ffe6a1;border-radius:8px;background:linear-gradient(150deg,#fff0ad,#e8ad3f);box-shadow:0 0 0 3px #122b40,0 3px 12px #efb74055;color:#45300f;font-size:19px}
 .updates-sigil{display:grid;place-items:center;width:34px;height:38px;border:1px solid #e6bd63;border-radius:10px;background:radial-gradient(circle at 40% 15%,#64512b,#322d24);box-shadow:inset 0 1px 0 #ffe3a040,0 0 15px #e8ad3f14;text-shadow:0 1px 2px #0008}
-[data-phase="current"] .updates-sigil{background:#24548344;border-color:#3989df55;box-shadow:none}
+[data-phase="current"]:not(.has-update) .updates-sigil{background:#24548344;border-color:#3989df55;box-shadow:none}
 .updates-sender{color:#9dccff;font-size:11px;font-weight:700}
 .updates-transfer{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:center;padding:12px 15px 15px;background:#3989df0b;border-top:1px solid #3989df24}
 .updates-transfer[hidden]{display:none}
