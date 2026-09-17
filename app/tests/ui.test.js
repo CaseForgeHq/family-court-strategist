@@ -189,13 +189,11 @@ test('read-only desk blocks imports and scans while completed reports remain acc
   await f.inbox.upload([new f.dom.window.File(['fictional'], 'file.txt')]); assert.equal(f.calls.some(call => call.request.method === 'POST'), false);
 });
 
-test('jurisdiction and reader setup require explicit actions and polling retains unsaved selection', async t => {
-  const f = setup(t, { docs: [] }); f.inbox.mount(f.host); await until(() => f.document.querySelector('[value=QLD]').checked);
-  assert.equal(f.calls.some(call => call.request.method === 'POST'), false);
-  f.document.querySelector('[value=NSW]').click(); await f.inbox.refresh(); assert.equal(f.document.querySelector('[value=NSW]').checked, true);
-  f.document.querySelector('[data-file-action=jurisdiction]').click(); await until(() => f.calls.some(call => call.path === '/api/scan-settings' && call.request.method === 'POST'));
-  assert.deepEqual(f.calls.find(call => call.path === '/api/scan-settings' && call.request.method === 'POST').request.body.regions, ['Commonwealth', 'NSW', 'QLD']);
-  f.document.querySelector('[data-file-action=readers]').click(); await until(() => f.calls.some(call => call.path === '/api/readers/setup'));
+test('Files & AI has only description/account and file cards, with no settings or counters', async t => {
+  const f=setup(t);f.inbox.mount(f.host);await until(()=>f.calls.some(c=>c.path==='/api/scan-settings'));
+  assert.equal(f.document.querySelector('.scan-settings,.files-ai-toolbar,.files-ai-footer,#scan-capacity,#scan-regions'),null);
+  assert.ok(f.document.querySelector('.files-ai-intro [data-file-action="connect"]'));
+  assert.equal(f.calls.some(c=>c.request.method==='POST'),false);
 });
 
 test('report text is escaped, law links are HTTPS only and legacy reports remain labelled', () => {
@@ -225,4 +223,18 @@ test('native open failure is displayed in the file register', async t => {
   f.inbox.mountDesk(f.host); await until(() => f.document.querySelector('.register-name'));
   f.document.querySelector('.register-name').click();
   await until(() => /No default app/.test(f.document.querySelector('#inbox-message').textContent));
+});
+
+test('checklist jumps to its matching answer without scanning and preserves collapse on refresh', async t => {
+  const f=setup(t,{docs:[{...record('done',{state:'completed'}),latestReportId:'report-1'}]});
+  f.inbox.mount(f.host); await f.inbox.open('done');
+  await until(()=>f.document.querySelector('.scan-plan-item'));
+  assert.equal(f.document.querySelectorAll('.scan-plan-item').length,13);
+  f.document.querySelector('[data-question-target="contradictions"]').click();
+  assert.equal(f.document.querySelector('[data-section="contradictions"]').open,true);
+  assert.equal(f.document.activeElement,f.document.querySelector('[data-section="contradictions"] > summary'));
+  assert.match(f.document.querySelector('[data-question-id="contradictions"]').textContent,/Answer not recorded/);
+  assert.equal(f.calls.some(c=>c.request.method==='POST'),false);
+  f.document.querySelector('.scan-plan').open=false; await f.inbox.refresh(true);
+  assert.equal(f.document.querySelector('.scan-plan').open,false);
 });

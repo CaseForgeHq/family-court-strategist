@@ -95,3 +95,101 @@
 /* Case desk originals open in the operating system default application. */
 .register-rows tr[data-native-document] { cursor: pointer; }
 .register-rows tr[data-native-document]:hover, .register-rows tr[data-native-document]:focus-within { background: rgba(128, 180, 205, .10); }
+/* Compact controls above one contained report scroll surface. */
+.files-ai-toolbar { padding: 4px 2px 10px; gap: 10px; }
+.files-ai-toolbar h2 { font: 600 14px/1.4 var(--ui); margin: 0; }
+.files-ai-toolbar small { font-size: 11px; }
+.scan-settings > summary { display: flex; align-items: center; gap: 8px; padding: 8px 2px; list-style: none; }
+.scan-settings > summary span { margin-left: 0; }
+.scan-settings > summary #scan-jurisdiction-label { margin-left: auto; }
+.scan-card-list { padding: 10px 8px 16px 0; scrollbar-gutter: stable; scroll-padding-block: 12px; }
+.scan-card-list::-webkit-scrollbar { width: 9px; }
+.scan-card-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink-2) 35%, transparent); border: 2px solid transparent; background-clip: padding-box; border-radius: 9px; }
+.scan-card { border-radius: 12px; background: color-mix(in srgb, var(--surface-glass, #fff) 94%, transparent); }
+.scan-card-heading { padding: 13px 16px; min-height: 68px; }
+.scan-card-chevron { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--surface-edge); border-radius: 8px; opacity: 1; transition: transform .16s ease; }
+.scan-card-body { padding: 0 16px 20px; }
+.scan-actions { padding: 10px 0; }
+.scan-card-error-box, .scan-review-notes { border-left: 2px solid #bf8d54; padding: 7px 10px; margin: 8px 0; font-size: 12px; }
+.scan-card-error-box[hidden] { display: none; }
+.scan-card-error-box summary, .scan-review-notes summary { cursor: pointer; font-weight: 600; }
+.scan-review-notes summary { display: flex; align-items: center; gap: 7px; list-style: none; }
+.scan-review-notes p { margin: 6px 0; }
+.scan-card-error-box .scan-warning { border: 0; margin: 0; padding: 8px 0 0; }
+.scan-report { font: 400 14px/1.6 var(--ui); }
+.scan-report h3 { font: 600 16px/1.5 var(--ui); margin: 15px 0 6px; }
+.scan-summary-text { max-width: 100ch; }
+.scan-section { border: 1px solid var(--surface-edge); border-radius: 8px; margin: 7px 0; overflow: clip; }
+.scan-section > summary { display: flex; gap: 9px; align-items: center; padding: 12px; list-style: none; }
+.scan-section > summary > .scan-section-title { margin: 0; font: 600 13px/1.5 var(--ui); opacity: 1; flex: 1; }
+.scan-section > summary > .scan-disclosure { margin: 0; opacity: 1; }
+.scan-disclosure { display: inline-flex; align-items: center; flex: none; }
+.scan-section[open] > summary .scan-disclosure, .scan-plan[open] > summary .scan-disclosure, .scan-settings[open] > summary .scan-disclosure { transform: rotate(180deg); }
+.scan-section summary::-webkit-details-marker, .scan-plan summary::-webkit-details-marker, .scan-settings summary::-webkit-details-marker { display: none; }
+.scan-section-body { padding: 0 14px 16px; }
+.scan-section[data-group=evidence] > summary { background: rgba(206,136,78,.14); }
+.scan-section[data-group=review] > summary { background: rgba(89,164,113,.14); }
+.scan-section[data-group=followup] > summary { background: rgba(81,143,196,.16); }
+.scan-plan { border: 1px solid var(--surface-edge); border-radius: 8px; padding: 10px 12px; margin: 8px 0 12px; }
+.scan-plan > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; cursor: pointer; list-style: none; font-size: 13px; }
+.scan-plan > summary > span:last-child { margin-left: auto; font-size: 11px; opacity: .8; }
+.scan-plan-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; margin-top: 10px; }
+.scan-plan-item { display: flex; align-items: baseline; gap: 8px; min-width: 0; text-align: left; padding: 7px 8px; border: 1px solid var(--surface-edge); border-radius: 5px; background: transparent; color: inherit; font: 500 11px/1.4 var(--ui); cursor: pointer; }
+.scan-plan-item > span:first-child { flex: none; opacity: .7; min-width: 14px; }
+.scan-plan-item[data-group=evidence] { background: rgba(206,136,78,.12); }
+.scan-plan-item[data-group=review] { background: rgba(89,164,113,.12); }
+.scan-plan-item[data-group=followup] { background: rgba(81,143,196,.14); }
+.scan-plan-item:focus-visible { outline: 2px solid var(--action); outline-offset: 1px; }
+.scan-plan > .scan-muted { margin: 8px 0 0; font-size: 11px; }
+.scan-question { font-weight: 600; margin: 4px 0 8px; }
+.scan-answer-status { display: inline-block; padding: 3px 8px; border: 1px solid var(--surface-edge); border-radius: 5px; font-size: 11px; margin-bottom: 10px; }
+.scan-answer-fields { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 8px 12px; margin: 0; }
+.scan-answer-fields dt { font-size: 12px; font-weight: 600; opacity: .8; }
+.scan-answer-fields dd { margin: 0; }
+.scan-answer-evidence { border-top: 1px solid var(--surface-edge); margin-top: 14px; }
+.files-ai-footer { padding: 5px 2px; border: 0; }
+@media(max-width:850px) { .scan-plan-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .scan-card-body { padding-inline: 12px; } .scan-answer-fields { grid-template-columns: 75px minmax(0,1fr); } }
+@media(prefers-reduced-motion:reduce) { .scan-card-chevron { transition: none; } }
+.files-ai-toolbar > div { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.scan-card { background: #edf3f2; color: #19313a; overflow: clip; }
+[data-scene-mode=dark] .scan-card { background: #19323d; color: #eef4f5; }
+.scan-card-heading { position: sticky; top: 0; z-index: 2; background: #edf3f2; }
+[data-scene-mode=dark] .scan-card-heading { background: #19323d; }
+.scan-section { scroll-margin-top: 92px; }
+.files-ai-workbench { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-rows: auto minmax(0,1fr) auto; column-gap: 14px; }
+.files-ai-toolbar { grid-column: 2; grid-row: 1; align-self: start; padding: 0 0 8px; }
+.files-ai-toolbar > div { display: none; }
+.scan-settings { grid-column: 1; grid-row: 1; align-self: start; border: 0; }
+.scan-settings > summary { min-height: 38px; }
+.scan-settings > summary #scan-jurisdiction-label { margin-left: 12px; }
+.scan-card-list { grid-column: 1 / -1; grid-row: 2; }
+.files-ai-footer { grid-column: 1 / -1; grid-row: 3; }
+@media(max-width:850px) { .files-ai-workbench { column-gap: 8px; } .scan-settings > summary { flex-wrap: wrap; } .scan-settings > summary #scan-jurisdiction-label { font-size: 10px; } }
+/* Files & AI: description and account, then files only. */
+.content .files-ai-intro { display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 20px; }
+.files-ai-intro > div { min-width: 0; }
+.files-ai-intro > .btn { flex: none; }
+.files-ai-workbench { display: flex; flex-direction: column; gap: 0; }
+.scan-card-list { padding: 0 8px 12px 0; }
+.scan-card { border: 0; }
+.scan-card-heading { gap: 16px; min-height: 74px; padding: 16px 18px; }
+.scan-card-name { display: grid; grid-template-columns: minmax(150px,.85fr) minmax(0,2fr) minmax(160px,1fr); align-items: center; gap: 22px; }
+.scan-card-name .file-reference { font-size: 10px; overflow-wrap: anywhere; }
+.scan-card-name strong { font-size: 14px; line-height: 1.5; }
+.scan-card-status { font-size: 12px; line-height: 1.5; }
+.scan-card-body { border-top: 0; }
+.files-ai-workbench + .inbox-message:empty { display: none; }
+@media(max-width:850px) {
+  .content .files-ai-intro { gap: 12px; }
+  .files-ai-intro > .btn { padding-inline: 10px; font-size: 11px; }
+  .scan-card-heading { padding: 13px 12px; gap: 10px; }
+  .scan-card-name { grid-template-columns: minmax(130px,.8fr) minmax(0,1.4fr) minmax(110px,.8fr); gap: 12px; }
+  .scan-card-name strong { font-size: 12px; }
+  .scan-card-status { font-size: 11px; }
+}
+@media(max-width:620px) {
+  .content .files-ai-intro { flex-wrap: wrap; }
+  .scan-card-name { grid-template-columns: minmax(0,1fr) minmax(110px,.7fr); gap: 5px 10px; }
+  .scan-card-name .file-reference { grid-column: 1 / -1; }
+}
+.scan-card-chevron { transition: none; }

@@ -1,3 +1,4 @@
+import { SCAN_QUESTIONS } from '../public/scan-questions.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -27,10 +28,10 @@ function fixture(t, options = {}) {
   const state = { read: 0 };
   const scan = async (input, scanOptions) => {
     assert.equal(scanOptions.signal, signal);
-    const stage = input.text.includes('Understand the document before') ? 'orientation' : input.text.includes('Read this part of one document') ? 'reading' : input.text.includes('Suggest up to six official') ? 'candidates' : input.text.includes('Use only these retrieved official') ? 'law' : input.text.includes('Review the extracted record') ? 'diagnostics' : 'unknown';
+    const stage = input.text.includes('Understand the document before') ? 'orientation' : input.text.includes('Read this part of one document') ? 'reading' : input.text.includes('Suggest up to six official') ? 'candidates' : input.text.includes('Use only these retrieved official') ? 'law' : input.text.includes('Review the extracted record') ? 'diagnostics' : input.text.includes('Answer EVERY question') ? 'answers' : 'unknown';
     calls.push({ stage, ...input });
     let value = await options.respond?.(stage, input, state);
-    if (value === undefined) value = stage === 'orientation' ? orientation(options.orientation) : stage === 'reading' ? reading({ findings: [finding()] }) : stage === 'candidates' ? { candidates: [{ url: officialURL, title: 'Fictional Notices Act 2025', provision: 'Section 4' }], limitations: [] } : stage === 'law' ? { laws: [law(options.law)], limitations: [] } : reading({ summary: 'Concise fictional result.' });
+    if (value === undefined) value = stage === 'orientation' ? orientation(options.orientation) : stage === 'reading' ? reading({ findings: [finding()] }) : stage === 'candidates' ? { candidates: [{ url: officialURL, title: 'Fictional Notices Act 2025', provision: 'Section 4' }], limitations: [] } : stage === 'law' ? { laws: [law(options.law)], limitations: [] } : stage === 'answers' ? {answers:SCAN_QUESTIONS.map(q=>({questionId:q.id,status:'no_findings',answer:'No further finding in this fictional fixture.',findingIds:[],lawIndexes:[],limitations:'Fictional fixture only.',followUp:'None.'}))} : reading({ summary: 'Concise fictional result.' });
     if (stage === 'reading') state.read++;
     return { text: JSON.stringify(value), model: 'gpt-6-astra', effort: 'low', usage: { last: { inputTokens: 100, outputTokens: 20 } } };
   };
@@ -45,13 +46,13 @@ function fixture(t, options = {}) {
 test('actual analysis reads context before facts, verifies law before diagnostics and returns all 13 checks', async t => {
   const f = fixture(t, { orientation: { legalIssues: ['record retention'] } });
   const result = await f.run();
-  assert.deepEqual(f.calls.map(call => call.stage), ['orientation', 'reading', 'candidates', 'law', 'diagnostics']);
+  assert.deepEqual(f.calls.map(call => call.stage), ['orientation', 'reading', 'candidates', 'law', 'diagnostics', 'answers']);
   assert.equal(result.complete, true); assert.equal(result.findings.length, 1);
   assert.equal(result.findings[0].sources[0].sourceMatch, 'text_match');
   assert.equal(result.laws[0].sourceMatch, 'official_text_match');
   assert.equal(result.laws[0].versionStatus, 'period_matched_requires_legal_review');
   assert.deepEqual(result.checks.map(check => check.label), CHECKS);
-  assert.equal(result.usage.length, 5); assert.equal(f.fetched.length, 1);
+  assert.equal(result.usage.length, 6); assert.equal(f.fetched.length, 1);
   assert.equal(f.fetched[0].url, officialURL);
   assert.equal(f.fetched[0].request.redirect, 'manual');
   const discovery = f.calls.find(call => call.stage === 'candidates').text;
@@ -59,9 +60,9 @@ test('actual analysis reads context before facts, verifies law before diagnostic
   assert.match(discovery, /record retention/);
 });
 
-test('a complete text document without legal issues needs only orientation, reading and diagnostics', async t => {
+test('a complete text document without legal issues answers every question after orientation, reading and diagnostics', async t => {
   const f = fixture(t); const result = await f.run();
-  assert.deepEqual(f.calls.map(call => call.stage), ['orientation', 'reading', 'diagnostics']);
+  assert.deepEqual(f.calls.map(call => call.stage), ['orientation', 'reading', 'diagnostics', 'answers']);
   assert.equal(f.fetched.length, 0); assert.equal(result.complete, true); assert.deepEqual(result.laws, []); assert.deepEqual(result.attention, []);
 });
 
@@ -72,8 +73,8 @@ test('resume reuses completed orientation and readings without another source-re
   assert.equal(f.checkpoint.reads.length, 1); assert.ok(f.checkpoint.orientation);
   f.calls.length = 0;
   const result = await f.run();
-  assert.deepEqual(f.calls.map(call => call.stage), ['diagnostics']);
-  assert.equal(result.complete, true); assert.equal(result.usage.length, 3);
+  assert.deepEqual(f.calls.map(call => call.stage), ['diagnostics', 'answers']);
+  assert.equal(result.complete, true); assert.equal(result.usage.length, 4);
 });
 
 test('later-page legal issues are incorporated before official legislation retrieval', async t => {
@@ -154,4 +155,11 @@ test('an impossible compilation date stays review-required without crashing the 
   const result = await f.run();
   assert.equal(result.complete, false);
   assert.equal(result.laws[0].versionStatus, 'needs_date_or_version_review');
+});
+
+test('all 13 displayed questions are submitted and their answers survive a matching resume', async t => {
+  const f=fixture(t);const result=await f.run();const submitted=f.calls.find(c=>c.stage==='answers');
+  for(const q of SCAN_QUESTIONS) { assert.ok(submitted.text.includes(q.question));assert.ok(submitted.text.includes(q.id)); }
+  assert.deepEqual(result.questionAnswers.map(a=>a.id),SCAN_QUESTIONS.map(q=>q.id));
+  f.calls.length=0;const resumed=await f.run();assert.equal(f.calls.length,0);assert.deepEqual(resumed.questionAnswers,result.questionAnswers);
 });

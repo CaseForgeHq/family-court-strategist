@@ -1,7 +1,9 @@
+import { SCAN_QUESTIONS } from './scan-questions.js';
 import { icon } from './icons.js';
 import { fileRegister, esc } from './file-register.js';
 import { getChatGPTConnection, chatGPTBrand } from './chatgpt-connection.js';
 
+const chevron = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 const REGIONS = ['Commonwealth', 'ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'];
 const SECTIONS = [
   ['provenance', '2. Identity and provenance', ['identity', 'provenance', 'metadata']],
@@ -29,7 +31,7 @@ export function scanLabel(scan) {
   return ({ paused: 'Scan paused', cancelled: 'Scan cancelled', interrupted: 'Scan interrupted — ready to resume', sign_in_required: 'Sign in with ChatGPT to continue', setup_required: 'File reader setup required', attention: 'Scan needs attention', failed: 'Scan failed — retry available' })[scan.state] || 'Scan needs attention';
 }
 function details(key, title, body, count = '') {
-  return `<details class="scan-section" data-section="${esc(key)}"><summary>${esc(title)}${count !== '' ? `<span>${count}</span>` : ''}</summary><div class="scan-section-body">${body}</div></details>`;
+  return `<details class="scan-section" data-section="${esc(key)}"><summary><span class="scan-disclosure">${chevron}</span><span class="scan-section-title">${esc(title)}</span>${count !== '' ? `<span>${count}</span>` : ''}</summary><div class="scan-section-body">${body}</div></details>`;
 }
 function valueMarkup(value) {
   if (value === null || value === undefined || value === '') return '<p class="scan-muted">Not recorded.</p>';
@@ -52,16 +54,31 @@ function sourceMarkup(source, id, reportId = '') {
 function findingMarkup(finding, id, reportId = '') {
   return `<article class="scan-finding"><h4>${esc(finding.title || words(finding.kind))}</h4><p>${esc(finding.detail || finding.statement || '')}</p>${finding.strength ? `<p><strong>Evidence strength:</strong> ${esc(finding.strength)}</p>` : ''}${finding.limitations?.length ? `<div class="scan-muted">${valueMarkup(finding.limitations)}</div>` : ''}${(finding.sources || []).map(source => sourceMarkup(source, id, reportId)).join('')}</article>`;
 }
+
+const answerLabels = {answered:'Answered',no_findings:'No finding identified',needs_review:'Needs review',not_applicable:'Not applicable',not_assessed:'Not assessed'};
+export function scanPlan() {
+  return `<details class="scan-plan" open><summary><span class="scan-disclosure">${chevron}</span><strong>What the AI checks</strong><span>13 questions · one answer per question</span></summary><div class="scan-plan-grid">${SCAN_QUESTIONS.map(q=>`<button type="button" class="scan-plan-item" data-question-target="${q.id}" data-group="${q.group}"><span>${q.number}</span><span>${esc(q.title)}</span></button>`).join('')}</div><p class="scan-muted">Each answer includes evidence, limitations and follow-up. These checks apply to one document.</p></details>`;
+}
+function questionAnswer(report, q) {
+  const answer = report.questionAnswers?.find(a=>a.id===q.id);
+  return `<div class="scan-question-answer" data-question-id="${q.id}"><p class="scan-question">${esc(q.question)}</p><span class="scan-answer-status">${answer ? esc(answerLabels[answer.status] || 'Not assessed') : 'Answer not recorded'}</span><dl class="scan-answer-fields"><dt>Answer</dt><dd>${esc(answer?.answer || 'This report has no question-by-question answer. Scan again to answer this question.')}</dd><dt>Limitations</dt><dd>${esc(answer?.limitations || (answer ? 'None stated in this answer.' : 'This check has not been explicitly answered.'))}</dd><dt>Follow-up</dt><dd>${esc(answer?.followUp || (answer ? 'None recorded.' : 'Scan again to generate a mapped answer.'))}</dd></dl></div>`;
+}
+
 export function reportMarkup(report, id) {
+  const questionDetails = (key, title, body, count = '') => {
+    const q=SCAN_QUESTIONS.find(q=>q.id===key), answer=report.questionAnswers?.find(a=>a.id===key);
+    if(answer && !['context','output'].includes(key)) body=(report.findings || []).filter(f=>answer.findingIds?.includes(f.id)).map(f=>findingMarkup(f,id,report.id)).join('')+(answer.lawIndexes || []).map(i=>report.laws?.[i]).filter(Boolean).map(l=>`<article class="scan-law"><h4>${esc(l.title)}${l.provision ? ` · ${esc(l.provision)}` : ''}</h4><blockquote>${esc(l.text || 'Provision text unavailable.')}</blockquote><p>${esc(l.relevance)}</p><p class="scan-muted">${esc(l.version || 'Applicable version not confirmed')} · ${esc(words(l.versionStatus || 'needs verification'))}</p>${l.assumptions ? valueMarkup(l.assumptions) : ''}${lawUrl(l.url) ? `<a href="${esc(lawUrl(l.url))}" target="_blank" rel="noopener noreferrer">Official source</a>` : ''}</article>`).join('') || '<p class="scan-muted">No supporting finding or legal reference linked to this answer.</p>';
+    return details(key, `${q.number}. ${q.title}`, questionAnswer(report,q)+`<div class="scan-answer-evidence"><h4>Evidence and detail</h4>${body}</div>`, answer ? answerLabels[answer.status] : 'Answer not recorded').replace('class="scan-section"',`class="scan-section" data-group="${q.group}"`);
+  };
   const findings = report.findings || [];
   const law = (report.laws || []).map(item => `<article class="scan-law"><h4>${esc(item.title)}${item.provision ? ` · ${esc(item.provision)}` : ''}</h4><blockquote>${esc(item.text || 'Provision text unavailable.')}</blockquote><p>${esc(item.relevance || '')}</p><p class="scan-muted">${esc(item.version || 'Applicable version not confirmed')} · ${esc(words(item.versionStatus || 'needs verification'))}</p>${item.assumptions ? valueMarkup(item.assumptions) : ''}${lawUrl(item.url) ? `<a class="record-link" href="${esc(lawUrl(item.url))}" target="_blank" rel="noopener noreferrer">Official source ↗</a>` : '<p class="scan-warning">Official source link unavailable.</p>'}</article>`).join('') || '<p class="scan-muted">No verified legal match recorded.</p>';
   const rows = SECTIONS.map(([key, title, kinds]) => {
     const entries = findings.filter(finding => kinds.includes(finding.kind));
-    return details(key, title, entries.map(finding => findingMarkup(finding, id, report.id)).join('') || '<p class="scan-muted">No findings recorded for this check.</p>', entries.length);
+    return questionDetails(key, title, entries.map(finding => findingMarkup(finding, id, report.id)).join('') || '<p class="scan-muted">No findings recorded for this check.</p>', entries.length);
   });
-  rows.splice(3, 0, details('laws', '5. Relevant law', law + (report.legalLimitations?.length ? valueMarkup(report.legalLimitations) : ''), (report.laws || []).length));
+  rows.splice(3, 0, questionDetails('laws', '5. Relevant law', law + (report.legalLimitations?.length ? valueMarkup(report.legalLimitations) : ''), (report.laws || []).length));
   const unknown = findings.filter(finding => !SECTIONS.some(([, , kinds]) => kinds.includes(finding.kind)));
-  return `<section class="scan-report">${report.legacy ? '<p class="scan-warning">Legacy analysis — retained from the previous workflow. This is not a new completed scan.</p>' : ''}<h3>Document summary</h3><p class="scan-summary-text">${esc(report.summary || 'No summary was recorded.')}</p>${report.attention?.length ? `<div class="scan-warning">${valueMarkup(report.attention)}</div>` : ''}<p class="scan-muted">Findings describe this document only. A source match confirms a quotation exists, not that an allegation is true.</p>${details('context', '1. Context and jurisdiction', valueMarkup(report.context) + '<h4>Jurisdiction</h4>' + valueMarkup(report.jurisdiction))}${rows.join('')}${details('output', '13. Saved output and coverage', `${unknown.map(finding => findingMarkup(finding, id)).join('')}<h4>Coverage</h4>${valueMarkup(report.coverage)}<h4>Model and usage</h4><p>${esc(report.model || (report.legacy ? 'Legacy provider' : 'GPT-6 Astra'))}${report.effort ? ` · ${esc(report.effort)}` : ''}</p>${valueMarkup(report.usage)}<p>Saved within Files &amp; AI. No records are automatically added to other case tools.</p>`)}</section>`;
+  return `<section class="scan-report">${report.legacy ? '<p class="scan-warning">Legacy analysis — retained from the previous workflow. This is not a new completed scan.</p>' : ''}${scanPlan()}<h3>Document summary</h3><p class="scan-summary-text">${esc(report.summary || 'No summary was recorded.')}</p>${report.attention?.length ? `<details class="scan-review-notes"><summary>${chevron} Review notes · ${report.attention.length}</summary>${valueMarkup([...new Set(report.attention)])}</details>` : ''}<p class="scan-muted">Findings describe this document only. A source match confirms a quotation exists, not that an allegation is true.</p>${questionDetails('context', '1. Context and jurisdiction', valueMarkup(report.context) + '<h4>Jurisdiction</h4>' + valueMarkup(report.jurisdiction))}${rows.join('')}${questionDetails('output', '13. Saved output and coverage', `${unknown.map(finding => findingMarkup(finding, id)).join('')}<h4>Coverage</h4>${valueMarkup(report.coverage)}<h4>Model and usage</h4><p>${esc(report.model || (report.legacy ? 'Legacy provider' : 'GPT-6 Astra'))}${report.effort ? ` · ${esc(report.effort)}` : ''}</p>${valueMarkup(report.usage)}<p>Saved within Files &amp; AI. No records are automatically added to other case tools.</p>`)}</section>`;
 }
 
 export function createInbox({ api, getSession, updateSession, showModal, onOpenScan, desktop = () => globalThis.window?.strategistDesktop }) {
@@ -101,8 +118,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
   }
   function mount(element) {
     begin(element, 'scans'); settingsDirty = false; settings = { country: 'AU', regions: ['Commonwealth'], confirmed: false };
-    host.innerHTML = `<div class="page-purpose"><p>Follow each document, from context to findings.</p><span>Start scans in Case desk. Each report stays here for review.</span></div><section class="files-ai-workbench" aria-label="Document scans"><div class="files-ai-toolbar"><div><h2>Your scans <span id="document-count">0</span></h2><small id="scan-capacity">Up to 3 documents at once</small></div><button class="btn" type="button" data-file-action="connect">${icon('ai')}<span id="scan-account">Sign in with ChatGPT</span></button></div><details class="scan-settings"><summary>Jurisdiction &amp; file readers <span id="scan-jurisdiction-label">Australia</span></summary><div class="scan-settings-body"><p>Choose the jurisdictions relevant to this case. Each document is checked for conflicting locations and dates.</p><fieldset id="scan-regions"><legend>Australia</legend>${REGIONS.map(region => `<label><input type="checkbox" name="scan-region" value="${region}" ${region === 'Commonwealth' ? 'checked' : ''}>${region}</label>`).join('')}</fieldset><div class="scan-settings-actions"><button type="button" class="btn small" data-file-action="jurisdiction">Save jurisdiction</button><button type="button" class="btn small" data-file-action="readers">Set up file readers</button></div><p id="scan-readers-status" class="scan-muted" role="status"></p></div></details><div class="scan-card-list" id="scan-card-list" aria-label="Scan results"><p class="empty">Loading scans…</p></div><div class="files-ai-footer"><span id="scan-connection-status">GPT-6 Astra · Low reasoning · Your ChatGPT limits apply</span></div></section><p id="inbox-message" class="inbox-message" role="status" aria-live="polite"></p>`;
-    find('#scan-regions').addEventListener('change', () => { settingsDirty = true; });
+    host.innerHTML = `<div class="page-purpose files-ai-intro"><div><p>Follow each document, from context to findings.</p><span>Start scans in Case desk. Each report stays here for review.</span></div><button class="btn" type="button" data-file-action="connect">${icon('ai')}<span id="scan-account">Sign in with ChatGPT</span></button></div><section class="files-ai-workbench" aria-label="Document scans"><div class="scan-card-list" id="scan-card-list" aria-label="Scan results"><p class="empty">Loading scans…</p></div></section><p id="inbox-message" class="inbox-message" role="status" aria-live="polite"></p>`;
     const connection = getChatGPTConnection(desktop());
     unsubscribeAccount = connection.subscribe(result => {
       account = result;
@@ -158,7 +174,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       if (!host || revision !== generation) return;
       documents = result.documents || [];
       if (result.access) updateSession({ ...getSession(), access: result.access });
-      if (mode === 'desk') renderDesk(); else { find('[data-file-action="jurisdiction"]').disabled = !writable(); await renderCards(force, revision); }
+      if (mode === 'desk') renderDesk(); else await renderCards(force, revision);
       if (mode === 'scans' && readersInstalling) { const readers = await api('/api/readers'); if (revision !== generation) return; paintReaders(readers); }
     } catch (error) { if (revision === generation) notice(error.message, true); }
     finally { if (revision === generation) refreshing = false; }
@@ -193,8 +209,6 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
   }
   async function renderCards(force, revision) {
     const list = find('#scan-card-list'), visible = documents.filter(d => d.scan || d.latestReportId || d.draft || d.legacyReport);
-    find('#document-count').textContent = visible.length;
-    find('#scan-capacity').textContent = `${documents.filter(d => d.scan?.state === 'running').length} scanning · ${documents.filter(d => d.scan?.state === 'queued').length} waiting · maximum 3 at once`;
     if (!visible.length) { list.innerHTML = '<div class="scan-empty"><h3>Your document scans will appear here.</h3><p>In Case desk, select Scan beside a file to begin.</p><button class="btn" data-go="dashboard" type="button">Open Case desk</button></div>'; return; }
     list.querySelector('.scan-empty,.empty')?.remove();
     const valid = new Set(visible.map(d => d.id));
@@ -203,7 +217,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       let card = [...list.children].find(node => node.dataset.documentId === d.id);
       if (!card) {
         card = document.createElement('details'); card.className = 'scan-card'; card.dataset.documentId = d.id;
-        card.innerHTML = `<summary class="scan-card-heading"><span class="scan-card-icon">${icon('file')}</span><span class="scan-card-name"><span class="file-reference"></span><strong></strong><span class="scan-card-status"></span></span><span class="scan-card-type"></span><span class="scan-card-chevron">⌄</span></summary><div class="scan-card-body"><div class="scan-card-controls"></div><p class="scan-card-error scan-warning" role="status" hidden></p><div class="scan-card-report"><p class="scan-muted">Expand this card to read its saved findings.</p></div></div>`;
+        card.innerHTML = `<summary class="scan-card-heading"><span class="scan-card-icon">${icon('file')}</span><span class="scan-card-name"><span class="file-reference"></span><strong></strong><span class="scan-card-status"></span></span><span class="scan-card-type"></span><span class="scan-card-chevron">${chevron}</span></summary><div class="scan-card-body"><div class="scan-card-controls"></div><details class="scan-card-error-box" hidden><summary>Scan needs attention</summary><p class="scan-card-error scan-warning" role="status" hidden></p></details><div class="scan-card-report"><p class="scan-muted">Expand this card to read its saved findings.</p></div></div>`;
         list.append(card);
       }
       card.querySelector('.file-reference').textContent = d.reference || '';
@@ -221,7 +235,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
           (replacement || card.querySelector('.scan-card-heading')).focus({ preventScroll: true });
         }
       }
-      const error = card.querySelector('.scan-card-error'); error.textContent = d.scan?.error?.message || d.scan?.error || ''; error.hidden = !error.textContent;
+      const error = card.querySelector('.scan-card-error'); error.textContent = d.scan?.error?.message || d.scan?.error || ''; error.hidden = !error.textContent; error.closest('.scan-card-error-box').hidden = !error.textContent;
       if (openId === d.id) card.open = true;
       const signature = JSON.stringify([d.latestReportId, d.scan?.state, d.updatedAt]);
       if (card.open && (force || loaded.get(d.id)?.signature !== signature)) await loadReport(d.id, signature, revision);
@@ -246,13 +260,15 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       if (!host || generation !== revision || mode !== 'scans') return;
       const card = [...find('#scan-card-list').children].find(node => node.dataset.documentId === id); if (!card) return;
       const container = card.querySelector('.scan-card-report');
+      const planOpen = container.querySelector('.scan-plan')?.open;
       const openSections = [...container.querySelectorAll('details[open]')].map(node => node.dataset.section);
       const active = container.contains(document.activeElement) ? document.activeElement.closest('[data-section]')?.dataset.section : null;
       const report = detail.reports?.[0] || (detail.draft ? { ...detail.draft, legacy: true } : null);
-      const content = report ? reportMarkup(report, id) + (detail.reports?.length > 1 ? details('history', `Earlier reports (${detail.reports.length - 1})`, detail.reports.slice(1).map((previous, index) => details(`version-${index}`, `Report ${previous.version || index + 1} · ${dateTime(previous.completedAt || previous.createdAt)}`, reportMarkup(previous, id))).join('')) : '') : '<p class="scan-muted">The report will appear here when analysis has been saved. Your original stays available throughout the scan.</p>';
+      const content = report ? reportMarkup(report, id) + (detail.reports?.length > 1 ? details('history', `Earlier reports (${detail.reports.length - 1})`, detail.reports.slice(1).map((previous, index) => details(`version-${index}`, `Report ${previous.version || index + 1} · ${dateTime(previous.completedAt || previous.createdAt)}`, reportMarkup(previous, id))).join('')) : '') : scanPlan() + '<p class="scan-muted">The report will appear here when analysis has been saved. Your original stays available throughout the scan.</p>';
       if (container.scanMarkup !== content) {
         const scroll = find('#scan-card-list').scrollTop;
         container.innerHTML = content; container.scanMarkup = content;
+        if (planOpen !== undefined && container.querySelector('.scan-plan')) container.querySelector('.scan-plan').open=planOpen;
         container.querySelectorAll('[data-section]').forEach(node => { if (openSections.includes(node.dataset.section)) node.open = true; });
         if (active) [...container.querySelectorAll('[data-section]')].find(node => node.dataset.section === active)?.querySelector('summary')?.focus({ preventScroll: true });
         find('#scan-card-list').scrollTop = scroll;
@@ -280,6 +296,13 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
     finally { pending.delete(id); if (revision === generation) await refresh(true); }
   }
   async function handleClick(event) {
+    const question=event.target.closest('[data-question-target]');
+    if(question) {
+      const card=question.closest('.scan-card'), target=card?.querySelector(`[data-section="${question.dataset.questionTarget}"]`), list=find('#scan-card-list');
+      if(target && list) { target.open=true; list.scrollTop+=target.getBoundingClientRect().top-list.getBoundingClientRect().top-(card.querySelector('.scan-card-heading')?.getBoundingClientRect().height || 0)-12; target.querySelector('summary').focus({preventScroll:true}); }
+      return;
+    }
+
     const scan = event.target.closest('[data-scan-document]');
     if (scan && !scan.disabled) { event.preventDefault(); if (scan.dataset.scanned === 'true') await onOpenScan?.(scan.dataset.scanDocument); else await command(scan.dataset.scanDocument, 'scan'); return; }
     const action = event.target.closest('[data-scan-action]');
