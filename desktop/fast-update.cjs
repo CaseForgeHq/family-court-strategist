@@ -69,7 +69,7 @@ function createFastUpdate({ resources, executable, temp, userData, electron, pid
       const helper = join(helperDir, 'CaseForgeUpdate.exe');
       try { if (await hash(helper) !== await hash(sourceHelper)) throw Error('Refresh helper'); }
       catch { await fs.copyFile(sourceHelper, helper); }
-      const plan = { id, version, root, executable, userData, previousPid: pid, stage, helper, signal: join(helperDir, `ready-${id}`) };
+      const plan = { id, version, fromVersion: current.version, root, executable, userData, previousPid: pid, stage, helper, signal: join(helperDir, `ready-${id}`) };
       const planPath = join(stage, 'plan.json'); await fs.writeFile(planPath, JSON.stringify(plan));
       return { ...plan, planPath };
     } catch (error) {

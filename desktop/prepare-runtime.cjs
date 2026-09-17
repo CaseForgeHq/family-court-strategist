@@ -10,7 +10,8 @@ console.log('Prepared pinned Codex runtime for ChatGPT sign-in.');
 if (process.platform === 'win32') {
   const { execFileSync } = require('node:child_process');
   const compiler = join(process.env.WINDIR || 'C:\\Windows', 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'csc.exe');
-  execFileSync(compiler, ['/nologo', '/target:winexe', '/optimize+', '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/reference:System.Web.Extensions.dll',
+  execFileSync(compiler, ['/nologo', '/target:winexe', '/optimize+', '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/reference:System.Web.Extensions.dll', '/reference:System.Xml.Linq.dll',
+    `/resource:${join(__dirname, '../brand/symbol.svg')},CaseForgeLogo.svg`,
     `/out:${join(target, 'CaseForgeUpdate.exe')}`, join(__dirname, 'update-handoff.cs')], { stdio: 'inherit', windowsHide: true });
   console.log('Prepared independent update status window.');
   require('app-builder-lib/out/toolsets/7zip').getPath7za().then(extractor => {

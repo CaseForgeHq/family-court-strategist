@@ -389,7 +389,7 @@ else {
       try {
         const closed = await closeForUpdate(target, async () => {
           if (app.isPackaged && !updates.status().fast) {
-            try { await showUpdateHandoff({ runtime: join(process.resourcesPath, 'runtime'), temp: app.getPath('temp'), executable: process.execPath, pid: process.pid }); }
+            try { await showUpdateHandoff({ runtime: join(process.resourcesPath, 'runtime'), temp: app.getPath('temp'), executable: process.execPath, pid: process.pid, fromVersion: appInfo().version, toVersion: updates.status().version }); }
             catch { /* A missing status window must never block a verified update. */ }
           }
           await updates.install();

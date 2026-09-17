@@ -6,6 +6,8 @@ using System.IO;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Web.Script.Serialization;
+using System.Globalization;
+using System.Xml.Linq;
 
 // Status only: installation and automatic relaunch remain electron-updater's job.
 sealed class UpdateWindow : Form {
@@ -14,6 +16,11 @@ sealed class UpdateWindow : Form {
     readonly Stopwatch elapsed = Stopwatch.StartNew();
     readonly Timer animation = new Timer(), monitor = new Timer();
     readonly Label title = new Label(), detail = new Label();
+    readonly List<PointF[]> logoPolygons = new List<PointF[]>();
+    readonly List<Color> logoColors = new List<Color>();
+    string[] messages;
+    int messageIndex;
+    bool statusOverride;
     float angle;
     bool previousExited;
     Dictionary<string, object> plan;
@@ -21,7 +28,7 @@ sealed class UpdateWindow : Form {
     bool switched, attempted, finished;
     Process replacement;
     readonly JavaScriptSerializer json = new JavaScriptSerializer();
-    public UpdateWindow(string path, int pid, string signal, string planFile) {
+    public UpdateWindow(string path, int pid, string signal, string planFile, string fromVersion, string toVersion) {
         executable = Path.GetFullPath(path); previousPid = pid; ready = signal;
         if (planFile != null) {
             plan = json.Deserialize<Dictionary<string, object>>(File.ReadAllText(planFile));
@@ -34,23 +41,51 @@ sealed class UpdateWindow : Form {
             backup = Path.Combine(root, ".caseforge-rollback-" + updateId);
             receipt = Path.Combine(root, ".caseforge-ready-" + updateId);
             pending = Path.Combine(root, ".caseforge-fast-update.json");
+            fromVersion = plan.ContainsKey("fromVersion") ? Convert.ToString(plan["fromVersion"]) : null;
+            toVersion = Convert.ToString(plan["version"]);
         }
-        Text = "Case Forge — Restarting"; ClientSize = new Size(490, 172);
+        using (var stream = typeof(UpdateWindow).Assembly.GetManifestResourceStream("CaseForgeLogo.svg")) {
+            var svg = XDocument.Load(stream);
+            foreach (var polygon in svg.Root.Elements()) {
+                if (polygon.Name.LocalName != "polygon") continue;
+                var points = new List<PointF>();
+                foreach (var pair in polygon.Attribute("points").Value.Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries)) {
+                    var xy = pair.Split(',');
+                    points.Add(new PointF(float.Parse(xy[0], CultureInfo.InvariantCulture), float.Parse(xy[1], CultureInfo.InvariantCulture)));
+                }
+                logoPolygons.Add(points.ToArray()); logoColors.Add(ColorTranslator.FromHtml(polygon.Attribute("fill").Value));
+            }
+        }
+        Text = "Case Forge — Restarting"; ClientSize = new Size(550, 240);
         FormBorderStyle = FormBorderStyle.None; StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(14, 31, 44); ForeColor = Color.FromArgb(236, 244, 251);
         AutoScaleMode = AutoScaleMode.Dpi; DoubleBuffered = true;
-        title.Text = "Restarting Case Forge"; title.SetBounds(90, 46, 340, 30);
+        var brand = new Label(); brand.Text = "CASE FORGE"; brand.SetBounds(78, 28, 390, 29);
+        brand.Font = new Font("Georgia", 15, FontStyle.Bold);
+        var versions = new Label(); versions.SetBounds(80, 62, 390, 22);
+        versions.Font = new Font("Segoe UI", 9); versions.ForeColor = Color.FromArgb(142, 192, 231);
+        var versionPattern = @"^\d+\.\d+\.\d+$";
+        versions.Text = System.Text.RegularExpressions.Regex.IsMatch(fromVersion ?? "", versionPattern) && System.Text.RegularExpressions.Regex.IsMatch(toVersion ?? "", versionPattern)
+            ? "Updating v" + fromVersion + "  →  v" + toVersion : "Preparing your update";
+        title.Text = "Restarting Case Forge"; title.SetBounds(28, 106, 420, 33);
         title.Font = new Font("Segoe UI", 16, FontStyle.Bold);
-        detail.Text = "Reopening automatically…";
-        detail.SetBounds(92, 85, 355, 46); detail.Font = new Font("Segoe UI", 10);
+        messages = new string[] { "Your Case Forge application will restart automatically.",
+            plan == null ? "Updates usually take around 30–45 seconds." : "Quick patches can restart in under 5 seconds.",
+            "We’re working to bring every restart under 5 seconds." };
+        detail.Text = messages[0];
+        detail.SetBounds(30, 151, 485, 46); detail.Font = new Font("Segoe UI", 10);
         detail.ForeColor = Color.FromArgb(180, 206, 227);
         var close = new Button(); close.Text = "×"; close.AccessibleName = "Hide restart status";
-        close.SetBounds(454, 8, 27, 27); close.FlatStyle = FlatStyle.Flat;
+        close.SetBounds(515, 8, 27, 27); close.FlatStyle = FlatStyle.Flat;
         close.FlatAppearance.BorderSize = 0; close.ForeColor = detail.ForeColor;
         close.Click += delegate { if (plan != null) Hide(); else Close(); };
         FormClosing += delegate(object sender, FormClosingEventArgs args) { if (plan != null && !finished) { args.Cancel = true; Hide(); } };
-        Controls.Add(title); Controls.Add(detail); Controls.Add(close);
-        animation.Interval = 25; animation.Tick += delegate { angle = (angle + 6) % 360; Invalidate(new Rectangle(24, 49, 55, 55)); };
+        Controls.Add(brand); Controls.Add(versions); Controls.Add(title); Controls.Add(detail); Controls.Add(close);
+        animation.Interval = 25; animation.Tick += delegate {
+            angle = (angle + 6) % 360; Invalidate(new Rectangle(470, 103, 56, 56));
+            int next = (int)(elapsed.Elapsed.TotalSeconds / 5) % messages.Length;
+            if (!statusOverride && next != messageIndex) { messageIndex = next; detail.Text = messages[next]; Invalidate(new Rectangle(26, 207, 60, 14)); }
+        };
         monitor.Interval = 25; monitor.Tick += delegate { Observe(); };
         Shown += delegate { try { File.WriteAllText(ready, "ready"); } catch {} animation.Start(); monitor.Start(); };
         FormClosed += delegate { animation.Dispose(); monitor.Dispose(); };
@@ -59,8 +94,13 @@ sealed class UpdateWindow : Form {
     protected override void OnPaint(PaintEventArgs e) {
         base.OnPaint(e); e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
         using (var border = new Pen(Color.FromArgb(58, 119, 177))) e.Graphics.DrawRectangle(border, 0, 0, Width - 1, Height - 1);
-        using (var track = new Pen(Color.FromArgb(37, 63, 85), 4)) e.Graphics.DrawEllipse(track, 32, 57, 38, 38);
-        using (var arc = new Pen(Color.FromArgb(114, 193, 255), 4)) { arc.StartCap = LineCap.Round; arc.EndCap = LineCap.Round; e.Graphics.DrawArc(arc, 32, 57, 38, 38, angle, 95); }
+        var logoState = e.Graphics.Save();
+        e.Graphics.TranslateTransform(28, 25); e.Graphics.ScaleTransform(0.62f, 0.62f); e.Graphics.TranslateTransform(-67.526611f, -175.393433f);
+        for (int i = 0; i < logoPolygons.Count; i++) using (var fill = new SolidBrush(logoColors[i])) e.Graphics.FillPolygon(fill, logoPolygons[i]);
+        e.Graphics.Restore(logoState);
+        using (var track = new Pen(Color.FromArgb(37, 63, 85), 4)) e.Graphics.DrawEllipse(track, 480, 111, 32, 32);
+        using (var arc = new Pen(Color.FromArgb(114, 193, 255), 4)) { arc.StartCap = LineCap.Round; arc.EndCap = LineCap.Round; e.Graphics.DrawArc(arc, 480, 111, 32, 32, angle, 95); }
+        for (int i = 0; i < messages.Length; i++) using (var dot = new SolidBrush(i == messageIndex ? Color.FromArgb(114,193,255) : Color.FromArgb(52,76,93))) e.Graphics.FillEllipse(dot, 30 + i * 15, 211, 5, 5);
         using (var line = new LinearGradientBrush(new Rectangle(0, Height - 3, Width, 3), Color.FromArgb(35, 114, 227), Color.FromArgb(120, 208, 255), 0f)) e.Graphics.FillRectangle(line, 0, Height - 3, Width, 3);
     }
     void Observe() {
@@ -91,6 +131,7 @@ sealed class UpdateWindow : Form {
             }
         }
         if (elapsed.Elapsed.TotalSeconds > 90) {
+            statusOverride = true;
             title.Text = "Still applying your update";
             detail.Text = "Windows is taking longer than usual. Case Forge will reopen when installation finishes.";
         }
@@ -141,14 +182,15 @@ sealed class UpdateWindow : Form {
             if (File.Exists(pending)) File.Delete(pending);
             Launch(); return true;
         } catch (Exception error) {
+            statusOverride = true;
             title.Text = "Restoring Case Forge"; detail.Text = "Waiting for Windows to release the app files…";
             try { File.WriteAllText(Path.Combine(root, ".caseforge-recovery-error.txt"), error.GetType().Name + ": " + error.Message); } catch {}
             return false;
         }
     }
     [STAThread] static void Main(string[] args) {
-        int pid; if ((args.Length != 3 && args.Length != 4) || !Int32.TryParse(args[1], out pid) || !Path.IsPathRooted(args[0])) return;
+        int pid; if ((args.Length != 3 && args.Length != 4 && args.Length != 5) || !Int32.TryParse(args[1], out pid) || !Path.IsPathRooted(args[0])) return;
         Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new UpdateWindow(args[0], pid, args[2], args.Length == 4 ? args[3] : null));
+        Application.Run(new UpdateWindow(args[0], pid, args[2], args.Length == 4 ? args[3] : null, args.Length == 5 ? args[3] : null, args.Length == 5 ? args[4] : null));
     }
 }
