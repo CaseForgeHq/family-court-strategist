@@ -1,6 +1,6 @@
 {
   "name": "family-court-strategist-desktop",
-  "version": "0.14.11",
+  "version": "0.14.12",
   "private": true,
   "description": "Local case workspace with document intake and optional user-selected AI analysis.",
   "main": "main.cjs",
@@ -125,7 +125,7 @@
       }
     ],
     "releaseInfo": {
-      "releaseNotesFile": "../releases/windows/0.14.11.md"
+      "releaseNotesFile": "../releases/windows/0.14.12.md"
     },
     "electronVersion": "44.2.0"
   },
