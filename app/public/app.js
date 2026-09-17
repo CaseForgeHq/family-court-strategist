@@ -3,6 +3,7 @@ import { createInbox } from "./inbox.js";
 import { createJournal } from "./journal.js";
 import { createTasks } from "./tasks.js";
 import { createCaseMap } from "./graph.js";
+import { createCaseDetails } from './case-details.js';
 import { createCalendar } from "./calendar.js";
 import { createSearch } from "./search.js";
 import { createCaseMenu } from './case-menu.js';
@@ -52,7 +53,12 @@ let documentSeed;
 async function openDocumentCreator(seed) { if (!await documentCreator.saveDraft()) return; documentSeed = seed; await go('creator'); }
 const notebook = createNotebook({ api, getSession: () => SESSION, onExport: openDocumentCreator });
 const tasks = createTasks({ api, getSession: () => SESSION });
-const caseMap = createCaseMap({ openRecord });
+const caseMap = createCaseMap({ openRecord, onSelect: id => caseDetails.select(id) });
+const caseDetails = createCaseDetails({ openRecord,
+  onSelect: id => { if (current === 'map') caseMap.select(id); },
+  openMap: async id => { await go('map'); if (id) caseMap.select(id); }
+});
+caseDetails.mount(document.getElementById('panel-details'));
 const calendar = createCalendar({ api, getSession: () => SESSION, openRecord, google: {
   status: () => window.strategistDesktop?.googleStatus?.() || Promise.resolve({available:false,configured:false,connected:false,message:'Google Calendar connection is available in the desktop app.'}),
   configure: () => window.strategistDesktop.googleConfigure(),
@@ -301,7 +307,7 @@ async function go(view) {
   if (view === "calendar") await calendar.mount($("view"));
   if (view === "dashboard") inbox.mountDesk($("view"));
   if(current !== view) return;
-  if (view === "map") caseMap.mount($("view"), MODEL);
+  if (view === "map") { caseMap.mount($("view"), MODEL); caseMap.select(caseDetails.getSelection()); }
   if (view === "settings") void refreshHomeSetup();
   if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) viewAnimation = $("view").animate?.([{ opacity:.3,transform:'translateY(6px)' },{ opacity:1,transform:'translateY(0)' }],{ duration:180,easing:'ease-out' });
   window.dispatchEvent(new window.CustomEvent('caseforge:view',{ detail:{ view } }));
@@ -472,11 +478,7 @@ function applyChrome(m) {
   $("case-name").textContent = m.caseName || "Case";
   $("current-matter").title = m.caseName || "Case";
   $("current-matter").setAttribute('aria-label', `Current case: ${m.caseName || "Case"}. Open case menu.`);
-  $("context-case-name").textContent = m.caseName || "Your case";
-  $("context-events").textContent = m.stats.timelineEvents;
-  $("context-evidence").textContent = m.evidence.length;
-  $("context-people").textContent = m.people.length;
-  $("context-connections").textContent = m.graph?.edges?.length || 0;
+  caseDetails.update(m, SESSION?.caseKey);
   $("count-timeline").textContent = m.stats.timelineEvents;
   $("count-evidence").textContent = m.evidence.length;
   $("count-patterns").textContent = m.patterns.length;

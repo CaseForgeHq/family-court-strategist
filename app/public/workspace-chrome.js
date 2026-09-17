@@ -19,7 +19,7 @@ function setContext(open, restoreFocus = false) {
   body.dataset.contextOpen = String(open);
   panel.hidden = !open; panel.inert = !open;
   context.setAttribute('aria-expanded', String(open));
-  if (open) document.getElementById('close-context').focus({ preventScroll:true });
+  if (open) { if (panel.dataset.windowMode !== 'float') panelWindow?.place(panel.dataset.windowMode || 'right'); document.getElementById('close-context').focus({ preventScroll:true }); }
   else if (restoreFocus || panel.contains(document.activeElement)) (panelOpener?.isConnected && !panel.contains(panelOpener) ? panelOpener : context).focus({ preventScroll:true });
 }
 function selectPanel(name = 'details') {
@@ -28,8 +28,9 @@ function selectPanel(name = 'details') {
   body.dataset.panel = name;
   window.dispatchEvent(new CustomEvent('caseforge:panel-selected', { detail:{ name } }));
 }
+let panelWindow;
 setContext(false);
-makeWindow(panel, { title: 'Case panel' });
+panelWindow = makeWindow(panel, { title: 'Case panel', anchor: () => document.querySelector('#view > .case-desk,#view > .files-ai-workbench,#view .case-map-shell') || document.getElementById('view'), alignToAnchor: true });
 context.addEventListener('click', () => setContext(body.dataset.contextOpen !== 'true'));
 panel.querySelectorAll('[data-panel]').forEach(button => button.addEventListener('click', () => selectPanel(button.dataset.panel)));
 window.addEventListener('caseforge:open-panel', event => { selectPanel(event.detail?.name || 'details'); setContext(true); });
@@ -42,10 +43,9 @@ document.addEventListener('keydown', event => {
   }
 });
 document.addEventListener('pointerdown', event => {
-  if (body.dataset.contextOpen === 'true' && panel.dataset.windowMode === 'right' && !panel.contains(event.target) && !context.contains(event.target) && !event.target.closest('#ask-claude')) setContext(false);
   if (!event.target.closest('.workspace-nav > details')) closeNavigationMenus();
 });
 window.addEventListener('caseforge:view', () => {
   closeNavigationMenus(null, true);
-  if (panel.dataset.windowMode === 'right') setContext(false);
+  if (body.dataset.contextOpen === 'true' && panel.dataset.windowMode !== 'float') window.requestAnimationFrame(() => panelWindow.place(panel.dataset.windowMode || 'right'));
 });

@@ -27,7 +27,8 @@ for (const desktop of [false, true]) test(`workspace navigation and native contr
   assert.match(document.querySelector('.file-register').textContent,/Meeting/);
   assert.ok(document.querySelector('.workspace-nav > [data-view="notebook"]'));
   assert.equal(document.querySelector('[data-view="timeline"]').nextElementSibling.dataset.view,'calendar');
-  assert.equal(document.getElementById('context-events').textContent,'1');
+  assert.equal(document.getElementById('case-details-summary').textContent,'1 record · 0 connections');
+  assert.equal(document.querySelectorAll('.case-details-results [data-detail-select]').length,1);
   assert.equal(document.querySelector('.home-setup-cards'),null);
   document.querySelector('[data-view="settings"]').click();
   await until(() => document.querySelector(".home-setup-cards"));

@@ -25,7 +25,7 @@ contextBridge.exposeInMainWorld('strategistDesktop',Object.freeze({
     return new Promise(resolve=>{
       const job={cancelled:false,finish:value=>{if(active===job)active=null;resolve(value);}};active=job;
       void(async()=>{
-        progress({requestId,phase:'connecting'});await wait(100);if(job.cancelled)return;
+        progress({requestId,phase:'connecting'});await wait(mode==='thinking'?3000:100);if(job.cancelled)return;
         progress({requestId,phase:'replying'});
         const chunks=mode==='stop'?['Fictional partial reply','Fictional partial reply that should be stopped.']:mode==='overwrite'?['I will think through this fictional record.','A fictional reply','A fictional reply replaces the progress commentary.']:[answer.slice(0,20),answer.slice(0,66),answer];
         for(const text of chunks){if(job.cancelled)return;progress({requestId,phase:'delta',text});await wait(mode==='stop'?1500:500);}

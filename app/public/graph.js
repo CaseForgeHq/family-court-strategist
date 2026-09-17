@@ -41,7 +41,7 @@ export function filterGraph(graph, query = "", type = "all") {
   return { nodes, edges: graph.edges.filter((e) => ids.has(e.source) && ids.has(e.target)) };
 }
 
-export function createCaseMap({ openRecord, loadScene = () => import('./map-scene.js') } = {}) {
+export function createCaseMap({ openRecord, onSelect, loadScene = () => import('./map-scene.js') } = {}) {
   let detailWindow, browseOpen = false, connectedOnly = false, renderedGraphKey = '';
   let host, graph, scene, selected, query, type, viewMode, generation = 0, available = true, disposeEvents = () => {};
   const find = selector => host?.querySelector(selector);
@@ -61,11 +61,21 @@ export function createCaseMap({ openRecord, loadScene = () => import('./map-scen
       ${links.length ? `<ul class="map-connections">${links.map(edge => { const other = graph.nodes.find(n => n.id === (edge.source === node.id ? edge.target : edge.source)); return `<li><button type="button" data-map-select="${escapeHtml(other.id)}"><small>${escapeHtml(edge.label)}</small><span>${escapeHtml(other.label)}</span>${icon('arrowRight')}</button></li>`; }).join('')}</ul>` : '<p>No connections recorded yet.</p>'}
       <p class="map-caution">A recorded link does not verify a claim. Position and distance have no meaning.</p>`;
   }
-  function choose(id) {
+  function choose(id, { notify = true } = {}) {
     selected = id; if (!id) connectedOnly = false;
     render(); scene?.setSelected(id); details();
     browseOpen = false; renderPicker();
     host.querySelectorAll('#map-list [data-map-select]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mapSelect === id)));
+    if (notify) onSelect?.(selected);
+  }
+  function select(id) {
+    if (!host || id !== null && !graph.nodes.some(node => node.id === id)) return false;
+    if (id && !filterGraph(graph, query, type).nodes.some(node => node.id === id)) {
+      query = ''; type = 'all'; connectedOnly = false;
+      find('#map-search').value = ''; find('#map-type').value = 'all';
+    }
+    choose(id, { notify: false });
+    return true;
   }
   function visibleGraph() {
     let base = graph;
@@ -171,6 +181,6 @@ export function createCaseMap({ openRecord, loadScene = () => import('./map-scen
       render();
     }).catch(() => { if (host && mountedGeneration === generation) fallback(); });
   }
-  return { mount, unmount, snapshot: () => scene?.snapshot() || null };
+  return { mount, unmount, select, snapshot: () => scene?.snapshot() || null };
 }
 
