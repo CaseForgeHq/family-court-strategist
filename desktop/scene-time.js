@@ -73,7 +73,7 @@
   const clamp = (value) => Math.max(0, Math.min(1, value));
   function applyWeather(state) {
     const condition = weather?.condition || 'unknown';
-    const cloud = weather?.cloudCover || 0, precipitation = weather?.precipitation || 0;
+    const cloud = weather?.cloudCover || 0, precipitation = (weather?.precipitation || 0) / (weather?.precipitationHours || 1);
     const rain = condition === 'rain' || condition === 'storm' ? clamp(.25 + precipitation / 8) : 0;
     const snow = condition === 'snow' ? clamp(.25 + precipitation / 5) : 0;
     const fog = condition === 'fog' ? 1 : 0;
@@ -141,7 +141,8 @@
     weather = snapshot && !snapshot.unavailable && conditions.has(snapshot.condition)
       && typeof snapshot.cloudCover === 'number' && Number.isFinite(snapshot.cloudCover) && snapshot.cloudCover >= 0 && snapshot.cloudCover <= 1
       ? { condition: snapshot.condition, cloudCover: snapshot.cloudCover,
-        precipitation: typeof snapshot.precipitation === 'number' && Number.isFinite(snapshot.precipitation) ? Math.max(0, Math.min(1000, snapshot.precipitation)) : 0 } : null;
+        precipitation: typeof snapshot.precipitation === 'number' && Number.isFinite(snapshot.precipitation) ? Math.max(0, Math.min(1000, snapshot.precipitation)) : 0,
+        precipitationHours: [1, 6, 12].includes(snapshot.precipitationHours) ? snapshot.precipitationHours : 1 } : null;
     return update();
   }
   browser.CaseForgeScene = Object.freeze({ getState, update, setTimezone, getTimezone: () => selectedTimezone, setWeather });

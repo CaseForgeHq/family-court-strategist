@@ -68,13 +68,84 @@
       <g class="alpine-pines">${pines.map(([x, y, scale]) => `<use href="#alpine-pine" transform="translate(${x} ${y}) scale(${scale})"/>`).join('')}</g>
     </svg>
     <div class="weather-fog"></div>
-    <svg class="weather-rain" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" focusable="false">
-      <defs><pattern id="alpine-rain" width="130" height="180" patternUnits="userSpaceOnUse"><path d="m14 10-5 19m54 38-4 16m44 52-5 20m-71 19-3 12" fill="none" stroke="#d7e9ee" stroke-width=".8" stroke-linecap="round"/></pattern></defs><g class="weather-rain-motion"><rect x="-200" y="-200" width="2000" height="1500" fill="url(#alpine-rain)"/></g>
-    </svg>
+    <canvas class="weather-rain" aria-hidden="true"></canvas>
     <svg class="weather-snow" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" focusable="false">
       <defs><pattern id="alpine-snow" width="340" height="300" patternUnits="userSpaceOnUse"><g fill="#eff5ee"><circle cx="31" cy="46" r="1.4" opacity=".8"/><circle cx="174" cy="17" r="1.7" opacity=".7"/><circle cx="286" cy="101" r="1.2" opacity=".65"/><circle cx="104" cy="188" r="2" opacity=".75"/><circle cx="231" cy="258" r="1.45" opacity=".7"/></g></pattern></defs><g class="weather-snow-motion"><rect x="-400" y="-400" width="2400" height="1800" fill="url(#alpine-snow)"/></g>
     </svg>`;
-  const updateVisibility = () => { document.documentElement.dataset.sceneHidden = String(document.hidden); };
+  // Individually recycled drops: no texture tile, shared loop or synchronized reset.
+  const canvas = landscape.querySelector('.weather-rain'), context = canvas.getContext('2d');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const root = document.documentElement;
+  let width = 1, height = 1, drops = [], frame = 0, last = 0, elapsed = 0;
+  let intensity = 0, storm = false, nextGlow = 10 + Math.random() * 16, glowAge = 10;
+  const random = (min, max) => min + Math.random() * (max - min);
+  function drop(initial = false) {
+    const depth = Math.pow(Math.random(), 1.5);
+    return { x: random(-80, width + 180), y: initial ? random(-50, height) : random(-100, -25),
+      depth, speed: 330 + depth * 650 + random(-55, 55), length: 7 + depth * 23,
+      alpha: random(.12, .25) + depth * .19, thickness: .45 + depth * .85 };
+  }
+  function resizeRain() {
+    const bounds = landscape.getBoundingClientRect(), ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+    width = Math.max(1, bounds.width); height = Math.max(1, bounds.height);
+    canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
+    context?.setTransform(ratio, 0, 0, ratio, 0, 0);
+    drops = []; syncRain();
+  }
+  function paint(dt) {
+    context.clearRect(0, 0, width, height);
+    elapsed += dt;
+    // Gusts are decorative, not measured wind; several periods avoid a short loop.
+    const gust = Math.sin(elapsed * .43) * .075 + Math.sin(elapsed * .91 + 2) * .035;
+    const slant = -.16 - gust - (storm ? .12 : 0);
+    const count = Math.min(600, Math.round(width * height / 4300 * (.45 + intensity * 1.7)));
+    while (drops.length < count) drops.push(drop(true));
+    drops.length = count;
+    for (let i = 0; i < count; i++) {
+      let p = drops[i];
+      const speed = p.speed * (.85 + intensity * .4 + (storm ? .18 : 0));
+      p.y += speed * dt; p.x += speed * slant * dt;
+      if (p.y > height + 40 || p.x < -100) p = drops[i] = drop();
+      const length = p.length * (.85 + intensity * .35);
+      context.strokeStyle = `rgba(210,231,240,${p.alpha})`;
+      context.lineWidth = p.thickness;
+      context.beginPath(); context.moveTo(p.x, p.y);
+      context.lineTo(p.x - slant * length, p.y - length); context.stroke();
+    }
+    // Slow, low-contrast in-cloud illumination; no rapid flashes or audio.
+    if (storm && !reduced.matches && dt) {
+      nextGlow -= dt; glowAge += dt;
+      if (nextGlow <= 0) { glowAge = 0; nextGlow = random(14, 32); }
+      if (glowAge < 1.8) {
+        const alpha = Math.sin(glowAge / 1.8 * Math.PI) * .11;
+        const glow = context.createRadialGradient(width * .72, 0, 0, width * .72, 0, width * .8);
+        glow.addColorStop(0, `rgba(210,225,255,${alpha})`); glow.addColorStop(1, 'rgba(210,225,255,0)');
+        context.fillStyle = glow; context.fillRect(0, 0, width, height);
+      }
+    }
+  }
+  function tick(time) {
+    frame = 0;
+    if (reduced.matches || document.hidden || root.dataset.sceneHidden === 'true' || !intensity) { last = 0; return; }
+    if (last && time - last < 1000 / 30) { frame = requestAnimationFrame(tick); return; }
+    const dt = last ? Math.min((time - last) / 1000, .065) : 0;
+    last = time; paint(dt); frame = requestAnimationFrame(tick);
+  }
+  function syncRain() {
+    if (!context) return;
+    cancelAnimationFrame(frame); frame = 0; last = 0;
+    storm = root.dataset.weather === 'storm';
+    intensity = Math.max(0, Math.min(1, parseFloat(root.style.getPropertyValue('--weather-rain')) || 0));
+    const visible = !document.hidden && root.dataset.sceneHidden !== 'true';
+    if (!visible || !intensity) { context.clearRect(0, 0, width, height); glowAge = 10; return; }
+    paint(0);
+    if (!reduced.matches) frame = requestAnimationFrame(tick);
+  }
+  new MutationObserver(syncRain).observe(root, { attributes: true, attributeFilter: ['data-weather', 'data-scene-hidden', 'style'] });
+  new ResizeObserver(resizeRain).observe(landscape);
+  reduced.addEventListener('change', syncRain);
+  resizeRain();
+  const updateVisibility = () => { document.documentElement.dataset.sceneHidden = String(document.hidden); syncRain(); };
   updateVisibility();
   document.addEventListener('visibilitychange', updateVisibility);
   window.addEventListener('pageshow', updateVisibility);

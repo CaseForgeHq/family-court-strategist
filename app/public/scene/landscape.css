@@ -26,7 +26,7 @@
 .weather-clouds,.weather-fog,.weather-rain,.weather-snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .weather-clouds{background:radial-gradient(ellipse at 12% 8%,var(--mist,#b6c7ca) 0,transparent 48%),radial-gradient(ellipse at 81% 14%,var(--mist,#b6c7ca) 0,transparent 49%),linear-gradient(180deg,#273c505c,transparent 58%);opacity:calc(var(--weather-cloud,0) * .45);filter:blur(12px)}
 .weather-fog{background:linear-gradient(180deg,transparent 24%,color-mix(in srgb,var(--mist,#b6c7ca) 35%,transparent) 69%,transparent 100%),radial-gradient(ellipse at 24% 67%,color-mix(in srgb,var(--mist,#b6c7ca) 24%,transparent),transparent 60%);opacity:var(--weather-fog,0)}
-.weather-rain{opacity:calc(var(--weather-rain,0) * .27)}
+.weather-rain{opacity:1}
 .weather-snow{opacity:calc(var(--weather-snow,0) * .5)}
 @media(prefers-reduced-motion:no-preference){
   .scene-sky,.scene-sky::before,.scene-sky::after{transition:background-color 1200ms linear}
@@ -35,9 +35,7 @@
   .alpine-scene path,.alpine-scene g{transition:fill 1200ms linear}
   .alpine-scene stop{transition:stop-color 1200ms linear}
   .weather-clouds,.weather-fog,.weather-rain,.weather-snow{transition:opacity 1200ms linear}
-  :root:is([data-weather="rain"],[data-weather="storm"]):not([data-scene-hidden="true"]) .weather-rain-motion{animation:alpine-rain-fall 1500ms linear infinite}
   :root[data-weather="snow"]:not([data-scene-hidden="true"]) .weather-snow-motion{animation:alpine-snow-fall 19s linear infinite}
-  @keyframes alpine-rain-fall{to{transform:translateY(180px)}}
   @keyframes alpine-snow-fall{to{transform:translateY(300px)}}
 }
 @media(prefers-reduced-motion:reduce){.landscape,.landscape *,.landscape *::before,.landscape *::after{transition:none!important;animation:none!important}}

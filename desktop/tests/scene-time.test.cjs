@@ -195,3 +195,11 @@ test('scene visibility marker pauses decorative effects while hidden or away', (
   window.fire('pagehide'); assert.equal(document.documentElement.dataset.sceneHidden, 'true');
   window.fire('pageshow'); assert.equal(document.documentElement.dataset.sceneHidden, 'false');
 });
+
+test('rain intensity uses hourly precipitation across one, six and twelve hour forecasts', () => {
+  const { window, values } = browserFixture(12);
+  for (const hours of [1, 6, 12]) {
+    window.CaseForgeScene.setWeather({ condition: 'rain', cloudCover: 1, precipitation: 2 * hours, precipitationHours: hours });
+    assert.equal(values.get('--weather-rain'), '0.5');
+  }
+});

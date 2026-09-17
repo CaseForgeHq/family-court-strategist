@@ -35,7 +35,7 @@ test('only catalog city IDs are accepted and location copies cannot rewrite dest
 });
 
 test('forecast measurements, precipitation periods, known symbols and attribution are normalized', async () => {
-  for (const [symbol, condition] of [['clearsky_day', 'clear'], ['fair_night', 'clear'], ['partlycloudy_day', 'cloudy'], ['rainshowers_day', 'rain'], ['heavysleet', 'snow'], ['lightssnowshowersandthunder_day', 'storm'], ['fog', 'fog']]) {
+  for (const [symbol, condition] of [['clearsky_day', 'clear'], ['fair_night', 'clear'], ['partlycloudy_day', 'cloudy'], ['rainshowers_day', 'rain'], ['heavysleet', 'snow'], ['lightssnowshowersandthunder_day', 'storm'], ['heavyrainandthunder', 'storm'], ['rainshowersandthunder_night', 'storm'], ['lightrainandthunder', 'storm'], ['fog', 'fog']]) {
     const payload = forecast(START, symbol);
     if (symbol === 'fog') { payload.properties.timeseries[0].data.next_6_hours = payload.properties.timeseries[0].data.next_1_hours; delete payload.properties.timeseries[0].data.next_1_hours; }
     const result = await createWeatherService({ fetchImpl: async () => response(payload), now: () => START }).get('brisbane');
