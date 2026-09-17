@@ -173,4 +173,5 @@ test("task APIs enforce write, origin, token and case boundaries without exposin
   assert.equal((await fetch(`${base}/.case-forge/tasks/registry.json`)).status, 404);
   active = mkdtempSync(join(tmpdir(), "other-tasks-case-")); t.after(() => rmSync(active, { recursive: true, force: true }));
   assert.equal((await post()).status, 409); assert.deepEqual(readdirSync(active), []);
+  await server.closeWorkspace();
 });

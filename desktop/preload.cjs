@@ -1,4 +1,25 @@
 const { contextBridge, ipcRenderer } = require('electron');
+function listenChatGPT(channel, callback, parse) {
+  if (typeof callback !== 'function') return () => {};
+  const listener = (_event, value) => { const result = parse(value); if (result) callback(result); };
+  ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.removeListener(channel, listener);
+}
+function chatGPTState(value) {
+  if (!value || typeof value !== 'object' || !['available', 'connected', 'signingIn', 'busy'].every(key => typeof value[key] === 'boolean')) return null;
+  const result = Object.fromEntries(['available', 'connected', 'signingIn', 'busy'].map(key => [key, value[key]]));
+  for (const [key, limit] of [['email',320], ['plan',80], ['model',160], ['scanModel',160], ['error',1000]]) result[key] = typeof value[key] === 'string' ? value[key].slice(0,limit) : null;
+  result.checking = value.checking === true;
+  result.state = ['unknown','checking','signed_out','signing_in','connected','error'].includes(value.state) ? value.state : 'unknown';
+  result.activeScans = Number.isInteger(value.activeScans) && value.activeScans >= 0 && value.activeScans <= 3 ? value.activeScans : 0;
+  return result;
+}
+function chatGPTProgress(value) {
+  if (!value || typeof value.requestId !== 'string' || !/^[A-Za-z0-9._:-]{1,160}$/.test(value.requestId) ||
+      !['connecting','replying','delta','completed','cancelled','error'].includes(value.phase) ||
+      (value.text !== undefined && (typeof value.text !== 'string' || value.text.length > 128000))) return null;
+  return { requestId:value.requestId, phase:value.phase, ...(value.text !== undefined ? {text:value.text} : {}) };
+}
 contextBridge.exposeInMainWorld('strategistDesktop', Object.freeze({
   updateStatus: () => ipcRenderer.invoke('updates:status'),
   updateCheck: () => ipcRenderer.invoke('updates:check'),
@@ -14,10 +35,16 @@ contextBridge.exposeInMainWorld('strategistDesktop', Object.freeze({
   adminReturnCase: () => ipcRenderer.invoke('admin:return-case'),
   chatGPTStatus: () => ipcRenderer.invoke('chatgpt:status'),
   chatGPTLogin: () => ipcRenderer.invoke('chatgpt:login'),
+  chatGPTCancelLogin: () => ipcRenderer.invoke('chatgpt:cancel-login'),
+  chatGPTNewConversation: () => ipcRenderer.invoke('chatgpt:new-conversation'),
+  chatGPTOpenLink: value => ipcRenderer.invoke('chatgpt:open-link',value),
   chatGPTLogout: () => ipcRenderer.invoke('chatgpt:logout'),
   chatGPTChat: value => ipcRenderer.invoke('chatgpt:chat',value),
+  onChatGPTStatus: callback => listenChatGPT('chatgpt:status-changed', callback, chatGPTState),
+  onChatGPTProgress: callback => listenChatGPT('chatgpt:progress', callback, chatGPTProgress),
   deepSearch: value => ipcRenderer.invoke('search:deep', value),
   chatGPTCancel: () => ipcRenderer.invoke('chatgpt:cancel'),
+  restoreCaseBackup: () => ipcRenderer.invoke('files:restore-backup'),
   googleStatus: () => ipcRenderer.invoke('google:status'),
   googleConfigure: () => ipcRenderer.invoke('google:configure'),
   googleConnect: () => ipcRenderer.invoke('google:connect'),

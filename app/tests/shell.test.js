@@ -19,7 +19,7 @@ test("actual app shell imports documents and saves a journal draft across naviga
   dom.window.scrollTo = () => {};
   const document = dom.window.document;
   t.after(async () => {
-    document.querySelector('[data-view="dashboard"]').click(); // stop inbox polling
+    document.querySelector('[data-view="people"]').click(); // stop document polling
     server.inbox.close(); await server.inbox.tail;
     await new Promise((r) => server.close(r));
     dom.window.close(); Object.assign(globalThis, previous);
@@ -34,17 +34,19 @@ test("actual app shell imports documents and saves a journal draft across naviga
   }
   await import("../public/app.js");
   await until(() => document.querySelector(".intake-shortcut"));
-  document.querySelector('[data-view="documents"]').click();
-  await until(() => document.querySelector("#document-list").textContent.includes("will appear"));
+  await until(() => document.querySelector('#document-picker'));
   const picker = document.querySelector("#document-picker");
   Object.defineProperty(picker, "files", { value: [new File([samplePdf()], "browser-flow.pdf", { type: "application/pdf" })] });
   picker.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-  await until(() => document.querySelector("#document-detail").textContent.includes("Ready to analyse"));
-  assert.match(document.querySelector("#document-detail").textContent, /browser-flow.pdf/);
-  document.querySelector("#inbox-connect").click();
-  await until(() => document.querySelector("#provider-choice"));
-  assert.equal(document.querySelector("#provider-choice").value, "ollama");
-  assert.equal(document.querySelector("#connect-submit").disabled, false);
+  await until(() => document.querySelector('#desk-files').textContent.includes('browser-flow.pdf'));
+  assert.equal(document.querySelector('[data-scan-document]').textContent, 'Scan');
+  document.querySelector('[data-view="documents"]').click();
+  await until(() => document.querySelector('.scan-empty'));
+  assert.equal(document.querySelector('#document-picker'), null, 'Files & AI has no intake control');
+  assert.equal(document.querySelector('.scan-card'), null, 'Import alone must not submit AI');
+  document.querySelector('[data-file-action="connect"]').click();
+  await until(() => document.querySelector('#scan-login'));
+  assert.equal(document.querySelector('#scan-login').disabled, true, 'Browser shell explains native sign-in is unavailable');
   document.querySelector("#modal-x").click();
   assert.equal(document.querySelector("#modal-back").hidden, true);
   document.querySelector('[data-view="journal"]').click();

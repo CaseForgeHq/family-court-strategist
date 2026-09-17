@@ -14,7 +14,7 @@ function walk(dir) {
   }
 
   for (const entry of entries) {
-    if (entry.startsWith(".")) continue; // skip .obsidian, .git
+    if (entry.startsWith(".") || entry.toLowerCase() === 'exports') continue; // Generated reports never become case facts.
     const full = join(dir, entry);
     let st;
     try {

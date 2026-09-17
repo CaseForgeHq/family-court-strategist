@@ -12,7 +12,7 @@ import { createWorkspacePreferences } from "../../desktop/workspace-preferences.
 const folderKey = (folder) => createHash("sha256").update(realpathSync(folder)).digest("hex");
 
 function snapshot(folder) {
-  return readdirSync(folder, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).map((entry) => (
+  return readdirSync(folder, { withFileTypes: true }).filter(entry => entry.name !== '.case-forge').sort((a, b) => a.name.localeCompare(b.name)).map((entry) => (
     entry.isDirectory()
       ? { name: entry.name, children: snapshot(join(folder, entry.name)) }
       : { name: entry.name, bytes: readFileSync(join(folder, entry.name)).toString("hex") }

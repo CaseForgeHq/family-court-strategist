@@ -1,74 +1,60 @@
-import { test } from "node:test";
-import assert from "node:assert/strict";
-import { JSDOM } from "jsdom";
-import { createInbox } from "../public/inbox.js";
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { createInbox } from '../public/inbox.js';
 
-function fixture(t, input = {}) {
-  const dom = new JSDOM('<div id="modal"></div>');
-  const previous = Object.getOwnPropertyDescriptor(globalThis, "document");
-  const document = dom.window.document, calls = [];
-  globalThis.document = document;
-  let session = { caseKey: "fictional-folder", access: { canWrite: true }, connection: null, ...input }, closed = false;
-  const inbox = createInbox({
-    getSession: () => session,
-    updateSession: (value) => { session = value; },
-    showModal: (html) => { document.querySelector("#modal").innerHTML = html; },
-    closeModal: () => { closed = true; },
-    onSaved: () => {},
-    api: async (path, options) => {
-      calls.push({ path, options });
-      assert.equal(path, "/api/providers/connect");
-      return { connection: { provider: options.body.provider, model: options.body.model, cloud: options.body.provider === "anthropic" } };
-    },
-  });
-  t.after(() => {
-    inbox.unmount(); dom.window.close();
-    if (previous) Object.defineProperty(globalThis, "document", previous);
-    else delete globalThis.document;
-  });
-  return { dom, document, calls, inbox, getSession: () => session, isClosed: () => closed };
+function setup(t, desktop) {
+  const dom = new JSDOM('<div id="modal"></div>'), previous = globalThis.document;
+  globalThis.document = dom.window.document;
+  const inbox = createInbox({ api: async () => { throw new Error('Provider API must not be called'); }, getSession: () => ({ access: { canWrite: true }, workspacePreferences: { preferredProvider: 'anthropic' } }), updateSession: () => {}, desktop: () => desktop, showModal: html => { dom.window.document.querySelector('#modal').innerHTML = html; } });
+  t.after(() => { inbox.unmount(); dom.window.close(); globalThis.document = previous; });
+  return { inbox, document: dom.window.document };
 }
 
-for (const scenario of [
-  { name: "active local connection takes precedence over a saved cloud preference", connection: { provider: "ollama", model: "fixture:local" }, saved: "anthropic", expected: "ollama" },
-  { name: "active cloud connection takes precedence over a saved local preference", connection: { provider: "anthropic", model: "fixture-cloud" }, saved: "ollama", expected: "anthropic" },
-  { name: "saved cloud preference is selected with no active connection", saved: "anthropic", expected: "anthropic" },
-  { name: "unknown saved provider falls back to local AI", saved: "unknown-provider", expected: "ollama" },
-  { name: "subscription preview cannot be selected through a saved preference", saved: "claude-code", expected: "ollama" },
-  { name: "missing preference defaults to local AI", expected: "ollama" },
-]) {
-  test(`AI form: ${scenario.name}`, async (t) => {
-    const { inbox, document, calls } = fixture(t, {
-      connection: scenario.connection || null,
-      ...(scenario.saved ? { workspacePreferences: { preferredProvider: scenario.saved } } : {}),
-    });
-    await inbox.connectionModal();
-    assert.equal(document.querySelector("#provider-choice").value, scenario.expected);
-    assert.deepEqual(calls, [], "Opening the form must not discover, connect or analyse anything");
-  });
-}
+test('scan connection uses ChatGPT only regardless of legacy provider preference', async t => {
+  let logins = 0;
+  const f = setup(t, { chatGPTStatus: async () => ({ connected: false }), chatGPTLogin: async () => { logins++; return { signingIn: true }; } });
+  await f.inbox.connectionModal();
+  assert.equal(f.document.querySelector('#provider-choice'), null);
+  assert.equal(f.document.querySelector('input[type=password]'), null);
+  assert.match(f.document.body.textContent, /GPT-6 Astra.*Low reasoning/);
+  assert.equal(logins, 0); f.document.querySelector('#scan-login').click();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(logins, 1); assert.match(f.document.querySelector('#scan-login-status').textContent, /Finish signing in/);
+});
 
-test("a saved cloud preference connects only after an explicit Check connection action", async (t) => {
-  const { dom, inbox, document, calls, getSession, isClosed } = fixture(t, {
-    workspacePreferences: { preferredProvider: "anthropic", configured: true },
+test('connected ChatGPT status is read without starting another login or a scan', async t => {
+  const f = setup(t, { chatGPTStatus: async () => ({ connected: true }), chatGPTLogin: async () => { assert.fail('Already connected'); } });
+  await f.inbox.connectionModal();
+  assert.equal(f.document.querySelector('#scan-login').disabled, true);
+  assert.match(f.document.querySelector('#scan-login-status').textContent, /ChatGPT connected/);
+});
+
+test('browser preview reports unavailable sign-in without substituting a provider', async t => {
+  const f = setup(t); await f.inbox.connectionModal();
+  assert.equal(f.document.querySelector('#scan-login').disabled, true);
+  assert.match(f.document.querySelector('#scan-login-status').textContent, /desktop app/);
+});
+
+test('scan connection immediately follows completed sign-in and cancellation events', async t => {
+  let notify, cancelled = 0;
+  const f = setup(t, {
+    chatGPTStatus: async () => ({ connected: false }),
+    chatGPTLogin: async () => ({ connected: false, signingIn: true }),
+    chatGPTCancelLogin: async () => { cancelled++; return { connected: false, signingIn: false }; },
+    onChatGPTStatus: callback => { notify = callback; return () => {}; },
   });
-  await inbox.connectionModal();
-  assert.equal(document.querySelector("#provider-choice").value, "anthropic");
-  assert.deepEqual(calls, []);
-  const model = document.querySelector("#provider-model"), key = document.querySelector("#provider-key");
-  assert.equal(key.type, "password");
-  model.value = "fixture-cloud-model";
-  key.value = "synthetic-test-key";
-  model.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
-  key.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
-  assert.deepEqual(calls, [], "Entering connection details must not send a request");
-  document.querySelector("#connect-submit").click();
-  for (let i = 0; i < 50 && !isClosed(); i++) await new Promise((resolve) => setTimeout(resolve, 5));
-  assert.equal(isClosed(), true);
-  assert.deepEqual(calls, [{ path: "/api/providers/connect", options: {
-    method: "POST", body: { provider: "anthropic", model: "fixture-cloud-model", apiKey: "synthetic-test-key" },
-  } }]);
-  assert.equal(key.value, "");
-  assert.equal(getSession().connection.provider, "anthropic");
-  assert.equal(getSession().workspacePreferences.preferredProvider, "anthropic");
+  await f.inbox.connectionModal();
+  assert.match(f.document.querySelector('#scan-login img').src, /monoblossom-white.svg/);
+  f.document.querySelector('#scan-login').click();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(f.document.querySelector('#scan-cancel-login').hidden, false);
+  f.document.querySelector('#scan-cancel-login').click();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(cancelled, 1);
+  assert.equal(f.document.querySelector('#scan-login').disabled, false);
+  notify({ connected: true, signingIn: false });
+  assert.match(f.document.querySelector('#scan-login-status').textContent, /ChatGPT connected/);
+  assert.equal(f.document.querySelector('#scan-login').disabled, true);
+  assert.equal(f.document.querySelector('#scan-cancel-login').hidden, true);
 });

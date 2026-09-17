@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { buildSearchIndex, searchIndex, createSearchReviews } from '../lib/case-index.js';
 import { buildCaseModel } from '../lib/vault.js';
 import { Notebook } from '../lib/notebook.js';
@@ -13,7 +13,8 @@ import { createServer } from '../server.js';
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'caseforge-index-'));
   t.after(() => rmSync(root, {recursive:true,force:true}));
-  const id = 'a'.repeat(64), documents = [{id, name:'Letter.pdf', original:'letter.pdf', reference:'CF-ABCDEF123456-000001', status:'ready', createdAt:'2026-09-17T00:00:00Z'}];
+  const original=Buffer.from('Fictional original search fixture.'),id=createHash('sha256').update(original).digest('hex'), documents = [{id, name:'Letter.pdf', original:'letter.pdf', reference:'CF-ABCDEF123456-000001', status:'ready', createdAt:'2026-09-17T00:00:00Z'}];
+  writeFileSync(join(root,'letter.pdf'),original);
   const storage = join(root,'.strategist','documents',id); mkdirSync(storage,{recursive:true});
   writeFileSync(join(storage,'pages.json'),JSON.stringify([{page:1,text:'A generic opening.'},{page:2,text:'Scarlet hibiscus was discussed at the school meeting.'}]));
   writeFileSync(join(storage,'document.json'),JSON.stringify(documents[0]));
@@ -54,7 +55,7 @@ test('missing text and corrupt stores are surfaced without dropping other result
   const f=fixture(t); writeFileSync(join(f.storage,'pages.json'),'not JSON');
   const index=f.build(); assert.equal(searchIndex(index,'Letter',{type:'document'}).total,1); assert.match(index.coverage.gaps[0].reason,/unavailable/);
   assert.equal(searchIndex(index,'orchid').total,1);
-  writeFileSync(join(f.storage,'pages.json'),JSON.stringify([{page:1,text:''}])); assert.match(f.build().coverage.gaps[0].reason,/recognition/);
+  writeFileSync(join(f.storage,'pages.json'),JSON.stringify([{page:1,text:''}])); assert.match(f.build().coverage.gaps[0].reason,/Use Scan/);
 });
 test('deep search expands recorded links, excludes personal text by default and requires fresh single-use consent',t=>{
   const f=fixture(t), reviews=createSearchReviews(f.build);
@@ -81,11 +82,12 @@ test('HTTP search respects case, token and local-source boundaries; fresh saved 
   const body=JSON.stringify({query:'orchid'});
   assert.equal((await fetch(base+'/api/search/prepare',{method:'POST',headers:{...headers,'x-strategist-token':'bad'},body})).status,403);
   const review=await(await fetch(base+'/api/search/prepare',{method:'POST',headers,body})).json();
-  assert.throws(()=>server.takeSearchReview({reviewId:review.id,caseKey:'other',consent:true}),/case changed/);
-  assert.equal(server.takeSearchReview({reviewId:review.id,caseKey:session.caseKey,consent:true}).text,review.text);
+  await assert.rejects(()=>server.takeSearchReview({reviewId:review.id,caseKey:'other',consent:true}),/case changed/);
+  assert.equal((await server.takeSearchReview({reviewId:review.id,caseKey:session.caseKey,consent:true})).text,review.text);
   f.nb.save({id:f.page,title:'Personal notebook',body:'New periwinkle body',expectedRevision:2});
   assert.equal((await(await fetch(base+'/api/search?q=periwinkle',{headers})).json()).total,1);
-  assert.deepEqual(readdirSync(f.root),before,'Search creates no new index files');
+  assert.deepEqual(readdirSync(f.root),before,'Migration reuses the existing hidden case folder');
+  await server.inbox.close();
 });
 
 test('a changed task source puts the same review-required deadline state into search and Calendar',async t=>{
@@ -98,4 +100,11 @@ test('a changed task source puts the same review-required deadline state into se
   writeFileSync(join(f.root,'meeting.md'),'---\ntype: event\nevent_id: EVT-1\ndate: 2026-09-18\n---\n# Changed meeting\nThe source date was corrected.');
   const changed=await(await fetch(base+'/api/search?q=review_required',{headers})).json();assert.equal(changed.results[0].id,id);assert.match(changed.results[0].status,/source changed/);
   const calendar=await(await fetch(base+'/api/calendar',{headers})).json();assert.equal(calendar.events.find(e=>e.id===`task:${id}`).dateState,'review_required');
+  await server.inbox.close();
+});
+
+test('deleted notebook pages disappear from current and historical search', t => {
+  const f = fixture(t);
+  f.nb.delete({ id: f.page, expectedRevision: 2 });
+  assert.equal(f.build().records.filter(r => r.category === 'notebook').length, 0);
 });

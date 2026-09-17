@@ -1,0 +1,133 @@
+{
+  "name": "deep-chat",
+  "version": "2.5.1",
+  "repository": "https://github.com/OvidijusParsiunas/deep-chat",
+  "tag": "2.5.1",
+  "commit": "b537bcc6219bbe937ee8159166444912e56973f0",
+  "sourcePackage": "https://registry.npmjs.org/deep-chat/-/deep-chat-2.5.1.tgz",
+  "packageIntegrity": "sha512-ZLyaSx6z5tScVtIEtqLDQ+zfWqbexntiz0hAdY0N+G68QkH7we5K/WFlo1xczxlF/L8VvCw0O2aKL6fVcpHmZA==",
+  "packageSha256": "edb66799399ecd61662b48446d6b29867976ddbe1b72a0e57fbec235b861d761",
+  "packageDownloadBytes": 2205078,
+  "upstreamGitHead": "2168c8fd227b853097c8340942e57ddcc9f6e4cb",
+  "upstreamLockfile": "https://raw.githubusercontent.com/OvidijusParsiunas/deep-chat/b537bcc6219bbe937ee8159166444912e56973f0/component/package-lock.json",
+  "lockfileSha256": "f0152b28f3c0b0af9ca5425f649aa24bfeb2928c4396b12427229a6498b3113b",
+  "retrievedAt": "2026-09-17T06:27:46.744Z",
+  "modifications": "None. Browser bundle and root license copied byte-for-byte from the integrity-verified npm package.",
+  "files": [
+    {
+      "path": "deepChat.bundle.js",
+      "bytes": 386971,
+      "sha256": "6844eaf354e19d50dcdd8ee78968d6ae32ccd4b9f15a883902d60e93d69caf84"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1075,
+      "sha256": "12d11204300c461fc3ba872703c1f15e8dc8e07fb58a3111d476ae6903db5388"
+    },
+    {
+      "path": "THIRD-PARTY-NOTICES.md",
+      "bytes": 9148,
+      "sha256": "b4fb9bb113a45c401d43b22cf3dd830586987cd22255930e3d4a05c401ba2b4d"
+    }
+  ],
+  "thirdPartyDependencies": [
+    {
+      "name": "@microsoft/fetch-event-source",
+      "version": "2.0.1",
+      "license": "MIT",
+      "url": "https://registry.npmjs.org/@microsoft/fetch-event-source/-/fetch-event-source-2.0.1.tgz",
+      "integrity": "sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==",
+      "archiveSha256": "86d544f5565bbbd4193d17d0f5a97ee531eb63fd322f1e1063733b47f1352fac",
+      "notices": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ]
+    },
+    {
+      "name": "remarkable",
+      "version": "2.0.1",
+      "license": "MIT",
+      "url": "https://registry.npmjs.org/remarkable/-/remarkable-2.0.1.tgz",
+      "integrity": "sha512-YJyMcOH5lrR+kZdmB0aJJ4+93bEojRZ1HGDn9Eagu6ibg7aVZhc3OWbbShRid+Q5eAfsEqWxpe+g5W5nYNfNiA==",
+      "archiveSha256": "6fd70ad77d4a4a6dfa261916d4f61769f8fd2ad073d87b5bdda3e503dddee323",
+      "notices": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "1cabe5f706e86a0767d2d894bcd3a8e836760fbad8d29e850f4d65e160186949"
+        }
+      ]
+    },
+    {
+      "name": "argparse",
+      "version": "1.0.10",
+      "license": "MIT",
+      "url": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
+      "integrity": "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==",
+      "archiveSha256": "7faa149cd7811b7e11fc8353dc6e4e9c4de68a02f8221aa8f7dc22108315ac0d",
+      "notices": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "c8442419dc614089ea022b3da6bfc089b41a58fb7b9030d1e651f2f36189dce2"
+        }
+      ]
+    },
+    {
+      "name": "sprintf-js",
+      "version": "1.0.3",
+      "license": "BSD-3-Clause",
+      "url": "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.0.3.tgz",
+      "integrity": "sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==",
+      "archiveSha256": "3afb26bcc328dc90f516515acf2783ad35b08dbfe9e0ada18264c3c4ddaa1a83",
+      "notices": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "a4cdda44b5adea4731d53dcae78fb5124f8fd853e994f01e25d8c33a7daf818b"
+        }
+      ]
+    },
+    {
+      "name": "autolinker",
+      "version": "3.16.2",
+      "license": "MIT",
+      "url": "https://registry.npmjs.org/autolinker/-/autolinker-3.16.2.tgz",
+      "integrity": "sha512-JiYl7j2Z19F9NdTmirENSUUIIL/9MytEWtmzhfmsKPCp9E+G35Y0UNCMoM9tFigxT59qSc8Ml2dlZXOCVTYwuA==",
+      "archiveSha256": "d857030c1447b92d9dda477027f8ba96533ee6d5ce44727e1fd3a6ab637b2182",
+      "notices": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "a75c69d29e268b13a47b3948afff8aff69475129f9058e3c951a585eb77150aa"
+        }
+      ]
+    },
+    {
+      "name": "tslib",
+      "version": "2.8.1",
+      "license": "0BSD",
+      "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+      "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==",
+      "archiveSha256": "66f635d5eeabae44807534976913a102cf615b9a045368359c9f79ae6ee2119e",
+      "notices": [
+        {
+          "path": "package/LICENSE.txt",
+          "sha256": "210b19e543130388c68654b7497e967119ce17145f66ab7d85688fbd70f08751"
+        }
+      ]
+    },
+    {
+      "name": "speech-to-element",
+      "version": "2.0.0",
+      "license": "MIT",
+      "url": "https://registry.npmjs.org/speech-to-element/-/speech-to-element-2.0.0.tgz",
+      "integrity": "sha512-p5xdDL/CNvjfuxWBARXydlUyiVztHcm45ZkTMpaDg4SZF/VACDEzQyWX+iMmsiEKTjsmrY0RjBlzXqJHo976xA==",
+      "archiveSha256": "7967429434b97419d5ca0651c016f9e8f395d6d2eaf36e4e7955e435ef428a7c",
+      "notices": [
+        {
+          "path": "https://raw.githubusercontent.com/OvidijusParsiunas/speech-to-element/97319f8119717bb4425bd1548cb308708430cc1a/LICENSE",
+          "sha256": "0370577404330d51d766f7a976bc671765609472d742002b7e5febdec29129ce"
+        }
+      ]
+    }
+  ]
+}

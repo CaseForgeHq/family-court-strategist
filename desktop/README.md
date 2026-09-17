@@ -1,12 +1,17 @@
 # Case Forge — desktop development preview
 
 Electron hosts the local case workspace and adds a native case-folder picker.
-Original documents and case notes stay on the computer. Cloud analysis sends only
-the extracted document text selected and confirmed by the user.
+Original documents and case notes stay on the computer. Selecting Scan sends
+the required document text and images through the signed-in ChatGPT connection.
+The separate AI chat sends only the text typed into that conversation.
+
+See [Files & AI](../docs/FILES-AI-IMPLEMENTATION.md) and
+[ChatGPT chat and sign-in](../docs/AI-CHAT-IMPLEMENTATION.md) for the current
+queue, SQLite storage, secure account persistence and testing details.
 
 ## Run
 
-Use Node.js 22.13+ for installing dependencies and running the web tests.
+Use Node.js 22.16+ for installing dependencies and running the web tests.
 
 ```bash
 cd app

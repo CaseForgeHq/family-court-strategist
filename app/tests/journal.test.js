@@ -124,4 +124,5 @@ test("journal API enforces case/token/origin/write boundaries and excludes priva
   t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
   assert.equal((await post()).status, 409);
   assert.deepEqual(readdirSync(activeRoot), []);
+  await server.closeWorkspace();
 });

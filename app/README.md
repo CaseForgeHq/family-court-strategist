@@ -1,7 +1,13 @@
 # Case Forge — local case workspace
 
-View a case vault, import documents, request AI analysis, review source passages,
-and save selected findings as portable Markdown notes on this computer.
+View a case vault, import documents through Case desk, and select Scan to create
+a Files & AI report. A local SQLite database preserves the queue, source
+references and versioned findings. Importing alone does not contact AI.
+
+See [Files & AI](../docs/FILES-AI-IMPLEMENTATION.md),
+[file readers](../docs/FILES-AI-READERS.md) and
+[ChatGPT chat and sign-in](../docs/AI-CHAT-IMPLEMENTATION.md) for the current
+workflow and verification limits. New scan findings stay inside Files & AI.
 
 This is a **development preview**, not a subscription-ready release. Stripe,
 customer sign-in, signed licences and public subscription authentication are not
@@ -10,7 +16,7 @@ is added.
 
 ## Start
 
-Requires Node.js **22.13+**. PDF text extraction uses PDF.js locally.
+Requires Node.js **22.16+** for the SQLite backup API. PDF text extraction uses PDF.js locally.
 
 ```bash
 cd app

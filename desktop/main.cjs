@@ -8,7 +8,7 @@ const { createWeatherService } = require('./weather.cjs');
 const { createScenePreferences } = require('./scene-preferences.cjs');
 const { createWorkspacePreferences } = require('./workspace-preferences.cjs');
 const { createTermsAcceptance } = require('./terms-acceptance.cjs');
-const { createChatGPT } = require('./chatgpt.cjs');
+const { createChatGPT, safeExternalUrl } = require('./chatgpt.cjs');
 const { createGoogleCalendar } = require('./google-calendar.cjs');
 const { createUpdates, closeForUpdate, downloadAndInstall } = require('./updates.cjs');
 const { createDocumentExports } = require('./document-exports.cjs');
@@ -51,6 +51,14 @@ function allowedSender(event, screen = 'workspace') {
   if (screen === 'settings') return allowedSender(event) || allowedSender(event, 'setup');
   return unlocked && new URL(url).origin === appOrigin();
 }
+function sendChatGPTEvent(channel, value) {
+  // Every assistant/card subscriber shares the trusted workspace renderer.
+  // Never send account identity or chat text to registration, lock or preview windows.
+  if (!unlocked || !win || win.isDestroyed() || win.webContents.isDestroyed()) return;
+  try { if (new URL(win.webContents.getURL()).origin !== appOrigin()) return; } catch { return; }
+  win.webContents.send(channel, value);
+}
+chatGPT.subscribe(value => sendChatGPTEvent('chatgpt:status-changed', value));
 function setupState() {
   const folder = validFolder(currentVault);
   return { pinConfigured: security.status().configured, folderSelected: !!folder, folderName: folder ? basename(folder) : '', folderPath: folder || '' };
@@ -118,6 +126,7 @@ async function startWorkspace(generation) {
   if (!validFolder(currentVault)) throw new Error('Your case folder is unavailable. Choose it again.');
   capability = randomBytes(32).toString('hex');
   server = createServer(() => currentVault, {
+    scanDocument:(request,options)=>chatGPT.scan(request,options),
     fileReferences:new FileReferences({root:app.getPath('userData'),relativePath:'file-references.json'}),
     desktopToken: capability, isUnlocked: () => unlocked, enableClaudeCode: false,
     getWorkspacePreferences: (root) => workspacePreferences.get(root),
@@ -399,16 +408,33 @@ else {
     workspaceIPC('admin:return-case', () => operation(async generation => ({ opened: await switchCaseFolder(demoCases.returnPath(), generation) })));
     workspaceIPC('chatgpt:status',()=>chatGPT.status());
     workspaceIPC('chatgpt:login',()=>chatGPT.login());
+    workspaceIPC('chatgpt:cancel-login',()=>chatGPT.cancelLogin());
+    workspaceIPC('chatgpt:new-conversation',()=>chatGPT.newConversation());
+    workspaceIPC('chatgpt:open-link',async value=>{ await shell.openExternal(safeExternalUrl(value)); return {opened:true}; });
     workspaceIPC('chatgpt:logout',()=>chatGPT.logout());
-    workspaceIPC('chatgpt:chat',value=>chatGPT.chat(value));
+    workspaceIPC('chatgpt:chat',value=>{
+      const generation=lockGeneration, workspace=server, target=win;
+      return chatGPT.chat(value,{onProgress:progress=>{
+        if(generation===lockGeneration && server===workspace && win===target)sendChatGPTEvent('chatgpt:progress',progress);
+      }});
+    });
     workspaceIPC('search:deep', async value => {
       const workspace = server;
-      const review = workspace.takeSearchReview(value);
+      const review = await workspace.takeSearchReview(value);
       const answer = await chatGPT.chat({ text: review.text }, { isolated: true });
       if (server !== workspace) throw new Error('The case changed during this search.');
       return { ...answer, sources: review.sources };
     });
     workspaceIPC('chatgpt:cancel',()=>chatGPT.cancel());
+    workspaceIPC('files:restore-backup',()=>operation(async generation=>{
+      const source=await dialog.showOpenDialog(win,{title:'Choose a Case Forge backup folder containing manifest.json',properties:['openDirectory']});
+      assertCurrent(generation);if(source.canceled)return {cancelled:true};
+      const target=await dialog.showOpenDialog(win,{title:'Choose an empty folder for the restored case',properties:['openDirectory','createDirectory']});
+      assertCurrent(generation);if(target.canceled)return {cancelled:true};
+      const {restoreCaseBackup}=await import(pathToFileURL(join(base,'app','lib','case-database.js')).href);
+      assertCurrent(generation);
+      return {restored:true,...restoreCaseBackup(source.filePaths[0],target.filePaths[0])};
+    }));
     workspaceIPC('google:status',()=>googleCalendar.status());
     workspaceIPC('google:connect',()=>googleCalendar.connect());
     workspaceIPC('google:disconnect',()=>googleCalendar.disconnect());

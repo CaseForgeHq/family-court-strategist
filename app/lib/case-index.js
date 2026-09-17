@@ -43,14 +43,24 @@ export function buildSearchIndex({ root, model, documents = [], journal, tasks, 
     bySource.set(doc.original, `document:${doc.id}`);
     const parts = [part('File details', fields({ number: doc.reference, name: doc.name, type: doc.extension, status: doc.status, added: doc.createdAt }))];
     try {
-      const pages = read(`.strategist/documents/${doc.id}/pages.json`, true);
+      if(!doc.fileTextIndexed) {
+      const pages = doc.indexedPages || read(`.strategist/documents/${doc.id}/pages.json`, true);
       if (!Array.isArray(pages) || pages.some(p => typeof p.text !== 'string' || !Number.isInteger(p.page))) throw new Error('Extracted pages could not be read.');
-      parts.push(...pages.map(p => part(`Page ${p.page}`, p.text, { page: p.page })));
+      parts.push(...pages.map(p => part(p.anchor?.label || `Page ${p.page}`, p.text, { page: p.page,anchor:p.anchor })));
       const empty = pages.filter(p => !p.text.trim());
-      if (!pages.length || empty.length) gap(doc.name, `${empty.length || 'All'} page(s) have no readable text. Text recognition is not available yet.`);
+      if (!pages.length || empty.length) gap(doc.name, `${empty.length || 'All'} page(s) have no extracted text. Use Scan in Case desk to read the document.`);
+      }
     } catch (error) { gap(doc.name, error.code === 'ENOENT' ? 'File text is not ready. Retry reading it in Files & AI.' : 'Extracted text is unavailable or too large. Open the file in Files & AI.'); }
     add({ kind: 'document', category: 'document', id: doc.id, title: doc.name, reference: doc.reference || doc.id, status: doc.status, parts });
+    for (const report of doc.indexedReports || []) {
+      const reportParts=[part('Scan summary',report.summary || '')];
+      for(const page of report.sourcePages || []) reportParts.push(part(page.anchor?.label || `Page ${page.page}`,page.text,{page:page.page,anchor:page.anchor}));
+      for(const finding of report.findings || []) reportParts.push(part(finding.sources?.[0]?.anchor?.label || 'Scan finding',fields(finding),{page:finding.sources?.[0]?.page}));
+      for(const law of report.laws || []) reportParts.push(part('Legal reference',fields(law)));
+      add({kind:'document',category:'draft',id:doc.id,title:`${doc.name} · ${report.legacy ? 'Legacy analysis':'AI scan'}`,reference:doc.reference,status:report.legacy ? 'Legacy analysis':'AI scan · not independently verified',parts:reportParts,revision:report.id,history:report !== doc.indexedReports[0]});
+    }
     try {
+      if(doc.indexedReports) continue;
       const draft = read(`.strategist/documents/${doc.id}/draft.json`, true);
       if (draft && doc.status !== 'saved') add({ kind: 'document', category: 'draft', id: doc.id, title: `${doc.name} · AI draft`, reference: doc.reference, status: 'Unapproved AI draft', parts: [part('Unapproved AI output', fields(draft))] });
     } catch (error) { if (error.code !== 'ENOENT') gap(`${doc.name} · AI draft`, 'The saved AI draft could not be indexed.'); }
@@ -108,7 +118,7 @@ function excerpt(record, terms, length = 320) {
   const found = ranked[0] || part('Record', record.title), text = found.text.replace(/\s+/g, ' ').trim(), folded = normal(text);
   const locations = terms.map(t => folded.indexOf(t)).filter(i => i >= 0);
   const start = Math.max(0, (locations.length ? Math.min(...locations) : 0) - 90);
-  return { text: `${start ? '…' : ''}${text.slice(start, start + length)}${start + length < text.length ? '…' : ''}`, locator: found.label, page: found.page, clipped: start > 0 || start + length < text.length };
+  return { text: `${start ? '…' : ''}${text.slice(start, start + length)}${start + length < text.length ? '…' : ''}`, locator: found.label, page: found.page, anchor:found.anchor, reportId:found.reportId, clipped: start > 0 || start + length < text.length };
 }
 function rankedRecords(index, terms, { history = false, any = false, privateText = true } = {}) {
   if (!terms.length) return [];
@@ -125,12 +135,44 @@ function publicResult(record, terms) {
   return { ...result, ...excerpt(record, terms) };
 }
 export function searchIndex(index, query, { type = '', history = false, offset = 0, limit = 50, mode = 'all' } = {}) {
-  const terms = queryTerms(query), matches = rankedRecords(index, terms, { history, any: mode === 'any' });
+  const terms = queryTerms(query);
+  const matches = rankedRecords(index, terms, { history, any: mode === 'any' }).filter(match=>!index.externalFileResults || match.record.kind!=='document');
+  for(const record of index.externalFileResults || [])if(history || !record.history)matches.push({record,score:terms.length*10});
+  matches.sort((a,b)=>b.score-a.score || a.record.title.localeCompare(b.record.title) || a.record.key.localeCompare(b.record.key));
   const selected = matches.filter(m => !type || m.record.category === type);
   const size = Math.max(1, Math.min(100, Number(limit) || 50));
   const start = Math.max(0, Math.min(Math.floor(Number(offset) || 0), Math.max(0, Math.ceil(selected.length / size) - 1) * size));
   return { query, total: selected.length, allTypesTotal: matches.length, offset: start, limit: size, coverage: index.coverage,
     results: selected.slice(start, start + size).map(m => publicResult(m.record, terms)) };
+}
+
+/** The SQLite search result remains an excerpt, never a reconstructed full file. */
+export function sqliteSearchRecord(row) {
+  const doc=row.record, report=row.report, isReport=Boolean(row.reportId);
+  return {key:`document:${doc.id}${isReport ? `:r${row.reportId}:draft`:''}`,kind:'document',category:isReport?'draft':'document',id:doc.id,title:isReport?`${doc.name} · ${report?.legacy?'Legacy analysis':'AI scan'}`:doc.name,reference:doc.reference,status:isReport?(report?.legacy?'Legacy analysis':'AI scan · not independently verified'):doc.status,revision:isReport?row.reportId:undefined,history:row.history===true,
+    parts:[part(row.locator || (isReport?'Scan report':'File text'),row.sourceText || row.text,{page:row.anchor?.sourcePage ?? row.anchor?.page,anchor:row.anchor,reportId:row.reportId || null})]};
+}
+
+export function documentSearchRecord(detail,reportId) {
+  const report=reportId ? detail.reports.find(value=>value.id===reportId):null;
+  if(reportId && !report)return null;
+  const row={record:detail,report,reportId:reportId || '',history:Boolean(report && detail.reports[0]?.id!==reportId)};
+  const result=sqliteSearchRecord(row);
+  result.parts=report ? [part('Scan summary',report.summary || ''),...(report.sourcePages || []).map(page=>part(page.anchor?.label || `Source ${page.page}`,page.text,{page:page.page,anchor:page.anchor})),...(report.findings || []).map(f=>part(f.title || 'Finding',fields(f))),...(report.laws || []).map(l=>part('Legal reference',fields(l)))]
+    :[part('File details',fields({number:detail.reference,name:detail.name,type:detail.extension,status:detail.status})),...detail.pages.map(page=>part(page.anchor?.label || `Source ${page.page}`,page.text,{page:page.page,anchor:page.anchor}))];
+  return result;
+}
+
+/** Async storage adapter retains the synchronous review engine's exact-text,
+ * single-use and changed-content checks without keeping whole cases in memory. */
+export function createAsyncSearchReviews(buildIndex,options={}) {
+  let current;
+  const contexts=new Map(),engine=createSearchReviews(()=>current,options);
+  return {
+    clear(){contexts.clear();engine.clear();},
+    async prepare(input){current=await buildIndex({query:input?.query || '',history:false,mode:'any',deep:true});const result=engine.prepare(input);contexts.clear();contexts.set(result.id,{query:input.query,history:false,mode:'any',deep:true});return result;},
+    async take(id,consent){if(consent!==true)throw new AppError('Review the text and confirm sending it to ChatGPT.',403);const context=contexts.get(id);if(!context)throw new AppError('This preview expired. Prepare and review the search again.',409);current=await buildIndex(context);const result=engine.take(id,consent);contexts.delete(id);return result;}
+  };
 }
 
 /** Single-use case-bound preview; changed saved content requires a fresh review. */

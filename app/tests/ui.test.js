@@ -1,169 +1,208 @@
-import { test } from "node:test";
-import assert from "node:assert/strict";
-import { JSDOM } from "jsdom";
-import { createInbox } from "../public/inbox.js";
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { createInbox, reportMarkup, scanLabel } from '../public/inbox.js';
+import { fileRegister } from '../public/file-register.js';
 
-async function until(check) {
-  for (let attempt = 0; attempt < 100; attempt++) {
-    if (check()) return;
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-  assert.fail("The interface did not reach its expected state");
+async function until(check) { for (let i = 0; i < 100; i++) { if (check()) return; await new Promise(resolve => setTimeout(resolve, 5)); } assert.fail('The interface did not reach its expected state'); }
+const record = (id = 'doc-1', scan = null) => ({ id, reference: `CF-FICTIONAL-${id}`, name: `${id}.txt`, extension: '.txt', bytes: 123, createdAt: '2026-09-17', status: 'ready', pages: [{ page: 1, text: 'Fictional source passage', anchor: { kind: 'paragraph', paragraph: 1 } }], scan });
+const report = { id: 'report-1', summary: 'A fictional letter about an appointment.', context: { documentType: 'Letter' }, jurisdiction: { country: 'AU', regions: ['QLD'] }, findings: [{ id: 'fact-1', kind: 'fact', title: 'Appointment stated', detail: 'The author states an appointment.', strength: 'limited', limitations: 'Not independently verified.', sources: [{ page: 1, quote: 'Fictional source passage', speaker: 'Fictional author', recipient: 'Fictional recipient', sequence: '1', anchor: { kind: 'paragraph', paragraph: 1 }, sourceMatch: 'text_match' }] }], laws: [], coverage: { complete: true } };
+function setup(t, options = {}) {
+  const dom = new JSDOM('<main id="host"></main><div id="modal"></div>', { url: 'http://127.0.0.1:4322' });
+  const previous = globalThis.document; globalThis.document = dom.window.document;
+  const document = dom.window.document, calls = [], opened = [], docs = options.docs || [record()];
+  let session = { caseKey: 'fictional', access: { canWrite: options.writable !== false } };
+  const inbox = createInbox({ getSession: () => session, updateSession: value => { session = value; }, desktop: () => options.desktop,
+    showModal: html => { document.querySelector('#modal').innerHTML = html; }, onOpenScan: id => { opened.push(id); },
+    api: async (path, request = {}) => {
+      calls.push({ path, request });
+      const intercepted = options.api?.(path, request); if (intercepted !== undefined) return intercepted;
+      if (path === '/api/documents') return { documents: docs, access: session.access };
+      if (path === '/api/scan-settings') return { country: 'AU', regions: ['Commonwealth', 'QLD'], confirmed: true };
+      if (path === '/api/readers') return { ready: true, message: 'Readers ready.' };
+      if (path.includes('/source?')) return { name: 'Fictional source', text: 'Fictional source passage', anchor: { kind: 'paragraph', paragraph: 1 } };
+      if (request.method === 'POST') return {};
+      return { ...docs.find(d => path.endsWith(d.id)), reports: [report] };
+    } });
+  t.after(() => { inbox.unmount(); dom.window.close(); globalThis.document = previous; });
+  return { dom, document, inbox, calls, opened, docs, host: document.querySelector('#host'), switchCase: caseKey => { session = { ...session, caseKey }; } };
 }
 
-test("file refresh preserves reading position and keyboard focus, including when a status changes", async t => {
-  const dom = new JSDOM('<main id="host"></main>', { url: 'http://127.0.0.1:4322' });
-  const previous = globalThis.document;
-  globalThis.document = dom.window.document;
-  const document = dom.window.document;
-  let session = { access: { canWrite: true }, connection: null };
-  const documents = Array.from({ length: 20 }, (_, i) => ({ id: String(i + 1).padStart(64, 'a'), reference: `CF-TEST-${i + 1}`, name: `Record ${i + 1}.txt`, extension: '.txt', bytes: 120, status: 'ready', createdAt: '2026-09-17', pages: [] }));
-  const inbox = createInbox({ api: async path => path === '/api/documents' ? { documents, access: session.access } : documents.find(item => path.endsWith(item.id)),
-    getSession: () => session, updateSession: value => { session = value; }, showModal() {}, closeModal() {}, onSaved() {} });
-  t.after(() => { inbox.unmount(); dom.window.close(); globalThis.document = previous; });
-  inbox.mount(document.querySelector('#host'));
-  await until(() => document.querySelector('.detail-header'));
-  const rows = document.querySelector('.register-rows');
-  rows.scrollTop = 720;
-  document.querySelectorAll('[data-document]')[15].focus();
-  const focused = document.activeElement.dataset.document;
-  await inbox.refresh();
-  assert.equal(document.querySelector('.register-rows'), rows, 'Unchanged polls keep the existing list');
-  assert.equal(rows.scrollTop, 720);
-  assert.equal(document.activeElement.dataset.document, focused);
-  documents[2].status = 'reading';
-  await inbox.refresh();
-  assert.match(document.querySelector('.register-rows').textContent, /Reading/);
-  assert.equal(document.querySelector('.register-rows').scrollTop, 720, 'Updated rows keep the reading position');
-  assert.equal(document.activeElement.dataset.document, focused, 'Updated rows keep keyboard focus');
-  inbox.unmount(); inbox.mount(document.querySelector('#host'));
-  await until(() => document.querySelector('.register-rows'));
-  assert.equal(document.querySelector('.register-rows').scrollTop, 0, 'A new mount starts at the top');
+test('Case desk AI column is between name and type with honest completed and busy states', () => {
+  const dom = new JSDOM(fileRegister([record('new'), record('done', { state: 'completed' }), record('busy', { state: 'running' })]));
+  assert.deepEqual([...dom.window.document.querySelectorAll('th')].map(node => node.textContent), ['File number', 'File name', 'AI', 'Type', 'Size', 'Status', 'Added']);
+  const buttons = [...dom.window.document.querySelectorAll('[data-scan-document]')];
+  assert.equal(buttons[0].textContent, 'Scan'); assert.equal(buttons[1].textContent, 'Scanned'); assert.equal(buttons[2].disabled, true);
+  dom.window.close();
 });
 
-test("document UI imports a file, requires review, shows sources and saves selected IDs only", async (t) => {
-  const dom = new JSDOM('<main id="host"></main><div id="modal"></div>', { url: "http://127.0.0.1:4322" });
-  const previous = globalThis.document;
-  globalThis.document = dom.window.document;
-  const document = dom.window.document, id = "a".repeat(64), calls = [];
-  let state = "empty", saved = false;
-  let session = { access: { canWrite: true, message: "Development preview" }, connection: { provider: "anthropic", model: "test", cloud: true }, claudeCodeEnabled: true };
-  const finding = { id: "finding-1", kind: "event", title: "Reported event", detail: "An attributed event.", date: "2024-03-19", verified: true, issues: [], sources: [{ documentId: id, name: "letter.pdf", page: 1, quote: "A source quote for review.", matched: true }] };
-  const draft = { id: "draft-1", summary: "Review this account.", limitations: ["Only this document was reviewed."], findings: [finding, { ...finding, id: "finding-2", title: "Invalid quote", verified: false, issues: ["Quote not matched."] }] };
-  const item = () => ({ id, name: "letter.pdf", extension: ".pdf", bytes: 800, pageCount: 1, createdAt: "2026-01-01", updatedAt: state, status: state === "saved" ? "saved" : state === "review" ? "review" : "ready" });
-  const api = async (path, options = {}) => {
-    calls.push({ path, options });
-    if (path === "/api/documents") return { documents: state === "empty" ? [] : [item()], access: session.access };
-    if (path.startsWith("/api/documents?")) { state = "ready"; return { document: item(), duplicate: false }; }
-    if (path.endsWith("/analyse")) { assert.equal(options.body.consent, true); state = "review"; return { queued: true }; }
-    if (path.endsWith("/approve")) {
-      assert.deepEqual(options.body, { findingIds: ["finding-1"], draftId: "draft-1" });
-      state = "saved"; return {};
-    }
-    if (path === `/api/documents/${id}`) return { ...item(), pages: [{ page: 1, text: "A source quote for review." }], draft: ["review", "saved"].includes(state) ? draft : null,
-      saved: state === "saved" ? { folder: "legal-documents/reviewed", findingIds: ["finding-1"] } : null };
-    throw new Error(`Unexpected request: ${path}`);
-  };
-  const inbox = createInbox({ api, getSession: () => session, updateSession: (value) => { session = value; },
-    showModal: (html) => { document.querySelector("#modal").innerHTML = html; }, closeModal: () => {}, onSaved: async () => { saved = true; } });
-  t.after(() => { inbox.unmount(); dom.window.close(); globalThis.document = previous; });
-  inbox.mount(document.querySelector("#host"));
-  await until(() => document.querySelector("#document-list").textContent.includes("will appear"));
-  const picker = document.querySelector("#document-picker");
-  Object.defineProperty(picker, "files", { value: [new dom.window.File(["PDF fixture"], "letter.pdf", { type: "application/pdf" })] });
-  picker.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-  await until(() => document.querySelector("#analysis-consent"));
-  assert.equal(calls.some((c) => c.path.endsWith("/analyse")), false, "Import must not trigger cloud analysis");
-  document.querySelector("#analysis-consent").checked = true;
-  document.querySelector('[data-action="analyse"]').click();
-  await until(() => document.querySelector('[name="finding"]'));
-  assert.equal(document.querySelector('[value="finding-2"]').disabled, true);
-  assert.equal(document.querySelector('[value="finding-1"]').checked, false, "Review must never pre-approve findings");
-  document.querySelector("[data-source]").click();
-  await until(() => document.querySelector(".source-modal"));
-  assert.match(document.querySelector(".source-modal").textContent, /source quote/);
-  document.querySelector('[value="finding-1"]').checked = true;
-  document.querySelector('[data-action="approve"]').click();
-  await until(() => document.querySelector(".saved-notice"));
-  assert.equal(saved, true);
+test('Case desk imports every selected file locally without creating a scan', async t => {
+  const f = setup(t, { docs: [] }); f.inbox.mountDesk(f.host);
+  await until(() => f.document.querySelector('.desk-empty'));
+  const files = Array.from({ length: 23 }, (_, i) => new f.dom.window.File(['fictional'], `file-${i}.docx`));
+  await f.inbox.upload(files);
+  const posts = f.calls.filter(call => call.request.method === 'POST');
+  assert.equal(posts.length, 23); assert.ok(posts.every(call => call.path.startsWith('/api/documents?name=') && call.request.raw));
+  assert.equal(posts.some(call => /\/(scan|analyse|approve)$/.test(call.path)), false);
+  assert.match(f.document.querySelector('#inbox-message').textContent, /Select Scan when ready/);
 });
 
-test("connection screen defaults to local AI and never presents disabled subscription preview as available", async (t) => {
-  const dom = new JSDOM('<main id="host"></main><div id="modal"></div>');
-  const previous = globalThis.document;
-  globalThis.document = dom.window.document;
-  const document = dom.window.document;
-  const inbox = createInbox({ api: async () => ({}), getSession: () => ({ access: { canWrite: true }, claudeCodeEnabled: false, connection: null }), updateSession: () => {},
-    showModal: (html) => { document.querySelector("#modal").innerHTML = html; }, closeModal: () => {}, onSaved: () => {} });
-  t.after(() => { inbox.unmount(); dom.window.close(); globalThis.document = previous; });
-  await inbox.connectionModal();
-  assert.equal(document.querySelector("#provider-choice").value, "ollama");
-  assert.equal(document.querySelector("#connect-submit").disabled, false);
-  document.querySelector("#provider-choice").value = "claude-code";
-  document.querySelector("#provider-choice").dispatchEvent(new dom.window.Event("change"));
-  assert.equal(document.querySelector("#connect-submit").disabled, true);
-  document.querySelector("#provider-choice").value = "anthropic";
-  document.querySelector("#provider-choice").dispatchEvent(new dom.window.Event("change"));
-  assert.equal(document.querySelector("#provider-key").type, "password");
-  assert.equal(document.querySelector("#connect-submit").disabled, false);
+test('repeated Scan clicks submit exactly once and completed results open their card', async t => {
+  let release;
+  const f = setup(t, { docs: [record(), record('done', { state: 'completed' })], api: (path, request) => path.endsWith('/scan') ? new Promise(resolve => { release = resolve; }) : undefined });
+  f.inbox.mountDesk(f.host); await until(() => f.document.querySelector('[data-scan-document]'));
+  const button = f.document.querySelector('[data-scan-document="doc-1"]'); button.click(); button.click();
+  assert.equal(f.calls.filter(call => call.path.endsWith('/scan')).length, 1);
+  assert.equal(f.document.querySelector('[data-scan-document="doc-1"]').disabled, true);
+  release({}); await until(() => !f.document.querySelector('[data-scan-document="doc-1"]').disabled);
+  f.document.querySelector('[data-scan-document="done"]').click();
+  assert.deepEqual(f.opened, ['done']);
 });
 
-test("local AI discovery is button-triggered, offers installed models and still requires connection confirmation", async (t) => {
-  const dom = new JSDOM('<main id="host"></main><div id="modal"></div>');
-  const previous = globalThis.document;
-  globalThis.document = dom.window.document;
-  const document = dom.window.document, requests = [];
-  let session = { caseKey: "one", access: { canWrite: true }, connection: null }, closed = false;
-  const inbox = createInbox({ api: async (path, options) => {
-    requests.push({ path, options });
-    if (path === "/api/providers/local-models") return { available: true, models: [{ name: "local:8b" }], message: "Choose an installed model below." };
-    assert.equal(path, "/api/providers/connect");
-    assert.deepEqual(options.body, { provider: "ollama", model: "local:8b", apiKey: undefined });
-    return { connection: { provider: "ollama", model: "local:8b", cloud: false } };
-  }, getSession: () => session, updateSession: (value) => { session = value; },
-  showModal: (html) => { document.querySelector("#modal").innerHTML = html; }, closeModal: () => { closed = true; }, onSaved: () => {} });
-  t.after(() => { inbox.unmount(); dom.window.close(); globalThis.document = previous; });
-  await inbox.connectionModal();
-  assert.equal(requests.length, 0, "Opening AI settings must not request model discovery");
-  assert.match(document.querySelector("#connection-fields").textContent, /Neither the engine nor a model is included/);
-  document.querySelector("#connection-form").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-  assert.equal(requests.length, 0, "Missing selection must not call connect");
-  assert.match(document.querySelector("#connection-message").textContent, /Find and choose/);
-  document.querySelector("#find-local-models").click();
-  await until(() => !document.querySelector("#local-model-options").hidden);
-  const picker = document.querySelector("#local-model-picker");
-  picker.value = "local:8b"; picker.dispatchEvent(new dom.window.Event("change"));
-  assert.equal(document.querySelector("#provider-model").value, "local:8b");
-  assert.equal(requests.length, 1, "Choosing a model must not connect or analyse anything");
-  document.querySelector("#connection-form").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-  await until(() => closed);
-  assert.equal(session.connection.cloud, false);
-  assert.equal(requests.length, 2);
+test('Files & AI shows submitted cards, queue positions and no file intake or promotion controls', async t => {
+  const f = setup(t, { docs: [record('unscanned'), record('queued', { state: 'queued', queuePosition: 2 }), record('running', { state: 'running', elapsedMs: 61000, stage: 'context' }), record('paused', { state: 'paused' })] });
+  f.inbox.mount(f.host); await until(() => f.document.querySelectorAll('.scan-card').length === 3);
+  assert.equal(f.document.querySelector('input[type=file]'), null);
+  assert.equal(f.document.querySelector('[data-action=approve]'), null);
+  assert.equal(f.document.querySelector('[data-action=analyse]'), null);
+  assert.match(f.host.textContent, /position 2 in queue/); assert.match(f.host.textContent, /1m 1s · context/);
+  assert.ok(f.document.querySelector('[data-scan-action=resume]'));
+  f.document.querySelector('[data-scan-action=resume]').click();
+  await until(() => f.calls.some(call => call.path.endsWith('/resume')));
+  assert.deepEqual(f.calls.find(call => call.path.endsWith('/resume')).request.body.jurisdiction.regions, ['Commonwealth', 'QLD']);
 });
 
-test("local discovery handles an absent engine and ignores a late response after changing providers", async (t) => {
-  const dom = new JSDOM('<main id="host"></main><div id="modal"></div>');
-  const previous = globalThis.document;
-  globalThis.document = dom.window.document;
-  const document = dom.window.document;
-  let resolveModels;
-  const inbox = createInbox({ api: async () => new Promise((resolve) => { resolveModels = resolve; }),
-    getSession: () => ({ caseKey: "one", access: { canWrite: true }, connection: null }), updateSession: () => {},
-    showModal: (html) => { document.querySelector("#modal").innerHTML = html; }, closeModal: () => {}, onSaved: () => {} });
-  t.after(() => { inbox.unmount(); dom.window.close(); globalThis.document = previous; });
-  await inbox.connectionModal();
-  document.querySelector("#find-local-models").click();
-  resolveModels({ available: false, models: [], message: "Open or install Ollama and a local model first." });
-  await until(() => !document.querySelector("#find-local-models").disabled);
-  assert.equal(document.querySelector("#local-model-options").hidden, true);
-  assert.match(document.querySelector("#local-models-message").textContent, /Open or install/);
-  assert.ok(document.querySelector("#provider-model"), "Manual model-name fallback remains available");
-  document.querySelector("#find-local-models").click();
-  document.querySelector("#provider-choice").value = "anthropic";
-  document.querySelector("#provider-choice").dispatchEvent(new dom.window.Event("change"));
-  resolveModels({ available: true, models: [{ name: "local:8b" }], message: "Installed models found" });
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(document.querySelector("#local-model-picker"), null);
-  assert.equal(document.querySelector("#provider-key").type, "password");
-  assert.equal(document.querySelector("#provider-model").value, "");
+test('attention reports allow a fresh retry while retaining their saved findings', async t => {
+  const f = setup(t, { docs: [{ ...record('attention', { state: 'attention' }), latestReportId: 'report-1' }] });
+  f.inbox.mount(f.host); await until(() => f.document.querySelector('.scan-card')); await f.inbox.open('attention');
+  await until(() => f.document.querySelector('.scan-report'));
+  assert.equal(f.document.querySelector('[data-scan-action=resume]').textContent, 'Resume with saved jurisdiction');
+  f.document.querySelector('[data-scan-action=retry]').click();
+  await until(() => f.calls.some(call => call.path.endsWith('/retry')));
+  assert.equal(f.calls.find(call => call.path.endsWith('/retry')).request.method, 'POST');
+  assert.equal(f.document.querySelector('.scan-summary-text').textContent, report.summary);
+});
+
+test('summary precedes 13 expandable checks and citations preserve attribution and report version', async t => {
+  const f = setup(t, { docs: [{ ...record('done', { state: 'completed', completedAt: '2026-09-17T02:00:00Z' }), latestReportId: 'report-1' }] });
+  f.inbox.mount(f.host); await until(() => f.document.querySelector('.scan-card')); await f.inbox.open('done');
+  await until(() => f.document.querySelector('.scan-report'));
+  assert.equal(f.document.querySelectorAll('.scan-report > .scan-section').length, 13);
+  assert.match(f.document.querySelector('.scan-report > h3').textContent, /Document summary/);
+  assert.match(f.document.querySelector('.scan-attribution').textContent, /Speaker: Fictional author.*Recipient: Fictional recipient.*Sequence: 1/);
+  f.document.querySelector('[data-source-document]').click();
+  await until(() => f.document.querySelector('#modal .source-modal'));
+  assert.equal(f.document.querySelector('#modal .source-modal').textContent, 'Fictional source passage');
+  assert.ok(f.calls.some(call => call.path.includes('reportId=report-1') && call.path.includes('sourceMatch=text_match')));
+  assert.match(f.document.querySelector('#modal').textContent, /Paragraph 1/);
+});
+
+test('polling preserves card, nested section, source keyboard focus and scroll position', async t => {
+  const d = { ...record('done', { state: 'completed' }), latestReportId: 'report-1' };
+  const f = setup(t, { docs: [d] }); f.inbox.mount(f.host); await until(() => f.document.querySelector('.scan-card')); await f.inbox.open('done');
+  await until(() => f.document.querySelector('[data-source-document]'));
+  const card = f.document.querySelector('.scan-card'), section = f.document.querySelector('[data-section=facts]'), source = f.document.querySelector('[data-source-document]');
+  section.open = true; source.focus(); f.document.querySelector('#scan-card-list').scrollTop = 155;
+  d.updatedAt = '2026-09-17T03:00:00Z'; await f.inbox.refresh(true);
+  assert.equal(f.document.querySelector('.scan-card'), card); assert.equal(card.open, true); assert.equal(section.open, true);
+  assert.equal(f.document.activeElement, source); assert.equal(f.document.querySelector('#scan-card-list').scrollTop, 155);
+  card.open = false; await f.inbox.refresh(); assert.equal(card.open, false, 'Opening from Case desk does not force it open forever');
+});
+
+test('explicit Scanned navigation reveals a later card after its report loads without moving later polling', async t => {
+  let release;
+  const done = { ...record('done', { state: 'completed' }), latestReportId: 'report-1' };
+  const f = setup(t, { docs: [...Array.from({ length: 6 }, (_, i) => record(`queued-${i}`, { state: 'queued', queuePosition: i + 1 })), done], api: path => path === '/api/documents/done' ? new Promise(resolve => { release = resolve; }) : undefined });
+  f.inbox.mount(f.host); await until(() => f.document.querySelectorAll('.scan-card').length === 7);
+  const list = f.document.querySelector('#scan-card-list'), card = list.lastElementChild;
+  list.getBoundingClientRect = () => ({ top: 100 });
+  card.getBoundingClientRect = () => ({ top: 900 - list.scrollTop });
+  const initialFocus = f.document.querySelector('[data-file-action=connect]'); initialFocus.focus();
+  const opening = f.inbox.open('done'); await until(() => release);
+  assert.equal(list.scrollTop, 0); assert.equal(f.document.activeElement, initialFocus);
+  release({ ...done, reports: [report] }); await opening;
+  await until(() => f.document.activeElement === card.querySelector('.scan-card-heading'));
+  assert.equal(card.open, true); assert.ok(card.querySelector('.scan-report')); assert.equal(list.scrollTop, 800);
+  list.scrollTop = 425; initialFocus.focus(); await f.inbox.refresh();
+  assert.equal(list.scrollTop, 425); assert.equal(f.document.activeElement, initialFocus);
+});
+
+test('delayed text and image source responses cannot open a modal after changing cases', async t => {
+  for (const sourceMatch of ['text_match', 'visual_observation']) {
+    await t.test(sourceMatch, async t => {
+      let release;
+      const localReport = { ...report, findings: [{ ...report.findings[0], sources: [{ ...report.findings[0].sources[0], sourceMatch }] }] };
+      const d = { ...record('done', { state: 'completed' }), latestReportId: 'report-1' };
+      const f = setup(t, { docs: [d], api: path => /\/(source|image)\?/.test(path) ? new Promise(resolve => { release = resolve; }) : path === '/api/documents/done' ? { ...d, reports: [localReport] } : undefined });
+      f.inbox.mount(f.host); await until(() => f.document.querySelector('.scan-card')); await f.inbox.open('done');
+      await until(() => f.document.querySelector('[data-source-document]'));
+      f.document.querySelector('[data-source-document]').click(); await until(() => release);
+      f.switchCase('other-fictional-case');
+      f.document.querySelector('#modal').textContent = 'Current case modal';
+      release(sourceMatch === 'visual_observation' ? new Blob(['fictional image']) : { name: 'Previous case source', text: 'Previous case text' });
+      await new Promise(resolve => setTimeout(resolve, 10));
+      assert.equal(f.document.querySelector('#modal').textContent, 'Current case modal');
+      assert.equal(f.document.querySelector('#inbox-message').textContent, '');
+    });
+  }
+});
+
+test('delayed original previews and old source buttons do not cross case boundaries', async t => {
+  let release;
+  const f = setup(t, { api: path => path.endsWith('/original') ? new Promise(resolve => { release = resolve; }) : undefined });
+  await f.inbox.openDocument('doc-1');
+  f.document.querySelector('#scan-open-original').click(); await until(() => release);
+  f.switchCase('other-fictional-case'); f.document.querySelector('#modal').textContent = 'Current case modal';
+  release(new Blob(['previous case original'])); await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(f.document.querySelector('#modal').textContent, 'Current case modal');
+  await f.inbox.openDocument('doc-1');
+  const oldButton = f.document.querySelector('#scan-open-original'), requests = f.calls.length;
+  f.switchCase('third-fictional-case'); oldButton.click();
+  assert.equal(f.calls.length, requests, 'An old modal cannot fetch a document from the newly selected case');
+});
+
+test('opening a source original stops between detail and binary requests if the case changes', async t => {
+  let release, delayDetail = false;
+  const d = { ...record('done', { state: 'completed' }), latestReportId: 'report-1' };
+  const f = setup(t, { docs: [d], api: path => delayDetail && path === '/api/documents/done' ? new Promise(resolve => { release = resolve; }) : undefined });
+  f.inbox.mount(f.host); await until(() => f.document.querySelector('.scan-card')); await f.inbox.open('done');
+  await until(() => f.document.querySelector('[data-source-document]'));
+  f.document.querySelector('[data-source-document]').click(); await until(() => f.document.querySelector('#scan-source-original'));
+  delayDetail = true; f.document.querySelector('#scan-source-original').click(); await until(() => release);
+  f.switchCase('other-fictional-case'); release(d); await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(f.calls.some(call => call.path.endsWith('/original')), false);
+});
+
+test('unscanned file opens its source inspector without submitting AI', async t => {
+  const f = setup(t); await f.inbox.openDocument('doc-1');
+  assert.match(f.document.querySelector('#modal').textContent, /Not scanned/);
+  assert.match(f.document.querySelector('#modal').textContent, /Fictional source passage/);
+  assert.equal(f.calls.some(call => call.request.method === 'POST'), false);
+});
+
+test('read-only desk blocks imports and scans while completed reports remain accessible', async t => {
+  const f = setup(t, { writable: false, docs: [record(), record('done', { state: 'completed' })] }); f.inbox.mountDesk(f.host);
+  await until(() => f.document.querySelector('[data-scan-document]'));
+  assert.equal(f.document.querySelector('#document-picker').disabled, true);
+  assert.equal(f.document.querySelector('[data-scan-document="doc-1"]').disabled, true);
+  assert.equal(f.document.querySelector('[data-scan-document="done"]').disabled, false);
+  await f.inbox.upload([new f.dom.window.File(['fictional'], 'file.txt')]); assert.equal(f.calls.some(call => call.request.method === 'POST'), false);
+});
+
+test('jurisdiction and reader setup require explicit actions and polling retains unsaved selection', async t => {
+  const f = setup(t, { docs: [] }); f.inbox.mount(f.host); await until(() => f.document.querySelector('[value=QLD]').checked);
+  assert.equal(f.calls.some(call => call.request.method === 'POST'), false);
+  f.document.querySelector('[value=NSW]').click(); await f.inbox.refresh(); assert.equal(f.document.querySelector('[value=NSW]').checked, true);
+  f.document.querySelector('[data-file-action=jurisdiction]').click(); await until(() => f.calls.some(call => call.path === '/api/scan-settings' && call.request.method === 'POST'));
+  assert.deepEqual(f.calls.find(call => call.path === '/api/scan-settings' && call.request.method === 'POST').request.body.regions, ['Commonwealth', 'NSW', 'QLD']);
+  f.document.querySelector('[data-file-action=readers]').click(); await until(() => f.calls.some(call => call.path === '/api/readers/setup'));
+});
+
+test('report text is escaped, law links are HTTPS only and legacy reports remain labelled', () => {
+  const dom = new JSDOM(reportMarkup({ ...report, summary: '<script>bad()</script>', legacy: true, laws: [{ title: '<img>', url: 'javascript:bad()', text: '<script>' }] }, 'fictional'));
+  assert.equal(dom.window.document.querySelector('script,img'), null);
+  assert.equal(dom.window.document.querySelector('a[href]'), null);
+  assert.match(dom.window.document.body.textContent, /Legacy analysis/);
+  assert.match(scanLabel({ state: 'sign_in_required' }), /Sign in/);
+  dom.window.close();
 });

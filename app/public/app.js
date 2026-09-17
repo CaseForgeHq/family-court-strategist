@@ -10,7 +10,6 @@ import { createAssistant } from "./assistant.js";
 import { createUpdates } from './updates.js';
 import { createAdmin } from "./admin.js";
 import { createNotebook } from './notebook.js';
-import { fileRegister } from './file-register.js';
 import { icon } from "./icons.js";
 // Case notes remain portable Markdown. Document intake uses the protected local API.
 const STATUS_CLASS = { PROVEN: "proven", DISPUTED: "disp", UNRESOLVED: "unres", DISPROVEN: "dispr" };
@@ -46,7 +45,7 @@ async function api(path, options = {}) {
 }
 
 const inbox = createInbox({ api, getSession: () => SESSION, updateSession: (s) => { SESSION = s; },
-  showModal: openModal, closeModal, onSaved: refreshCase });
+  showModal: openModal, closeModal, onOpenScan: async id => { await go('documents'); await inbox.open(id); } });
 const journal = createJournal({ api, getSession: () => SESSION });
 const documentCreator = createDocumentCreator({ api, getSession: () => SESSION });
 let documentSeed;
@@ -104,20 +103,13 @@ function recordLink(kind,id,label,extra='') {
   return `<a class="record-link ${extra}" href="#record/${kind}/${encodeURIComponent(id)}" data-record-kind="${esc(kind)}" data-record-id="${esc(id)}">${esc(label)}</a>`;
 }
 function viewDashboard() {
-  return `<div class="page-purpose"><p>Your case files, all in one place.</p><span>Find a document by its permanent file number. Select the blue number to open it.</span></div><section class="case-desk intake-shortcut" aria-labelledby="desk-heading"><div class="desk-toolbar"><h2 id="desk-heading">Your file register</h2><button class="btn primary" type="button" data-go="documents">${icon('plus')} Add files</button></div><div id="desk-files"><p class="empty">Loading your files…</p></div></section>`;
-}
-async function loadDesk() {
-  const host = $('desk-files');
-  try {
-    const {documents} = await api('/api/documents'); if(!host?.isConnected) return;
-    host.innerHTML = documents.length ? fileRegister(documents) + `<div class="desk-bottom"><span>${documents.length} files · permanent references</span></div>` : `<div class="desk-empty">${icon('folder')}<h3>Start with a file.</h3><p>Add your documents. Each file gets a permanent number.</p><button class="btn" data-go="documents" type="button">${icon('plus')} Add files</button></div>`;
-  } catch(error) { if(host?.isConnected) host.innerHTML = `<p class="empty" role="alert">${esc(error.message)}</p>`; }
+  return '';
 }
 async function openRecord(kind,id) {
   if(typeof kind === 'object') { id = kind.id; kind = kind.kind; }
   const turn = ++recordRequest;
   globalSearch?.close();
-  if(kind === 'document') { closeModal(); await go('documents'); inbox.open(id); return; }
+  if(kind === 'document') { closeModal(); await inbox.openDocument(id); return; }
   if(kind === 'task') { closeModal(); await go('tasks'); await tasks.open(id); return; }
   if(kind === 'journal') { closeModal(); await go('journal'); await journal.open(id); return; }
   if(kind === 'notebook') { closeModal(); await go('notebook'); notebook.open(id); return; }
@@ -307,7 +299,7 @@ async function go(view) {
   if (view === 'people') { $('add-person')?.addEventListener('click', () => addPersonForm()); document.querySelectorAll('[data-edit-person]').forEach(button => button.addEventListener('click', () => addPersonForm(MODEL.people.find(p => p.reference === button.dataset.editPerson)))); }
   if (view === "tasks") await tasks.mount($("view"));
   if (view === "calendar") await calendar.mount($("view"));
-  if (view === "dashboard") void loadDesk();
+  if (view === "dashboard") inbox.mountDesk($("view"));
   if(current !== view) return;
   if (view === "map") caseMap.mount($("view"), MODEL);
   if (view === "settings") void refreshHomeSetup();
