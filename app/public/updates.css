@@ -75,3 +75,23 @@
 .updates-status{color:#b8c8d6;margin:0;padding:0 16px 12px;font-size:12px}
 .updates-popover progress{display:block;width:calc(100% - 32px);margin:0 16px 12px}
 .updates-popover progress[hidden]{display:none}
+
+/* An invitation on arrival; motion and progress begin after Download. */
+.update-dot{width:23px;height:25px;right:-7px;top:-8px;border:2px solid #ffe6a1;border-radius:8px;background:linear-gradient(150deg,#fff0ad,#e8ad3f);box-shadow:0 0 0 3px #122b40,0 3px 12px #efb74055;color:#45300f;font-size:19px}
+.updates-sigil{display:grid;place-items:center;width:34px;height:38px;border:1px solid #e6bd63;border-radius:10px;background:radial-gradient(circle at 40% 15%,#64512b,#322d24);box-shadow:inset 0 1px 0 #ffe3a040,0 0 15px #e8ad3f14;text-shadow:0 1px 2px #0008}
+[data-phase="current"] .updates-sigil{background:#24548344;border-color:#3989df55;box-shadow:none}
+.updates-sender{color:#9dccff;font-size:11px;font-weight:700}
+.updates-transfer{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:center;padding:12px 15px 15px;background:#3989df0b;border-top:1px solid #3989df24}
+.updates-transfer[hidden]{display:none}
+.updates-transfer-label{font:500 12px/1.5 var(--ui);color:#cbdff0}
+.updates-transfer progress{grid-column:1/-1;appearance:none;width:100%;height:5px;margin:0;border:0;border-radius:5px;overflow:hidden;background:#253e52}
+.updates-transfer progress::-webkit-progress-bar{background:#253e52;border-radius:5px}
+.updates-transfer progress::-webkit-progress-value{background:linear-gradient(90deg,#287bea,#82c7ff);border-radius:5px;transition:width .25s ease-out}
+.updates-transfer progress:not([value]){background:linear-gradient(90deg,#253e52 15%,#56abff 45%,#253e52 75%);background-size:220% 100%;animation:update-flow 1.4s linear infinite}
+.updates-spinner{width:17px;height:17px;box-sizing:border-box;border:2px solid #4687bd44;border-top-color:#8fcfff;border-right-color:#438fed;border-radius:50%;animation:update-spin .85s linear infinite}
+.is-transferring .updates-download{animation:update-download 1.1s ease-in-out infinite}
+.updates-popover button:disabled{opacity:1;color:#c6ddf2;background:#244763;border-color:#3b6585}
+@keyframes update-spin{to{transform:rotate(360deg)}}
+@keyframes update-flow{to{background-position:-220% 0}}
+@keyframes update-download{0%,100%{transform:translateY(-2px)}50%{transform:translateY(2px)}}
+@media(prefers-reduced-motion:reduce){.updates-spinner,.is-transferring .updates-download,.updates-transfer progress:not([value]){animation:none}.updates-transfer progress::-webkit-progress-value{transition:none}}

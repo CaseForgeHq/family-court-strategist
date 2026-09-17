@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld('strategistDesktop', Object.freeze({
   updateCheck: () => ipcRenderer.invoke('updates:check'),
   updateDownload: () => ipcRenderer.invoke('updates:download'),
   updateInstall: () => ipcRenderer.invoke('updates:install'),
+  onUpdateStatus: callback => listenChatGPT('updates:status-changed', callback, value =>
+    value && ['idle','current','checking','unavailable','available','downloading','verifying','ready','restarting','installing','error'].includes(value.phase) ? value : null),
   previewDocument: value => ipcRenderer.invoke('documents:preview', value),
   saveDocumentPDF: value => ipcRenderer.invoke('documents:save-pdf', value),
   documentHistory: value => ipcRenderer.invoke('documents:history', value),

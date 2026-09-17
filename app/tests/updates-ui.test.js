@@ -32,7 +32,7 @@ test('real page mounts one shield trigger and relocates sample data to More tool
   dom.window.close();
 });
 
-test('registration uses the same card, announces arrival without focus theft and supports download', async t => {
+test('registration only shows the icon on arrival and supports an explicitly opened download', async t => {
   const dom = new JSDOM('<input id="name">');
   const previous = { window: globalThis.window, document: globalThis.document }; globalThis.window = dom.window; globalThis.document = dom.window.document;
   t.after(() => { dom.window.dispatchEvent(new dom.window.Event('pagehide')); dom.window.close(); Object.assign(globalThis, previous); });
@@ -40,7 +40,10 @@ test('registration uses the same card, announces arrival without focus theft and
   const state = { currentVersion: '0.14.0', version: '0.15.0', phase: 'available', required: true, message: 'Please update to continue.' };
   createUpdates({ format: 'notification', desktop: { updateStatus: async () => state, updateDownload: async () => { downloads++; return { ...state, phase: 'downloading', progress: 25 }; } } });
   await tick(); const panel = document.getElementById('updates-popover');
-  assert.equal(panel.hidden, false); assert.equal(document.activeElement.id, 'name');
+  assert.equal(panel.hidden, true); assert.equal(document.activeElement.id, 'name');
+  document.querySelector('#open-updates').click();
+  assert.equal(panel.hidden, false);
+  assert.equal(document.querySelector('.updates-sender').textContent, 'Case Forge Admin Says');
   assert.equal(panel.getAttribute('aria-label'), 'Required update message');
   assert.equal(document.querySelector('.updates-message p').textContent, state.message);
   document.querySelector('[data-update-action]').click(); await tick(); assert.equal(downloads, 1); assert.equal(document.querySelector('progress').value, 25);
@@ -48,7 +51,7 @@ test('registration uses the same card, announces arrival without focus theft and
   document.querySelector('#open-updates').click(); await tick(); assert.equal(panel.hidden, false);
 });
 
-test('shield changes on arrival, optional notices open once per version and closing stays dismissed', async t => {
+test('shield changes on arrival and the message opens only on hover or click', async t => {
   const dom = new JSDOM('<input id="working"><button id="open-updates"></button>');
   const previous = { window: globalThis.window, document: globalThis.document }; Object.assign(globalThis, { window: dom.window, document: dom.window.document });
   t.after(() => { dom.window.dispatchEvent(new dom.window.Event('pagehide')); dom.window.close(); Object.assign(globalThis, previous); });
@@ -67,4 +70,19 @@ test('shield changes on arrival, optional notices open once per version and clos
   state.version = '0.15.1'; trigger.dispatchEvent(new dom.window.Event('pointerenter')); await tick(); assert.equal(panel.hidden, false);
   state = { phase: 'current', currentVersion: '0.15.1', version: '0.15.1', message: 'Old release instructions must not appear' };
   trigger.dispatchEvent(new dom.window.Event('pointerenter')); await tick(); assert.equal(trigger.classList.contains('has-update'), false); assert.equal(panel.querySelector('.updates-message p').textContent, 'You are currently up to date');
+});
+
+test('live arrival stays closed and old polling cannot overwrite newer transfer status', async t => {
+  const dom = new JSDOM('<input id="work"><button id="open-updates"></button>');
+  const previous={window:globalThis.window,document:globalThis.document};Object.assign(globalThis,{window:dom.window,document:dom.window.document});
+  let notify,resolvePoll,unsubscribed=false;
+  t.after(()=>{dom.window.dispatchEvent(new dom.window.Event('pagehide'));assert.equal(unsubscribed,true);dom.window.close();Object.assign(globalThis,previous);});
+  createUpdates({desktop:{updateStatus:()=>new Promise(resolve=>{resolvePoll=resolve;}),onUpdateStatus:fn=>{notify=fn;return ()=>{unsubscribed=true;};}}});
+  document.getElementById('work').focus();const panel=document.getElementById('updates-popover');
+  notify({phase:'available',version:'0.15.0',revision:2,message:'A new update'});
+  assert.equal(panel.hidden,true);assert.equal(document.activeElement.id,'work');assert.equal(document.getElementById('open-updates').classList.contains('has-update'),true);
+  notify({phase:'downloading',version:'0.15.0',revision:4,progress:null,fullDownload:true});
+  assert.equal(document.querySelector('progress').hasAttribute('value'),false);assert.match(document.querySelector('.updates-transfer-label').textContent,/complete update/);
+  resolvePoll({phase:'downloading',revision:3,progress:20});await tick();assert.equal(document.querySelector('progress').hasAttribute('value'),false);
+  notify({phase:'restarting',version:'0.15.0',revision:5});assert.match(document.querySelector('.updates-transfer-label').textContent,/reopen automatically/);
 });

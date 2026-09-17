@@ -1,12 +1,12 @@
 # Windows updates
 
-The top-bar download button opens Updates on hover, focus or click. The popover shows installed/offered versions, a release message from the Case Forge team, progress and explicit download/restart actions. Escape and outside click dismiss it. Sample data remains under More tools.
+The update icon changes from a shield to a download arrow with a gold ! badge when a release arrives. It never opens the message automatically. Hover, focus or click to read Case Forge Admin Says and use Download or Close. Current versions show You are currently up to date.
 
 `desktop/updates.cjs` wraps the pinned `electron-updater` dependency. `desktop/main.cjs` exposes fixed status/check/download/install IPC actions to its own main workspace, registration and PIN screens. These actions do not unlock case data. The renderer cannot supply a URL or installer path. The packaged provider is the public GitHub repository `CaseForgeHq/family-court-strategist`.
 
-Packaged Windows builds check 15 seconds after startup, every minute and before opening a case. Development builds do not contact the feed. Downloads are manual; install-on-quit, prereleases and downgrades are disabled. A native restart confirmation is followed by the window close/unsaved-work guard. Installation starts only after a clean close. The updater checks the asset checksum; Windows publisher signing is not configured yet.
+Packaged Windows builds check 15 seconds after startup, every minute and before opening a case. Development builds do not contact the feed. Downloads are manual; install-on-quit, prereleases and downgrades are disabled. Download verifies the update while the app stays open, then uses the normal unsaved-work close guard and installs silently with automatic relaunch. Late checks cannot reset an active download. A differential fallback switches to an indeterminate complete-update animation instead of a backwards percentage. The updater checks asset checksums; Windows publisher signing is not configured yet.
 
-Registration and PIN entry load the exact same `app/public/updates.js` and `updates.css` through the private protocol. Its notification format appears at the top right when an update arrives, without stealing typing focus. Optional notices can be dismissed and reopened from the blue download control. Required updates also announce themselves in an open workspace.
+Registration, PIN entry and the workspace share updates.js and updates.css. Arrival only animates the icon; it does not open a message or move focus. Real-time IPC reports download, verification and restarting stages. Required updates retain their existing case-entry gate.
 
 ## Owner release panel
 
@@ -29,3 +29,9 @@ Release messages are plain text in `releases/windows/<version>.md`; the build pl
 Use the `caseforge-release` skill at `docs/skills/caseforge-release/SKILL.md` for the publish sequence. The release verification helper refuses mismatched versions, source bytes or installer metadata. Never publish `latest.yml` without its matching installer.
 
 This first updater-enabled release requires a manual install over versions through 0.13.1. Publishing announces updates to updater-enabled clients on their next check. It does not silently restart them or reach offline computers immediately.
+
+## Restart status (0.14.15+)
+
+After a clean close, a small native status window is copied to a temporary directory and shown before installer handoff. It remains independent of the files being replaced and closes after the original process exits and the replacement executable has a visible window. It never downloads, installs, starts the app, or accesses case files. Closing the status window does not cancel the update. A delayed installation shows a longer-wait message after 90 seconds; the status window exits after ten minutes.
+
+The build compiles desktop/update-handoff.cs using the Windows .NET Framework compiler and verifies the packaged helper bytes. The restart window appeared in 183 ms in the isolated native rehearsal; that measurement excludes Windows installation. Differential downloads remain enabled and completed downloads are reused for a blocked-close retry. The NSIS installer still replaces the application: near-instant file patches require a separate atomic patching design and are not claimed by this release.

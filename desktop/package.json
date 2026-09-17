@@ -1,6 +1,6 @@
 {
   "name": "family-court-strategist-desktop",
-  "version": "0.14.14",
+  "version": "0.14.15",
   "private": true,
   "description": "Local case workspace with document intake and optional user-selected AI analysis.",
   "main": "main.cjs",
@@ -56,7 +56,8 @@
       "chatgpt.cjs",
       "google-calendar.cjs",
       "updates.cjs",
-      "document-exports.cjs"
+      "document-exports.cjs",
+      "update-handoff.cjs"
     ],
     "extraResources": [
       {
@@ -94,7 +95,8 @@
         "to": "runtime",
         "filter": [
           "codex.exe",
-          "LICENSE-Codex.txt"
+          "LICENSE-Codex.txt",
+          "CaseForgeUpdate.exe"
         ]
       }
     ],
@@ -125,7 +127,7 @@
       }
     ],
     "releaseInfo": {
-      "releaseNotesFile": "../releases/windows/0.14.14.md"
+      "releaseNotesFile": "../releases/windows/0.14.15.md"
     },
     "electronVersion": "44.2.0"
   },

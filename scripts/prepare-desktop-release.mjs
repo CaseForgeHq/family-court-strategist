@@ -34,6 +34,7 @@ function compare(relative, target) {
 function walk(relative) { return readdirSync(join(root, relative)).flatMap(name => { const path = `${relative}/${name}`; return statSync(join(root, path)).isDirectory() ? walk(path) : [path]; }); }
 for (const file of ['app/server.js', 'app/package.json', ...walk('app/lib'), ...walk('app/public')]) compare(file, () => readFileSync(join(dist, 'win-unpacked/resources', file)));
 for (const file of pkg.build.files.filter(name => !name.includes('*'))) compare(`desktop/${file}`, () => extractFile(asar, file));
+compare('desktop/runtime/CaseForgeUpdate.exe', () => readFileSync(join(dist, 'win-unpacked/resources/runtime/CaseForgeUpdate.exe')));
 const feed = yaml.load(readFileSync(join(dist, 'win-unpacked/resources/app-update.yml'), 'utf8'));
 if (feed.provider !== 'github' || feed.owner !== 'CaseForgeHq' || feed.repo !== 'family-court-strategist') fail('Packaged update destination mismatch.');
 const policyPath = join(root, 'releases/windows', `${version}.json`);

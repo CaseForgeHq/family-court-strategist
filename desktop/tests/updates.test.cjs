@@ -75,3 +75,23 @@ test('up-to-date response discards historical release notes', () => {
   const f = fixture(); f.updater.emit('update-not-available', { version: '0.14.0', releaseNotes: 'Old installer instructions' });
   assert.equal(f.updates.status().phase, 'current'); assert.equal(f.updates.status().message, '');
 });
+
+test('fallback download never displays a backwards percentage and ignores late check results', async () => {
+  const f = fixture(); await f.updates.check(); let finish;
+  f.updater.downloadUpdate = () => new Promise(resolve => { finish = resolve; });
+  const pending = f.updates.download();
+  f.updater.emit('download-progress', {percent:70}); assert.equal(f.updates.status().progress,70);
+  f.updater.emit('update-available', {version:'0.16.0'}); assert.equal(f.updates.status().version,'0.15.0'); assert.equal(f.updates.status().progress,70);
+  f.updater.emit('download-progress', {percent:20}); assert.equal(f.updates.status().progress,null); assert.equal(f.updates.status().fullDownload,true);
+  f.updater.emit('download-progress', {percent:NaN}); assert.equal(f.updates.status().progress,null);
+  f.updater.emit('download-progress', {percent:100}); assert.equal(f.updates.status().phase,'verifying'); assert.equal(f.updates.install(),false);
+  f.updater.emit('update-downloaded', {version:'0.15.0'}); assert.equal(f.updates.status().phase,'ready');
+  f.updater.emit('download-progress', {percent:30}); assert.equal(f.updates.status().phase,'ready'); finish(); await pending;
+});
+
+test('restart status is immediate, a blocked close restores retry, and only verified data installs', async () => {
+  const f=fixture(); f.updates.restarting(); assert.equal(f.updates.status().phase,'idle');
+  await f.updates.check(); await f.updates.download(); f.updates.restarting(); assert.equal(f.updates.status().phase,'restarting');
+  f.updates.restartBlocked(); assert.equal(f.updates.status().phase,'ready'); assert.match(f.updates.status().error,/Save your unfinished work/);
+  f.updates.restarting(); assert.equal(f.updates.install(),true); assert.equal(f.counts().installs,1);
+});

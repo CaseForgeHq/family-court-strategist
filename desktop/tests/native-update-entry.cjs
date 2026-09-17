@@ -23,7 +23,11 @@ const env = { ...process.env, CASEFORGE_TEST_USER_DATA: profile }; delete env.EL
       ipcMain.removeHandler('updates:status'); ipcMain.handle('updates:status', () => global.fixtureUpdate);
       ipcMain.removeHandler('updates:download'); ipcMain.handle('updates:download', () => { global.fixtureUpdate = { ...global.fixtureUpdate, phase: 'ready', progress: 100 }; return global.fixtureUpdate; });
     });
+    await page.locator('#open-updates').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#updates-popover').isVisible(), false, 'Arrival offers the icon without opening a message');
+    await page.locator('#open-updates').click();
     await page.locator('#updates-popover:not([hidden])').waitFor();
+    assert.equal(await page.locator('.updates-sender').textContent(), 'Case Forge Admin Says');
     assert.equal(await page.locator('#updates-popover').getAttribute('aria-label'), 'Required update message');
     for (const [name, width, height, hour] of [['registration-day', 1304, 841, 12], ['registration-compact', 804, 619, 12], ['registration-night', 1304, 841, 22]]) {
       await app.evaluate(({ BrowserWindow }, size) => BrowserWindow.getAllWindows()[0].setContentSize(...size), [width, height]);
@@ -38,8 +42,18 @@ const env = { ...process.env, CASEFORGE_TEST_USER_DATA: profile }; delete env.EL
     await page.waitForFunction(() => document.querySelector('[data-update-action]').textContent === 'Restart and install');
     await page.keyboard.press('Escape'); assert.equal(await page.locator('#updates-popover').isVisible(), false);
     await page.locator('#open-updates').click(); assert.equal(await page.locator('#updates-popover').isVisible(), true);
+    for (const [phase, progress, fullDownload] of [['downloading', 70, false], ['downloading', null, true], ['verifying', null, true], ['restarting', 100, false]]) {
+      await app.evaluate(({ BrowserWindow }, value) => {
+        global.fixtureUpdate = { ...global.fixtureUpdate, ...value };
+        BrowserWindow.getAllWindows()[0].webContents.send('updates:status-changed', global.fixtureUpdate);
+      }, { phase, progress, fullDownload });
+      await page.waitForFunction(phase => document.querySelector('#updates-popover').dataset.phase === phase, phase);
+      if (progress === null) assert.equal(await page.locator('#updates-popover progress').getAttribute('value'), null);
+      await page.screenshot({ path: join(out, `${phase}${fullDownload ? '-full' : ''}.png`) });
+    }
     assert.deepEqual(errors, []);
     writeFileSync(join(out, 'report.json'), JSON.stringify({ captures, errors, profile, transport: 'Simulated updater; real entry IPC checked in development mode' }, null, 2));
     console.log('Registration update arrival, shared card, download, keyboard and 3 native layouts passed.');
   } finally { if (app) await app.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
+

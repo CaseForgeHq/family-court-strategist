@@ -14,7 +14,7 @@ export function createUpdates({ desktop, format = 'popover' }) {
   const panel = document.createElement('section');
   panel.id = 'updates-popover'; panel.className = `updates-popover${format === 'notification' ? ' updates-notification' : ''}`; panel.hidden = true;
   panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Update message');
-  panel.innerHTML = `<div class="updates-body"><section class="updates-message"><span class="updates-sigil" aria-hidden="true"></span><div class="updates-copy"><span class="updates-sender" hidden>Case Forge whispers:</span><p></p></div><button class="btn primary" data-update-action hidden title="Download, install and reopen Case Forge">Download</button><button class="updates-close" aria-label="Close updates" title="Close">${icon('close')}</button></section><p class="updates-status" role="status" aria-live="polite" hidden></p><progress max="100" aria-label="Update download progress" hidden></progress></div>`;
+  panel.innerHTML = `<div class="updates-body"><section class="updates-message"><span class="updates-sigil" aria-hidden="true"></span><div class="updates-copy"><span class="updates-sender" hidden>Case Forge Admin Says</span><p></p></div><button class="btn primary" data-update-action hidden title="Download, install and reopen Case Forge">Download</button><button class="updates-close" aria-label="Close updates" title="Close">${icon('close')}</button></section><p class="updates-status" role="status" aria-live="polite" hidden></p><div class="updates-transfer" hidden><span class="updates-spinner" aria-hidden="true"></span><span class="updates-transfer-label" role="status" aria-live="polite"></span><progress max="100" aria-label="Update download progress"></progress></div></div>`;
   document.body.append(panel);
   const $ = selector => panel.querySelector(selector);
   let state = { phase: 'idle' }, pinned = false, timer, busy = false, focusSuppressed = false, announced = '';
@@ -24,17 +24,22 @@ export function createUpdates({ desktop, format = 'popover' }) {
     panel.setAttribute('aria-label', state.required ? 'Required update message' : 'Update message');
     $('.updates-status').textContent = state.error || '';
     $('.updates-status').hidden = !state.error;
-    $('progress').hidden = phase !== 'downloading'; $('progress').value = state.progress || 0;
-    const hasRelease = ['available', 'downloading', 'ready', 'installing'].includes(phase) || (phase === 'error' && Boolean(state.version));
+    const transferring = ['downloading', 'verifying', 'restarting', 'installing'].includes(phase);
+    $('.updates-transfer').hidden = !transferring;
+    $('.updates-transfer-label').textContent = phase === 'verifying' ? 'Verifying your update…' : ['restarting', 'installing'].includes(phase) ? 'Restarting Case Forge… It will reopen automatically.' : state.fullDownload ? 'Downloading the complete update…' : 'Downloading your update…';
+    if (phase === 'downloading' && Number.isFinite(state.progress)) $('progress').value = state.progress;
+    else $('progress').removeAttribute('value');
+    trigger.classList.toggle('is-transferring', transferring);
+    const hasRelease = ['available', 'downloading', 'verifying', 'ready', 'restarting', 'installing'].includes(phase) || (phase === 'error' && Boolean(state.version));
     $('.updates-message p').textContent = phase === 'current' ? 'You are currently up to date' : hasRelease ? (state.message || 'A new update is ready.') : phase === 'error' ? 'Unable to check for updates' : phase === 'unavailable' ? 'Updates are available in the installed app' : 'Checking for updates…';
     $('.updates-sender').hidden = !hasRelease;
     $('.updates-sigil').textContent = hasRelease ? '!' : phase === 'current' ? '✓' : '·';
     panel.dataset.phase = phase;
     const action = $('[data-update-action]');
-    action.hidden = !['available', 'downloading', 'ready', 'installing'].includes(phase) && !(phase === 'error' && state.version);
-    action.textContent = phase === 'ready' ? 'Restart and install' : phase === 'downloading' ? `Downloading ${Math.round(state.progress || 0)}%` : phase === 'installing' ? 'Installing…' : 'Download';
-    action.disabled = busy || ['downloading', 'installing'].includes(phase);
-    const available = ['available', 'downloading', 'ready', 'installing'].includes(phase) || (phase === 'error' && Boolean(state.version));
+    action.hidden = !['available', 'downloading', 'verifying', 'ready', 'restarting', 'installing'].includes(phase) && !(phase === 'error' && state.version);
+    action.textContent = phase === 'ready' ? 'Restart and install' : phase === 'downloading' ? (state.fullDownload ? 'Downloading…' : `${Math.round(state.progress || 0)}%`) : phase === 'verifying' ? 'Verifying…' : ['restarting', 'installing'].includes(phase) ? 'Restarting…' : 'Download';
+    action.disabled = busy || ['downloading', 'verifying', 'restarting', 'installing'].includes(phase);
+    const available = ['available', 'downloading', 'verifying', 'ready', 'restarting', 'installing'].includes(phase) || (phase === 'error' && Boolean(state.version));
     trigger.hidden = format === 'notification' && !available;
     if (trigger.hidden) close();
     trigger.classList.toggle('has-update', available);
@@ -44,12 +49,15 @@ export function createUpdates({ desktop, format = 'popover' }) {
     const notice = `${state.version}:${state.required}`;
     if (available && state.version && notice !== announced) {
       trigger.classList.remove('update-arrival'); void trigger.offsetWidth; trigger.classList.add('update-arrival');
-      panel.classList.remove('update-arrival'); void panel.offsetWidth; panel.classList.add('update-arrival');
-      announced = notice; pinned = true; panel.hidden = false; trigger.setAttribute('aria-expanded', 'true');
+      announced = notice;
     }
     if (!panel.hidden) position();
   }
-  async function refresh() { try { const result = await desktop.updateStatus(); if (result.error && !result.phase) return; state = result; render(); } catch { /* Keep the last known state during lock or shutdown. */ } }
+  function receive(value) {
+    if (!value?.phase || (value.revision || 0) < (state.revision || 0)) return;
+    state = value; render();
+  }
+  async function refresh() { try { receive(await desktop.updateStatus()); } catch { /* Keep the last known state during lock or shutdown. */ } }
   function open() { clearTimeout(timer); panel.hidden = false; trigger.setAttribute('aria-expanded', 'true'); position(); void refresh(); }
   function close(focus = false) { clearTimeout(timer); pinned = false; panel.hidden = true; trigger.setAttribute('aria-expanded', 'false'); if (focus) { focusSuppressed = true; trigger.focus(); focusSuppressed = false; } }
   function leave() { clearTimeout(timer); timer = setTimeout(() => { if (!pinned && !panel.contains(document.activeElement) && document.activeElement !== trigger) close(); }, 220); }
@@ -64,14 +72,15 @@ export function createUpdates({ desktop, format = 'popover' }) {
   document.addEventListener('pointerdown', event => { if (!panel.hidden && !panel.contains(event.target) && !trigger.contains(event.target)) close(); });
   window.addEventListener('resize', () => { if (!panel.hidden) position(); });
   async function action(method) {
-    if (busy) return; busy = true; render();
-    try { const result = await desktop[method](); if (result.phase) state = result; else if (result.error) state = { ...state, error: result.error }; }
+    if (busy) return; busy = true; pinned = true; render();
+    try { const result = await desktop[method](); if (result.phase) receive(result); else if (result.error) state = { ...state, error: result.error }; }
     catch { state = { ...state, error: 'Could not complete this action. Please try again.' }; }
     finally { busy = false; render(); }
   }
   $('[data-update-action]').addEventListener('click', () => void action(state.phase === 'ready' ? 'updateInstall' : 'updateDownload'));
+  const unsubscribe = desktop.onUpdateStatus?.(receive);
   render(); void refresh();
   const poll = setInterval(() => void refresh(), 2000);
-  window.addEventListener('pagehide', () => { clearInterval(poll); clearTimeout(timer); }, { once: true });
+  window.addEventListener('pagehide', () => { clearInterval(poll); clearTimeout(timer); unsubscribe?.(); }, { once: true });
   return { close };
 }

@@ -11,6 +11,7 @@ const { createTermsAcceptance } = require('./terms-acceptance.cjs');
 const { createChatGPT, safeExternalUrl } = require('./chatgpt.cjs');
 const { createGoogleCalendar } = require('./google-calendar.cjs');
 const { createUpdates, closeForUpdate, downloadAndInstall } = require('./updates.cjs');
+const { showUpdateHandoff } = require('./update-handoff.cjs');
 const { createDocumentExports } = require('./document-exports.cjs');
 const { createDemoCases } = require('./demo-cases.cjs');
 // Test profiles never set or read the user's actual PIN. Packaged builds ignore this variable.
@@ -367,7 +368,8 @@ else {
     workspaceIPC('documents:preview', value => documentExports.preview(value));
     workspaceIPC('documents:save-pdf', value => documentExports.save(value));
     workspaceIPC('documents:history', value => documentExports.history(value));
-    updates = createUpdates({ updater: app.isPackaged ? require('electron-updater').autoUpdater : null, version: appInfo().version, enabled: app.isPackaged && process.platform === 'win32' });
+    updates = createUpdates({ updater: app.isPackaged ? require('electron-updater').autoUpdater : null, version: appInfo().version, enabled: app.isPackaged && process.platform === 'win32',
+      onChange: state => { if (win && !win.isDestroyed()) win.webContents.send('updates:status-changed', state); } });
     const updateIPC = (name, action) => ipcMain.handle(name, async event => {
       if (!entrySender(event)) return { error: 'Access denied.' };
       try { return await action(event); } catch { return { error: 'The update could not complete. Please try again.' }; }
@@ -378,14 +380,22 @@ else {
       if (!entrySender(event) || updates.status().phase !== 'ready' || installingUpdate) return updates.status();
       const target = win;
       installingUpdate = true;
+      updates.restarting();
       try {
-        const closed = await closeForUpdate(target, () => updates.install());
+        const closed = await closeForUpdate(target, async () => {
+          if (app.isPackaged) {
+            try { await showUpdateHandoff({ runtime: join(process.resourcesPath, 'runtime'), temp: app.getPath('temp'), executable: process.execPath, pid: process.pid }); }
+            catch { /* A missing status window must never block a verified update. */ }
+          }
+          updates.install();
+        });
         if (!closed) {
           installingUpdate = false;
-          return { ...updates.status(), error: 'Save your unfinished work, then select Restart and install.' };
+          updates.restartBlocked();
+          return updates.status();
         }
         return { installed: true };
-      } catch (error) { installingUpdate = false; throw error; }
+      } catch (error) { installingUpdate = false; updates.restartBlocked(); throw error; }
     };
     updateIPC('updates:download', event => downloadAndInstall(updates, () => installVerifiedUpdate(event)));
     updateIPC('updates:install', installVerifiedUpdate);
