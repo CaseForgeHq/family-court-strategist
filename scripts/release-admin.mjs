@@ -74,7 +74,9 @@ async function publish(value) {
   if (!release) await command('gh', ['release', 'create', tag, '--repo', repository, '--verify-tag', '--draft', '--title', `Case Forge ${info.version} — Windows beta`, '--notes-file', notes]);
   else await command('gh', ['release', 'edit', tag, '--repo', repository, '--notes-file', notes]);
   await command('gh', ['release', 'upload', tag, '--repo', repository, '--clobber', ...names.map(name => join(staging, name))]);
-  const uploaded = JSON.parse((await command('gh', ['api', `repos/${repository}/releases/tags/${tag}`])).stdout);
+  // GitHub's releases/tags REST route can return 404 for drafts; gh resolves the draft ID.
+  const uploaded = JSON.parse((await command('gh', ['release', 'view', tag, '--repo', repository, '--json', 'assets,isDraft'])).stdout);
+  if (!uploaded.isDraft) throw Error('Release became public before asset verification.');
   for (const name of names) {
     const bytes = await readFile(join(staging, name));
     const asset = uploaded.assets.find(asset => asset.name === name);

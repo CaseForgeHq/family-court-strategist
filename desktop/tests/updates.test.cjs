@@ -53,3 +53,20 @@ test('install waits for an asynchronous clean close and honours unsaved-work gua
     assert.equal(window.listenerCount('closed'), 0);
   }
 });
+
+test('one download action installs only after verified completion and supports cached retry', async () => {
+  const { downloadAndInstall } = require('../updates.cjs'); const f = fixture();
+  let installs = 0; const install = () => { installs++; return { installed: true }; };
+  await f.updates.check(); assert.deepEqual(await downloadAndInstall(f.updates, install), { installed: true }); assert.equal(installs, 1);
+  assert.equal(f.counts().downloads, 1);
+  await downloadAndInstall(f.updates, install); assert.equal(f.counts().downloads, 1);
+  const bad = fixture(); bad.updater.downloadUpdate = async () => { throw Error('bad checksum'); }; await bad.updates.check();
+  const failed = await downloadAndInstall(bad.updates, install); assert.equal(failed.phase, 'error'); assert.equal(installs, 2);
+});
+
+test('installer handoff does not access BrowserWindow.webContents after destruction', async () => {
+  const { closeForUpdate } = require('../updates.cjs'); const window = new EventEmitter(), contents = new EventEmitter(); let destroyed = false, installed = false;
+  Object.defineProperty(window, 'webContents', { get() { if (destroyed) throw Error('Object has been destroyed'); return contents; } });
+  window.close = () => { destroyed = true; window.emit('closed'); };
+  assert.equal(await closeForUpdate(window, () => { installed = true; }), true); assert.equal(installed, true);
+});

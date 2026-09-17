@@ -10,7 +10,7 @@ const { createWorkspacePreferences } = require('./workspace-preferences.cjs');
 const { createTermsAcceptance } = require('./terms-acceptance.cjs');
 const { createChatGPT } = require('./chatgpt.cjs');
 const { createGoogleCalendar } = require('./google-calendar.cjs');
-const { createUpdates, closeForUpdate } = require('./updates.cjs');
+const { createUpdates, closeForUpdate, downloadAndInstall } = require('./updates.cjs');
 const { createDocumentExports } = require('./document-exports.cjs');
 const { createDemoCases } = require('./demo-cases.cjs');
 // Test profiles never set or read the user's actual PIN. Packaged builds ignore this variable.
@@ -365,17 +365,21 @@ else {
     });
     updateIPC('updates:status', () => updates.status());
     updateIPC('updates:check', () => updates.check());
-    updateIPC('updates:download', () => updates.download());
-    updateIPC('updates:install', async event => {
-      if (updates.status().phase !== 'ready' || installingUpdate) return { installed: false };
+    const installVerifiedUpdate = async event => {
+      if (!entrySender(event) || updates.status().phase !== 'ready' || installingUpdate) return updates.status();
       const target = win;
-      const answer = await dialog.showMessageBox(target, { type: 'question', title: 'Restart to update Case Forge?', message: 'Your update is ready.', detail: 'Case Forge will close and open the update installer. Save any unfinished work first. Your saved case folders will remain in place.', buttons: ['Keep working', 'Restart and install'], defaultId: 0, cancelId: 0 });
-      if (answer.response !== 1 || !entrySender(event) || win !== target) return { installed: false };
       installingUpdate = true;
-      const closed = await closeForUpdate(target, () => updates.install());
-      if (!closed) { installingUpdate = false; return { error: 'Save your unfinished work, then choose Restart and install again.' }; }
-      return { installed: true };
-    });
+      try {
+        const closed = await closeForUpdate(target, () => updates.install());
+        if (!closed) {
+          installingUpdate = false;
+          return { ...updates.status(), error: 'Save your unfinished work, then select Restart and install.' };
+        }
+        return { installed: true };
+      } catch (error) { installingUpdate = false; throw error; }
+    };
+    updateIPC('updates:download', event => downloadAndInstall(updates, () => installVerifiedUpdate(event)));
+    updateIPC('updates:install', installVerifiedUpdate);
     const firstUpdateCheck = setTimeout(() => void updates.check(), 15000); firstUpdateCheck.unref();
     updateTimer = setInterval(() => void updates.check(), 60 * 1000); updateTimer.unref();
     workspaceIPC('admin:status', () => {

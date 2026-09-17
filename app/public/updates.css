@@ -52,3 +52,8 @@
 .updates-popover footer[hidden]{display:none}
 .updates-body{padding-bottom:14px}
 .updates-popover footer{padding-top:0}
+
+.updates-message{display:flex;align-items:center;gap:10px;padding:12px}
+.updates-message p{flex:1;min-width:0}
+.updates-message [data-update-action]{flex:none;max-width:130px}
+.updates-message .updates-close{position:static;flex:none;width:26px;height:30px;padding:4px}

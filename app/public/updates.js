@@ -14,7 +14,7 @@ export function createUpdates({ desktop, format = 'popover' }) {
   const panel = document.createElement('section');
   panel.id = 'updates-popover'; panel.className = `updates-popover${format === 'notification' ? ' updates-notification' : ''}`; panel.hidden = true;
   panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Update message');
-  panel.innerHTML = `<div class="updates-body"><section class="updates-message"><p></p><button class="updates-close" aria-label="Close updates" title="Close">${icon('close')}</button></section><p class="updates-status" role="status" aria-live="polite" hidden></p><progress max="100" aria-label="Update download progress" hidden></progress></div><footer><button class="btn primary" data-update-action hidden>Download</button></footer>`;
+  panel.innerHTML = `<div class="updates-body"><section class="updates-message"><p></p><button class="btn primary" data-update-action hidden title="Download, install and reopen Case Forge">Download</button><button class="updates-close" aria-label="Close updates" title="Close">${icon('close')}</button></section><p class="updates-status" role="status" aria-live="polite" hidden></p><progress max="100" aria-label="Update download progress" hidden></progress></div>`;
   document.body.append(panel);
   const $ = selector => panel.querySelector(selector);
   let state = { phase: 'idle' }, pinned = false, timer, busy = false, focusSuppressed = false, announced = '';
@@ -30,7 +30,6 @@ export function createUpdates({ desktop, format = 'popover' }) {
     action.hidden = !['available', 'downloading', 'ready', 'installing'].includes(phase) && !(phase === 'error' && state.version);
     action.textContent = phase === 'ready' ? 'Restart and install' : phase === 'downloading' ? `Downloading ${Math.round(state.progress || 0)}%` : phase === 'installing' ? 'Installing…' : 'Download';
     action.disabled = busy || ['downloading', 'installing'].includes(phase);
-    $('footer').hidden = action.hidden;
     const available = ['available', 'downloading', 'ready', 'installing'].includes(phase) || (phase === 'error' && Boolean(state.version));
     trigger.hidden = format === 'notification' && !available;
     if (trigger.hidden) close();

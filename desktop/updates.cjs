@@ -44,18 +44,24 @@ function createUpdates({ updater, version, enabled, now = () => new Date().toISO
   }
   function install() {
     if (!enabled || state.phase !== 'ready') return false;
-    set({ phase: 'installing' }); updater.quitAndInstall(false, true); return true;
+    set({ phase: 'installing' }); updater.quitAndInstall(true, true); return true;
   }
   return { status, check, download, install };
 }
 function closeForUpdate(target, install) {
+  const contents = target.webContents;
   return new Promise(resolve => {
-    const cleanup = () => { target.removeListener('closed', closed); target.webContents.removeListener('will-prevent-unload', blocked); };
+    const cleanup = () => { target.removeListener('closed', closed); contents.removeListener('will-prevent-unload', blocked); };
     const closed = () => { cleanup(); install(); resolve(true); };
     const blocked = () => { cleanup(); resolve(false); };
     target.once('closed', closed);
-    target.webContents.once('will-prevent-unload', blocked);
+    contents.once('will-prevent-unload', blocked);
     target.close();
   });
 }
-module.exports = { createUpdates, closeForUpdate };
+async function downloadAndInstall(updates, install) {
+  if (updates.status().phase === 'error') await updates.check();
+  const result = await updates.download();
+  return result.phase === 'ready' ? install() : result;
+}
+module.exports = { createUpdates, closeForUpdate, downloadAndInstall };
