@@ -18,7 +18,7 @@ function render() {
   $('lock-message').textContent = statusError || (retryAfter ? `Please wait ${retryAfter} seconds before trying again.` : inputError);
   $('pin-entry-feedback').textContent = verified ? 'Confirmed. Opening your settings…' : checking ? 'Checking your PIN…' : !value ? 'Enter 6–12 digits.'
     : /\D/.test(value) ? 'Use numbers only.' : validPin() ? 'Press Enter to confirm.' : `${value.length} digits · at least 6 needed.`;
-  $('lock-title').textContent = 'Your PIN';
+  $('lock-title').textContent = 'Create Your PIN';
   $('lock-intro').textContent = folderIntent ? 'Confirm your PIN to choose a folder.' : 'Enter your PIN to continue.';
   $('confirm-wrap').hidden = true; $('confirmation').required = false; $('pin-form').hidden = false;
 }
