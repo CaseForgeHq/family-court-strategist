@@ -245,4 +245,4 @@ refresh().then(async () => {
   if ((initial === 'preferences' || initial === 'ready') && complete()) await loadPreferences(false);
   else stage('configure', false);
 }).catch((error) => { ready = false; setupUnavailable = true; render(); $('setup-message').textContent = error.message; })
-  .finally(() => { delete document.body.dataset.entryLoading; });
+  .finally(() => { delete document.body.dataset.entryLoading; window.requestAnimationFrame?.(() => window.requestAnimationFrame?.(() => desktop?.updateBootReady?.())); });

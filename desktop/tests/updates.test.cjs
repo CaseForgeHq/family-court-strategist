@@ -85,8 +85,8 @@ test('fallback download never displays a backwards percentage and ignores late c
   f.updater.emit('download-progress', {percent:20}); assert.equal(f.updates.status().progress,null); assert.equal(f.updates.status().fullDownload,true);
   f.updater.emit('download-progress', {percent:NaN}); assert.equal(f.updates.status().progress,null);
   f.updater.emit('download-progress', {percent:100}); assert.equal(f.updates.status().phase,'verifying'); assert.equal(f.updates.install(),false);
-  f.updater.emit('update-downloaded', {version:'0.15.0'}); assert.equal(f.updates.status().phase,'ready');
-  f.updater.emit('download-progress', {percent:30}); assert.equal(f.updates.status().phase,'ready'); finish(); await pending;
+  f.updater.emit('update-downloaded', {version:'0.15.0'}); finish(); await pending; assert.equal(f.updates.status().phase,'ready');
+  f.updater.emit('download-progress', {percent:30}); assert.equal(f.updates.status().phase,'ready');
 });
 
 test('restart status is immediate, a blocked close restores retry, and only verified data installs', async () => {

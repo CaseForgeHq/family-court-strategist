@@ -35,6 +35,13 @@ function walk(relative) { return readdirSync(join(root, relative)).flatMap(name 
 for (const file of ['app/server.js', 'app/package.json', ...walk('app/lib'), ...walk('app/public')]) compare(file, () => readFileSync(join(dist, 'win-unpacked/resources', file)));
 for (const file of pkg.build.files.filter(name => !name.includes('*'))) compare(`desktop/${file}`, () => extractFile(asar, file));
 compare('desktop/runtime/CaseForgeUpdate.exe', () => readFileSync(join(dist, 'win-unpacked/resources/runtime/CaseForgeUpdate.exe')));
+for (const name of ['7za.exe', '7zip-LICENSE.txt', '7zip-COPYING']) compare(`desktop/runtime/${name}`, () => readFileSync(join(dist, 'win-unpacked/resources/runtime', name)));
+const fast = require('../desktop/fast-update.cjs').manifest(JSON.parse(readFileSync(join(dist, 'win-unpacked/resources/fast-update.json'))));
+if (fast.version !== version || fast.electron !== pkg.build.electronVersion) fail('Fast-update manifest version mismatch.');
+for (const [prefix, items] of [['', fast.engine], ['resources', fast.resources]]) for (const [name, expected] of Object.entries(items)) {
+  const actual = createHash('sha256').update(readFileSync(join(dist, 'win-unpacked', prefix, name))).digest('hex');
+  if (actual !== expected) fail(`Fast-update manifest mismatch: ${prefix}/${name}`);
+}
 const feed = yaml.load(readFileSync(join(dist, 'win-unpacked/resources/app-update.yml'), 'utf8'));
 if (feed.provider !== 'github' || feed.owner !== 'CaseForgeHq' || feed.repo !== 'family-court-strategist') fail('Packaged update destination mismatch.');
 const policyPath = join(root, 'releases/windows', `${version}.json`);

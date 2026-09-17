@@ -30,8 +30,22 @@ Use the `caseforge-release` skill at `docs/skills/caseforge-release/SKILL.md` fo
 
 This first updater-enabled release requires a manual install over versions through 0.13.1. Publishing announces updates to updater-enabled clients on their next check. It does not silently restart them or reach offline computers immediately.
 
-## Restart status (0.14.15+)
+## Prepared patches (0.14.16+)
+
+The admin message defaults to **Update ready.** Keep release messages short; technical release evidence belongs in project notes. The current-state message remains **You are currently up to date**.
+
+The verified installer is downloaded, extracted and checked while the app remains open. A build manifest records Electron engine hashes, resource hashes and installer integration settings. Only a newer version with matching engine and integration is eligible for a prepared resource switch. Unknown installed resource files, an incompatible package or failed preparation uses the normal verified NSIS installer instead.
+
+After the usual unsaved-work guard permits closing, the independent native helper waits for the old process to exit, retains its resources, moves the prepared resources into place, and reopens the same executable with the same user-data directory. A double animation-frame acknowledgement from the initialized registration/PIN renderer marks the app usable. Only then is the retained resource directory removed. A replacement that exits before readiness restores the previous resources and relaunches; that version subsequently uses NSIS. This is a recoverable directory switch, not a filesystem transaction or a guarantee against power loss.
+
+The animation says **Restarting Case Forge** and **Reopening automatically…**. Preparation happens before downtime. Benchmark the final packaged build using `desktop/tests/native-fast-update.cjs`; the target is under five seconds from the restart request through usable entry UI, excluding download and preparation. `desktop/tests/native-fast-update-rollback.cjs` injects a broken replacement and checks restoration plus saved test data. Measurements are machine-specific, not a universal time guarantee.
+
+Installing 0.14.16 from an older client still uses its existing full installer. Subsequent compatible patches can use the prepared switch. Electron upgrades and changes to installer integration continue to use NSIS. The Windows executable/uninstall metadata retain the last full installation version until the next full install; the running app and update feed use the new package version.
+
+The pinned builder toolset supplies 7za.exe for extraction, with its license files included. Installer SHA512, packaged resource hashes and unchanged engine files are checked before any close. No case files are part of the installation resource switch.
+
+## Full-installer restart status (0.14.15+)
 
 After a clean close, a small native status window is copied to a temporary directory and shown before installer handoff. It remains independent of the files being replaced and closes after the original process exits and the replacement executable has a visible window. It never downloads, installs, starts the app, or accesses case files. Closing the status window does not cancel the update. A delayed installation shows a longer-wait message after 90 seconds; the status window exits after ten minutes.
 
-The build compiles desktop/update-handoff.cs using the Windows .NET Framework compiler and verifies the packaged helper bytes. The restart window appeared in 183 ms in the isolated native rehearsal; that measurement excludes Windows installation. Differential downloads remain enabled and completed downloads are reused for a blocked-close retry. The NSIS installer still replaces the application: near-instant file patches require a separate atomic patching design and are not claimed by this release.
+The build compiles desktop/update-handoff.cs using the Windows .NET Framework compiler and verifies the packaged helper bytes. Differential downloads remain enabled and completed downloads are reused for a blocked-close retry. The full NSIS installation path is not covered by the prepared-patch restart target.

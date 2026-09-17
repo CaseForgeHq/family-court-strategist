@@ -19,7 +19,7 @@ const env = { ...process.env, CASEFORGE_TEST_USER_DATA: profile }; delete env.EL
     assert.equal((await page.evaluate(() => window.strategistDesktop.updateStatus())).phase, 'unavailable');
     assert.equal(await page.locator('#updates-popover').isVisible(), false);
     await app.evaluate(({ ipcMain }) => {
-      global.fixtureUpdate = { phase: 'available', version: '0.15.0', currentVersion: '0.14.0', required: true, message: 'An update from your administrator.\nPlease install this version before opening your case.' };
+      global.fixtureUpdate = { phase: 'available', version: '0.15.0', currentVersion: '0.14.0', required: true, message: 'Update ready.' };
       ipcMain.removeHandler('updates:status'); ipcMain.handle('updates:status', () => global.fixtureUpdate);
       ipcMain.removeHandler('updates:download'); ipcMain.handle('updates:download', () => { global.fixtureUpdate = { ...global.fixtureUpdate, phase: 'ready', progress: 100 }; return global.fixtureUpdate; });
     });

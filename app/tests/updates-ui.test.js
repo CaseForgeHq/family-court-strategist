@@ -84,5 +84,5 @@ test('live arrival stays closed and old polling cannot overwrite newer transfer 
   notify({phase:'downloading',version:'0.15.0',revision:4,progress:null,fullDownload:true});
   assert.equal(document.querySelector('progress').hasAttribute('value'),false);assert.match(document.querySelector('.updates-transfer-label').textContent,/complete update/);
   resolvePoll({phase:'downloading',revision:3,progress:20});await tick();assert.equal(document.querySelector('progress').hasAttribute('value'),false);
-  notify({phase:'restarting',version:'0.15.0',revision:5});assert.match(document.querySelector('.updates-transfer-label').textContent,/reopen automatically/);
+  notify({phase:'restarting',version:'0.15.0',revision:5});assert.match(document.querySelector('.updates-transfer-label').textContent,/Restarting Case Forge/);
 });

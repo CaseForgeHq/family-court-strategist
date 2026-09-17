@@ -94,4 +94,4 @@ if (typeof security?.resetAppSetup === 'function') {
 }
 window.addEventListener('pagehide', () => { clearTimeout(refreshTimer); unsubscribe?.(); });
 void loadAppVersion();
-refresh().then(() => { if (document.activeElement === document.body && !$('pin').disabled) $('pin').focus(); });
+refresh().then(() => { window.requestAnimationFrame?.(() => window.requestAnimationFrame?.(() => security?.updateBootReady?.())); if (document.activeElement === document.body && !$('pin').disabled) $('pin').focus(); });
