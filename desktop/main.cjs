@@ -11,6 +11,7 @@ const { createTermsAcceptance } = require('./terms-acceptance.cjs');
 const { createChatGPT } = require('./chatgpt.cjs');
 const { createGoogleCalendar } = require('./google-calendar.cjs');
 const { createUpdates, closeForUpdate } = require('./updates.cjs');
+const { createDocumentExports } = require('./document-exports.cjs');
 const { createDemoCases } = require('./demo-cases.cjs');
 // Test profiles never set or read the user's actual PIN. Packaged builds ignore this variable.
 if (!app.isPackaged && process.env.CASEFORGE_TEST_USER_DATA) app.setPath('userData', resolve(process.env.CASEFORGE_TEST_USER_DATA));
@@ -28,6 +29,7 @@ const googleCalendar = createGoogleCalendar({profileDir:app.getPath('userData'),
 const LOCK_URL = 'caseforge://lock/lock.html';
 const SETUP_URL = 'caseforge://lock/setup.html';
 let currentVault, win, server, serverPort, capability;
+let documentExports;
 let demoCases, updates, updateTimer, installingUpdate = false;
 let entryStage = 'configure';
 let unlocked = false, setupAuthorized = false, operationBusy = false, switchingFolder = false, lastActivity = Date.now(), lockGeneration = 0;
@@ -77,6 +79,7 @@ function gateURL() {
   return setupAuthorized ? SETUP_URL : LOCK_URL;
 }
 function stopServer() {
+  documentExports?.close();
   chatGPT.close(); googleCalendar.close();
   unlocked = false; capability = null; serverPort = null;
   if (server) { server.closeWorkspace(); server.close(); server.closeAllConnections(); server = null; }
@@ -351,6 +354,10 @@ else {
       try { const result = await action(value); assertCurrent(generation); return result; }
       catch(error) { return {error:error.message || 'The connection could not complete.'}; }
     });
+    documentExports = createDocumentExports({ base, tempPath: join(app.getPath('temp'), 'caseforge-documents'), getWindow: () => win, getContext: () => unlocked && currentVault ? { root: currentVault, caseKey: require('node:crypto').createHash('sha256').update(currentVault).digest('hex') } : null });
+    workspaceIPC('documents:preview', value => documentExports.preview(value));
+    workspaceIPC('documents:save-pdf', value => documentExports.save(value));
+    workspaceIPC('documents:history', value => documentExports.history(value));
     updates = createUpdates({ updater: app.isPackaged ? require('electron-updater').autoUpdater : null, version: appInfo().version, enabled: app.isPackaged && process.platform === 'win32' });
     const updateIPC = (name, action) => ipcMain.handle(name, async event => {
       if (!entrySender(event)) return { error: 'Access denied.' };

@@ -41,3 +41,14 @@
 .person-form fieldset fieldset legend{font-size:13px;padding:0 5px}
 .person-form fieldset fieldset label{flex-direction:row;align-items:center;padding:6px 0;gap:10px}
 .person-form input[type=checkbox]{width:17px;height:17px;padding:0;flex:none;accent-color:var(--action)}
+
+/* A note opens separately from its hover/focus delete action. */
+.notebook-page-row{display:flex;align-items:center;border:1px solid transparent;border-radius:8px;min-width:0}
+.notebook-page-row:hover,.notebook-page-row:focus-within,.notebook-page-row.on{background:#ffffff12;border-color:#ffffff18}
+.notebook-page-row>[data-notebook-page]{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px;text-align:left;border:0;background:none;color:#e8eee7;padding:10px 9px;font:600 13px/1.4 var(--ui);cursor:pointer}
+.notebook-page-row>[data-notebook-page]>span{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.notebook-delete{display:grid;place-items:center;flex:none;width:32px;height:32px;margin-right:4px;padding:6px;border:0;border-radius:6px;background:transparent;color:#e8eee7;opacity:0;cursor:pointer}
+.notebook-page-row:hover .notebook-delete,.notebook-page-row:focus-within .notebook-delete{opacity:1}
+.notebook-delete:hover{background:#ffffff20;color:#ffd0c6}
+.notebook-delete:focus-visible{outline:2px solid #e8eee7;outline-offset:1px}
+@media(hover:none){.notebook-delete{opacity:1}}

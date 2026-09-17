@@ -14,7 +14,8 @@ const env = { ...process.env, CASEFORGE_TEST_USER_DATA: profile }; delete env.EL
     const page = await app.firstWindow(); page.on('pageerror', e => errors.push(e.message));
     page.on('response', r => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
     await page.waitForURL('caseforge://lock/setup.html');
-    await page.locator('#open-updates').waitFor();
+    await page.locator('#open-updates').waitFor({ state: 'attached' });
+    assert.equal(await page.locator('#open-updates').isVisible(), false);
     assert.equal((await page.evaluate(() => window.strategistDesktop.updateStatus())).phase, 'unavailable');
     assert.equal(await page.locator('#updates-popover').isVisible(), false);
     await app.evaluate(({ ipcMain }) => {
@@ -23,7 +24,7 @@ const env = { ...process.env, CASEFORGE_TEST_USER_DATA: profile }; delete env.EL
       ipcMain.removeHandler('updates:download'); ipcMain.handle('updates:download', () => { global.fixtureUpdate = { ...global.fixtureUpdate, phase: 'ready', progress: 100 }; return global.fixtureUpdate; });
     });
     await page.locator('#updates-popover:not([hidden])').waitFor();
-    assert.equal(await page.locator('#updates-title').textContent(), 'Required update');
+    assert.equal(await page.locator('#updates-popover').getAttribute('aria-label'), 'Required update message');
     for (const [name, width, height, hour] of [['registration-day', 1304, 841, 12], ['registration-compact', 804, 619, 12], ['registration-night', 1304, 841, 22]]) {
       await app.evaluate(({ BrowserWindow }, size) => BrowserWindow.getAllWindows()[0].setContentSize(...size), [width, height]);
       await page.waitForFunction(size => innerWidth === size[0] && innerHeight === size[1], [width, height]);

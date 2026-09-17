@@ -98,6 +98,8 @@ export function createServer(vaultDir, options = {}) {
         if (req.method === "GET" && url.pathname === "/api/providers/local-models") return json(200, await providers.localModels());
         if (req.method === "GET" && url.pathname === "/api/case") return json(200, { ...caseModel(root), isSample: options.isSample?.(root) === true });
         const notebook = new Notebook(root, { assertWritable });
+        const documentDrafts = new Notebook(root, { assertWritable, collection: 'documents' });
+        if (req.method === 'GET' && url.pathname === '/api/document-drafts') return json(200, { pages: documentDrafts.list() });
         if (req.method === 'GET' && url.pathname === '/api/notebook') return json(200, { pages: notebook.list(), access: getAccess(root) });
         const journal = new Journal(root, { assertWritable, getTargets: () => journalTargets(root, inbox.list(root)) });
         if (req.method === "GET" && url.pathname === "/api/journal") return json(200, { entries: journal.list(), access: getAccess(root) });
@@ -154,7 +156,7 @@ export function createServer(vaultDir, options = {}) {
         if (req.method === "POST") {
           if (!req.headers["content-type"]?.startsWith("application/json")) throw new AppError("Expected a JSON request.", 415);
           let body;
-          try { body = JSON.parse((await readBody(req, url.pathname === '/api/notebook' ? 64000 : 16_000)).toString("utf8")); }
+          try { body = JSON.parse((await readBody(req, url.pathname === '/api/document-drafts' ? 400000 : url.pathname === '/api/notebook' ? 64000 : 16_000)).toString("utf8")); }
           catch (error) { if (error instanceof AppError) throw error; throw new AppError("Invalid request."); }
           if (!body || typeof body !== "object" || Array.isArray(body)) throw new AppError("Invalid request.");
           if (caseRoot(resolveVault()) !== root) throw new AppError("The active case changed. Reload before continuing.", 409);
@@ -162,7 +164,9 @@ export function createServer(vaultDir, options = {}) {
           if (url.pathname === "/api/journal") return json(200, journal.save(body));
           if (url.pathname === "/api/tasks") return json(200, tasks.save(body));
           if (url.pathname === "/api/calendar") return json(200, calendar.save(body));
+          if (url.pathname === '/api/document-drafts') return json(200, documentDrafts.save(body));
           if (url.pathname === '/api/notebook') return json(200, notebook.save(body));
+          if (url.pathname === '/api/notebook/delete') return json(200, notebook.delete(body));
           if (url.pathname === '/api/people') return json(200, addPerson(root, body, { assertWritable, model: caseModel(root) }));
           if (url.pathname === "/api/providers/connect") {
             assertWritable(root);
@@ -181,7 +185,7 @@ export function createServer(vaultDir, options = {}) {
       }
       if (req.method !== "GET") throw new AppError("Method not allowed.", 405);
       const rel = url.pathname === "/" ? "/index.html" : url.pathname;
-      if (!["/updates.js", "/updates.css", "/search.css", "/case-menu.js", "/layout.css", "/notebook.js", "/file-register.js", "/windows.js", "/refinement.css", "/admin.js", "/admin.css", "/topbar.css", "/map-space.css", "/map-layout.js", "/map-scene.js", "/vendor/three/three.module.js", "/vendor/three/three.core.js", "/vendor/three/OrbitControls.js", "/icons.js", "/search.js", "/assistant.js", "/calendar.js", "/calendar.css", "/index.html", "/app.css", "/app.js", "/workspace.css", "/workspace-chrome.js", "/scene/landscape.css", "/scene/landscape.js", "/scene/scene-time.js", "/scene/scene-controls.css", "/scene/scene-controls.js", "/scene/fonts/Ubuntu-Regular.ttf", "/scene/fonts/Quicksand-VariableFont_wght.ttf", "/graph.js", "/graph.css", "/inbox.js", "/journal.js", "/tasks.js", "/brand/tokens.css", "/brand/logo.svg", "/brand/logo-reversed.svg", "/brand/symbol.svg", "/brand/favicon.svg", "/brand/fonts/InterVariable.woff2", "/brand/fonts/EBGaramond-Variable.ttf"].includes(rel)) throw new AppError("Not found.", 404);
+      if (!["/document-model.js", "/document-creator.js", "/document-creator.css", "/updates.js", "/updates.css", "/search.css", "/case-menu.js", "/layout.css", "/notebook.js", "/file-register.js", "/windows.js", "/refinement.css", "/admin.js", "/admin.css", "/topbar.css", "/map-space.css", "/map-layout.js", "/map-scene.js", "/vendor/three/three.module.js", "/vendor/three/three.core.js", "/vendor/three/OrbitControls.js", "/icons.js", "/search.js", "/assistant.js", "/calendar.js", "/calendar.css", "/index.html", "/app.css", "/app.js", "/workspace.css", "/workspace-chrome.js", "/scene/landscape.css", "/scene/landscape.js", "/scene/scene-time.js", "/scene/scene-controls.css", "/scene/scene-controls.js", "/scene/fonts/Ubuntu-Regular.ttf", "/scene/fonts/Quicksand-VariableFont_wght.ttf", "/graph.js", "/graph.css", "/inbox.js", "/journal.js", "/tasks.js", "/brand/tokens.css", "/brand/logo.svg", "/brand/logo-reversed.svg", "/brand/symbol.svg", "/brand/favicon.svg", "/brand/fonts/InterVariable.woff2", "/brand/fonts/EBGaramond-Variable.ttf"].includes(rel)) throw new AppError("Not found.", 404);
       const full = join(PUBLIC, rel);
       const body = await readFile(full);
       res.writeHead(200, { "content-type": TYPES[extname(full)] || "application/octet-stream" });

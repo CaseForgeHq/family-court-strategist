@@ -84,7 +84,7 @@ export function buildSearchIndex({ root, model, documents = [], journal, tasks, 
   if (journal) revisions(journal, 'journal', state => Object.values(state.entries));
   if (tasks) revisions(tasks, 'task', state => Object.values(state.entries));
   if (calendar) revisions(calendar, 'calendar', state => Object.values(state.entries));
-  if (notebook) revisions(notebook, 'notebook', state => Object.values(state.pages));
+  if (notebook) revisions(notebook, 'notebook', state => Object.values(state.pages).filter(page => !page.deletedAt));
   if (facts) revisions(facts, 'fact', state => Object.values(state.facts));
   const latestKey = new Map(records.filter(r => !r.history && r.category !== 'draft').map(r => [`${r.kind}:${r.id}`, r.key]));
   const resolveNode = id => id.startsWith('source:') ? latestKey.get(bySource.get(id.slice(7))) : latestKey.get(`note:${id}`);

@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="/refinement.css">
 <link rel="stylesheet" href="/layout.css">
 <link rel="stylesheet" href="/search.css">
+<link rel="stylesheet" href="/document-creator.css">
 <script src="/scene/scene-time.js"></script>
 </head>
 <body data-context-open="false">
@@ -42,7 +43,7 @@
 
       <div id="scene-controls" class="workspace-atmosphere"></div>
       <div class="header-tools" role="group" aria-label="Workspace controls">
-      <button id="open-updates" class="icon-button updates-trigger" type="button" aria-label="Updates" aria-haspopup="dialog" aria-expanded="false" aria-controls="updates-popover" hidden><span data-icon="download"></span><span class="update-dot" hidden></span></button>
+      <button id="open-updates" class="icon-button updates-trigger" type="button" aria-label="Updates" aria-haspopup="dialog" aria-expanded="false" aria-controls="updates-popover" hidden><span data-icon="shield"></span><span class="update-dot" hidden>!</span></button>
       <button class="workspace-settings icon-button" type="button" data-view="settings" aria-label="Workspace settings" title="Workspace settings"><span data-icon="settings"></span></button>
       <button class="icon-button lock-app" id="lock-app" type="button" aria-label="Lock app" title="Save your work before locking. Unsaved drafts will be cleared." hidden><span data-icon="lock"></span></button>
       <button id="toggle-context" class="icon-button" type="button" aria-label="Toggle case details" aria-controls="workspace-context" aria-expanded="false" title="Case details"><span data-icon="panelRight"></span></button>
@@ -65,6 +66,7 @@
     <button type="button" class="nav" data-view="patterns"><span data-icon="patterns"></span>Patterns<span class="ct alert" id="count-patterns">0</span></button>
 
 
+    <button type="button" class="nav" data-view="creator"><span data-icon="file"></span>Document creator</button>
     <button type="button" class="nav" data-view="exports"><span data-icon="print"></span>Print &amp; export</button>
     <button type="button" class="nav" data-view="legal"><span data-icon="book"></span>Legal Research</button>
 
@@ -110,3 +112,4 @@
 <script src="/app.js" type="module"></script>
 </body>
 </html>
+

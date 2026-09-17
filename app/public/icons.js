@@ -1,6 +1,7 @@
 // One icon vocabulary for navigation, menus and workspace actions.
 // 24px outline grid; decorative icons inherit the control's accessible label.
 export const ICONS = Object.freeze({
+  trash: '<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/>',
   download: '<path d="M12 3v12m-5-5 5 5 5-5M4 15v5h16v-5"/>',
   space: '<path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/>',
   fly: '<path d="m3 11 18-8-8 18-2-8zM11 13l10-10"/>',

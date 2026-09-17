@@ -1,3 +1,4 @@
+import { createDocumentCreator } from './document-creator.js';
 import { createInbox } from "./inbox.js";
 import { createJournal } from "./journal.js";
 import { createTasks } from "./tasks.js";
@@ -18,7 +19,7 @@ const TYPE_CLASS = {
   legal: "court", professional: "pro", communication: "com",
 };
 const VIEW_TITLES = {
-  search: 'Case search',
+  creator: 'Document creator', search: 'Case search',
   notebook: 'Notebook', calendar: "Calendar", dashboard: "Case desk", tasks: "Tasks & deadlines", timeline: "Timeline", evidence: "Evidence matrix", map: "Case map",
   patterns: "Patterns", people: "People", documents: "Files & AI", journal: "Case journal", exports: "Print & export", legal: "Legal research", settings: "Workspace settings",
 };
@@ -47,7 +48,10 @@ async function api(path, options = {}) {
 const inbox = createInbox({ api, getSession: () => SESSION, updateSession: (s) => { SESSION = s; },
   showModal: openModal, closeModal, onSaved: refreshCase });
 const journal = createJournal({ api, getSession: () => SESSION });
-const notebook = createNotebook({ api, getSession: () => SESSION });
+const documentCreator = createDocumentCreator({ api, getSession: () => SESSION });
+let documentSeed;
+async function openDocumentCreator(seed) { if (!await documentCreator.saveDraft()) return; documentSeed = seed; await go('creator'); }
+const notebook = createNotebook({ api, getSession: () => SESSION, onExport: openDocumentCreator });
 const tasks = createTasks({ api, getSession: () => SESSION });
 const caseMap = createCaseMap({ openRecord });
 const calendar = createCalendar({ api, getSession: () => SESSION, openRecord, google: {
@@ -256,7 +260,7 @@ function viewLegal() {
 }
 
 const VIEWS = {
-  search: () => '',
+  creator: () => '', search: () => '',
   notebook: () => '', calendar: () => "", dashboard: viewDashboard, settings: viewSettings, tasks: () => "", timeline: viewTimeline, evidence: viewEvidence,
   patterns: viewPatterns, people: viewPeople, documents: () => "", journal: () => "", exports: viewDocuments, legal: viewLegal, map: () => "",
 };
@@ -274,6 +278,7 @@ async function go(view) {
   inbox.unmount();
   journal.unmount();
   notebook.unmount();
+  documentCreator.unmount();
   tasks.unmount();
   caseMap.unmount();
   calendar.unmount();
@@ -297,6 +302,7 @@ async function go(view) {
   if (view === "documents") inbox.mount($("view"));
   if (view === 'search') await globalSearch.mount($('view'));
   if (view === "journal") await journal.mount($("view"));
+  if (view === 'creator') { const seed = documentSeed; documentSeed = null; await documentCreator.mount($('view'), seed); }
   if (view === 'notebook') await notebook.mount($('view'));
   if (view === 'people') { $('add-person')?.addEventListener('click', () => addPersonForm()); document.querySelectorAll('[data-edit-person]').forEach(button => button.addEventListener('click', () => addPersonForm(MODEL.people.find(p => p.reference === button.dataset.editPerson)))); }
   if (view === "tasks") await tasks.mount($("view"));
@@ -415,22 +421,7 @@ async function generateChronology() {
     openModal(`<h2 class="modal-title">Could not generate chronology</h2><p class="modal-p">${esc(error.message)}</p>`);
     return;
   }
-  const rows = m.timeline.length
-    ? [...m.timeline].reverse().map((e) => `<tr><td>${esc(e.date)}</td><td>${esc(e.title)}</td><td>${esc(e.type)}</td><td>${esc(e.eventId)}</td></tr>`).join("")
-    : `<tr><td colspan="4">No dated events recorded.</td></tr>`;
-  $("print-area").innerHTML = `
-    <div class="doc">
-      <img class="brand-print" src="/brand/logo.svg" alt="Case Forge">
-      <h1 class="doc-h1">Draft Chronology of Events</h1>
-      <p class="doc-meta">${esc(m.court || m.caseName || "Family law matter")}</p>
-      <table class="doc-table"><thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Ref</th></tr></thead>
-      <tbody>${rows}</tbody></table>
-      <p class="doc-foot">Prepared with Case Forge · printable draft only. Verify accuracy and completeness before use. This is a case-organisation document, not legal advice.</p>
-    </div>`;
-  document.body.classList.add("printing");
-  const cleanup = () => { document.body.classList.remove("printing"); window.removeEventListener("afterprint", cleanup); };
-  window.addEventListener("afterprint", cleanup);
-  window.print();
+  await openDocumentCreator({ title: 'Draft Chronology of Events', body: [...m.timeline].reverse().map(e => `${e.date} — ${e.title}\nType: ${e.type} · Reference: ${e.eventId}`).join('\n\n') || 'No dated events recorded.' });
 }
 
 /* ---------- wire up ---------- */
