@@ -9,8 +9,8 @@ export function createAdmin({ desktop }) {
   const dialog = document.createElement('dialog');
   dialog.className = 'admin-dialog';
   dialog.setAttribute('aria-labelledby', 'admin-title');
-  dialog.innerHTML = `<header class="admin-heading"><span class="admin-emblem">${icon('shield')}</span><div><span class="admin-eyebrow">ADMIN</span><h2 id="admin-title">Sample data</h2></div><button type="button" class="admin-close" aria-label="Close admin">${icon('close')}</button></header>
-    <div class="admin-content"><p class="admin-intro">Explore a case with fictional records.<br><span>Each set opens as a separate local case.</span></p><div class="admin-options"></div><div class="admin-preview" aria-live="polite"></div><p class="admin-status" role="status" aria-live="polite"></p><div class="admin-library"></div></div>
+  dialog.innerHTML = `<header class="admin-heading"><span class="admin-emblem">${icon('shield')}</span><div><span class="admin-eyebrow">DEMO CASES</span><h2 id="admin-title">Simulate a case</h2></div><button type="button" class="admin-close" aria-label="Close admin">${icon('close')}</button></header>
+    <div class="admin-content"><p class="admin-intro">Simulate a complete fictional case.<br><span>People, email exchanges, events and connections — saved as a separate local case.</span></p><div class="admin-options"></div><div class="admin-preview" aria-live="polite"></div><p class="admin-status" role="status" aria-live="polite"></p><div class="admin-library"></div></div>
     <footer class="admin-footer"><button type="button" class="admin-return" hidden>${icon('arrowRight')}<span>Previous case</span></button><button type="button" class="admin-create">${icon('plus')}<span>Create &amp; open demo</span></button></footer>`;
   document.body.append(dialog);
   const $ = selector => dialog.querySelector(selector);
@@ -19,7 +19,7 @@ export function createAdmin({ desktop }) {
   function render() {
     const preset = state?.presets.find(item => item.id === selected);
     $('.admin-options').innerHTML = state ? `<fieldset ${busy ? 'disabled' : ''}><legend>Choose a sample size</legend><div class="admin-sizes">${state.presets.map(item => `<label class="admin-size"><input type="radio" name="demo-size" value="${escape(item.id)}" ${selected === item.id ? 'checked' : ''}><span class="admin-size-name">${escape(item.label)}<span class="admin-radio" aria-hidden="true"></span></span><strong>${item.files}<span> files</span></strong><small>${({ small: 'Quick look', medium: 'Everyday case', large: 'Stress test' })[item.id] || ''}</small></label>`).join('')}</div></fieldset>` : '';
-    $('.admin-preview').innerHTML = preset ? `<div>${preset.people} people <span>·</span> ${preset.events} events <span>·</span> ${preset.tasks} tasks</div><small>${preset.notes} journal notes · ${preset.calendar} calendar entries · ${preset.evidence} evidence items · ${preset.patterns} themes</small>` : '';
+    $('.admin-preview').innerHTML = preset ? `<div>${preset.people} people <span>·</span> ${preset.events} events <span>·</span> ${preset.tasks} tasks</div><small>${preset.emailExports ?? Math.max(0, preset.files - 5)} email exports · ${preset.notes} notebook pages · ${preset.notes} journal notes<br>${preset.calendar} calendar entries · ${preset.evidence} evidence items · ${preset.patterns} themes</small>` : '';
     $('.admin-status').textContent = notice;
     $('.admin-status').classList.toggle('is-busy', busy);
     $('.admin-options').setAttribute('aria-busy', String(busy));
