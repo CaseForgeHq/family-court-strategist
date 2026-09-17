@@ -1,0 +1,24 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
+import { tmpdir } from 'node:os';
+import { createServer } from '../server.js';
+test('record previews and calendar APIs enforce case/token/write boundaries and local note allowlist',async t=>{
+  const root=mkdtempSync(join(tmpdir(),'caseforge-links-'));mkdirSync(join(root,'events'));
+  writeFileSync(join(root,'events','meeting.md'),'---\ndate: 2026-09-16\nevent_id: EVT-1\ntype: event\n---\n# School meeting\nA fictional meeting.');
+  mkdirSync(join(root,'.private'));writeFileSync(join(root,'.private','secret.md'),'Secret sentinel');
+  const server=createServer(root,{preview:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  t.after(async()=>{server.closeAllConnections();await new Promise(r=>server.close(r));assert(resolve(root).startsWith(resolve(tmpdir())+sep));rmSync(root,{recursive:true,force:true});});
+  const base=`http://127.0.0.1:${server.address().port}`;const session=await (await fetch(base+'/api/session')).json();
+  const headers={'x-case-id':session.caseKey,'x-strategist-token':session.token,'content-type':'application/json'};
+  assert.equal((await fetch(base+'/api/notes?path=events%2Fmeeting.md')).status,409);
+  const note=await (await fetch(base+'/api/notes?path=events%2Fmeeting.md',{headers})).json();assert.equal(note.title,'School meeting');assert.match(note.body,/fictional/);
+  for(const path of ['../secret.md','.private/secret.md','events/absent.md'])assert.equal((await fetch(base+'/api/notes?path='+encodeURIComponent(path),{headers})).status,404);
+  const results=await (await fetch(base+'/api/search?q=2026-09-16',{headers})).json();assert.equal(results.results[0].kind,'note');
+  const initial=await (await fetch(base+'/api/calendar',{headers})).json();assert.equal(initial.events[0].source.id,'events/meeting.md');
+  const event={id:'11111111-1111-4111-8111-111111111111',expectedRevision:0,title:'Call',date:'2026-09-17',details:'',status:'active'};
+  assert.equal((await fetch(base+'/api/calendar',{method:'POST',headers:{...headers,'x-strategist-token':'bad'},body:JSON.stringify(event)})).status,403);
+  assert.equal((await fetch(base+'/api/calendar',{method:'POST',headers,body:JSON.stringify(event)})).status,200);
+  const listed=await (await fetch(base+'/api/calendar',{headers})).json();assert.equal(listed.events.length,2);
+});

@@ -71,6 +71,41 @@ test("local model adapter sends a schema and returns structured findings", async
   assert.equal(await providers.analyse("Synthetic document", new AbortController().signal), '{"summary":"test"}');
 });
 
+test("explicit local model discovery reads tags only and returns safe non-cloud model names", async () => {
+  const requests = [];
+  const providers = new Providers({ fetchImpl: async (url, options) => {
+    requests.push({ url, options });
+    return json({ models: [{ name: "local:8b", size: 500, digest: "not returned" }, { model: "another:4b" }, { name: "local:8b" },
+      { name: "remote-cloud:latest" }, { name: "custom-alias", remote_host: "https://example.invalid" }, { name: "remote-alias", remote_model: "remote" },
+      { name: '<img src="x">' }, null] });
+  } });
+  assert.equal(requests.length, 0);
+  const result = await providers.localModels();
+  assert.equal(result.available, true);
+  assert.deepEqual(result.models, [{ name: "another:4b" }, { name: "local:8b" }]);
+  assert.equal(result.excludedCloudModels, 3);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].url, "http://127.0.0.1:11434/api/tags");
+  assert.equal(requests[0].options.method, "GET");
+  assert.equal(requests[0].options.body, undefined);
+  assert.equal(requests[0].options.redirect, "error");
+  assert.equal(providers.connection, null, "Discovery must never connect or run analysis");
+});
+
+test("local discovery explains an unavailable engine or missing models without installing anything", async () => {
+  const offline = new Providers({ fetchImpl: async () => { throw new Error("Connection refused with internal details"); } });
+  const result = await offline.localModels();
+  assert.equal(result.available, false);
+  assert.deepEqual(result.models, []);
+  assert.match(result.message, /install Ollama and a local model first/);
+  assert.doesNotMatch(result.message, /internal details/);
+  const empty = await new Providers({ fetchImpl: async () => json({ models: [] }) }).localModels();
+  assert.equal(empty.available, true);
+  assert.match(empty.message, /No local models were found/);
+  const malformed = await new Providers({ fetchImpl: async () => json({ models: "not a list" }) }).localModels();
+  assert.equal(malformed.available, false);
+});
+
 test("source matching rejects invented passages, invalid dates and single-source inconsistencies", () => {
   const id = "a".repeat(64);
   const documents = [{ id, name: "letter.pdf", pages: [{ page: 1, text: "On 2024-03-19, Alex reported that the changeover did not occur." }] }];

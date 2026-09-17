@@ -1,0 +1,48 @@
+import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const require = createRequire(new URL('../desktop/package.json', import.meta.url));
+const yaml = require('js-yaml'), { extractFile } = require('@electron/asar');
+const pkg = JSON.parse(readFileSync(join(root, 'desktop/package.json')));
+const lock = JSON.parse(readFileSync(join(root, 'desktop/package-lock.json')));
+const dist = join(root, 'desktop/dist'), version = pkg.version;
+const fail = message => { throw new Error(message); };
+if (!/^\d+\.\d+\.\d+$/.test(version) || lock.version !== version || lock.packages[''].version !== version) fail('Desktop versions disagree.');
+const notesPath = resolve(root, 'desktop', pkg.build.releaseInfo.releaseNotesFile);
+if (notesPath !== join(root, 'releases/windows', `${version}.md`)) fail('Release notes path does not match this version.');
+const notes = readFileSync(notesPath, 'utf8'); if (!notes.trim()) fail('Write the administrator release message.');
+const metadata = yaml.load(readFileSync(join(dist, 'latest.yml'), 'utf8'));
+if (metadata.version !== version || metadata.releaseNotes?.trim() !== notes.trim()) fail('Update metadata version or message differs from source.');
+const installer = `Case-Forge-Setup-${version}.exe`;
+const bytes = readFileSync(join(dist, installer));
+const sha512 = createHash('sha512').update(bytes).digest('base64');
+const asset = metadata.files?.find(file => file.url === installer);
+if (!asset || asset.sha512 !== sha512 || asset.size !== bytes.length) fail('Installer does not match latest.yml.');
+if (metadata.path && metadata.path !== installer) fail('Legacy update path mismatch.');
+const asar = join(dist, 'win-unpacked/resources/app.asar');
+const packaged = JSON.parse(extractFile(asar, 'package.json').toString());
+if (packaged.version !== version) fail('Packaged version mismatch.');
+const checked = [];
+function compare(relative, target) {
+  const source = readFileSync(join(root, relative));
+  const output = target(); if (!source.equals(output)) fail(`Packaged source mismatch: ${relative}`);
+  checked.push(relative);
+}
+function walk(relative) { return readdirSync(join(root, relative)).flatMap(name => { const path = `${relative}/${name}`; return statSync(join(root, path)).isDirectory() ? walk(path) : [path]; }); }
+for (const file of ['app/server.js', 'app/package.json', ...walk('app/lib'), ...walk('app/public')]) compare(file, () => readFileSync(join(dist, 'win-unpacked/resources', file)));
+for (const file of pkg.build.files.filter(name => !name.includes('*'))) compare(`desktop/${file}`, () => extractFile(asar, file));
+const feed = yaml.load(readFileSync(join(dist, 'win-unpacked/resources/app-update.yml'), 'utf8'));
+if (feed.provider !== 'github' || feed.owner !== 'CaseForgeHq' || feed.repo !== 'family-court-strategist') fail('Packaged update destination mismatch.');
+const policyPath = join(root, 'releases/windows', `${version}.json`);
+const policy = existsSync(policyPath) ? JSON.parse(readFileSync(policyPath, 'utf8')) : { required: false };
+if (typeof policy.required !== 'boolean') fail('Release required policy must be a boolean.');
+metadata.caseForgeRequired = policy.required;
+writeFileSync(join(dist, 'latest.yml'), yaml.dump(metadata, { lineWidth: -1 }));
+const assets = [installer, `${installer}.blockmap`, 'latest.yml'].map(name => ({ name, bytes: statSync(join(dist, name)).size, sha256: createHash('sha256').update(readFileSync(join(dist, name))).digest('hex') }));
+writeFileSync(join(dist, 'SHA256SUMS.txt'), assets.map(a => `${a.sha256}  ${a.name}`).join('\n') + '\n');
+const report = { version, repository: 'CaseForgeHq/family-court-strategist', assets, checkedSourceFiles: checked, verifiedAt: new Date().toISOString(), limits: ['Authenticode signing must be checked separately.', 'Does not prove an installed upgrade or public availability.'] };
+writeFileSync(join(dist, 'release-report.json'), JSON.stringify(report, null, 2) + '\n');
+console.log(JSON.stringify({ version, assets, checkedSourceFiles: checked.length }, null, 2));

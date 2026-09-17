@@ -1,27 +1,133 @@
 {
   "name": "family-court-strategist-desktop",
-  "version": "0.1.0",
+  "version": "0.14.3",
   "private": true,
   "description": "Local case workspace with document intake and optional user-selected AI analysis.",
   "main": "main.cjs",
   "scripts": {
+    "prestart": "node ../scripts/sync-brand.mjs && node prepare-runtime.cjs",
+    "predist": "node ../scripts/sync-brand.mjs && node prepare-runtime.cjs",
+    "predist:win": "node ../scripts/sync-brand.mjs && node prepare-runtime.cjs",
     "start": "electron .",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win nsis --x64",
+    "test": "node --test tests/*.test.cjs"
   },
   "devDependencies": {
+    "@openai/codex": "0.153.4",
     "electron": "^44.2.0",
     "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "org.familycourtstrategist.app",
     "productName": "Case Forge",
-    "files": ["main.cjs", "preload.cjs"],
-    "extraResources": [
-      { "from": "../app", "to": "app", "filter": ["server.js", "package.json", "lib/**", "public/**", "node_modules/pdfjs-dist/**", "node_modules/@napi-rs/**"] },
-      { "from": "../sample-case", "to": "sample-case" }
+    "files": [
+      "main.cjs",
+      "demo-cases.cjs",
+      "preload.cjs",
+      "security.cjs",
+      "workspace-preferences.cjs",
+      "lock.html",
+      "lock.css",
+      "lock.js",
+      "setup.html",
+      "setup.css",
+      "setup.js",
+      "ai-plans.js",
+      "plans.css",
+      "icon.png",
+      "icon.ico",
+      "brand/**",
+      "fonts/**",
+      "scene-time.js",
+      "landscape.js",
+      "landscape.css",
+      "weather.cjs",
+      "scene-preferences.cjs",
+      "entry-flow.js",
+      "scene-controls.js",
+      "scene-controls.css",
+      "onboarding.css",
+      "glass-effects.js",
+      "terms.js",
+      "terms.css",
+      "terms-screen.js",
+      "terms-acceptance.cjs",
+      "chatgpt.cjs",
+      "google-calendar.cjs",
+      "updates.cjs"
     ],
-    "mac": { "category": "public.app-category.productivity", "target": "dmg" },
-    "win": { "target": "nsis" },
-    "linux": { "target": "AppImage" }
+    "extraResources": [
+      {
+        "from": "../app",
+        "to": "app",
+        "filter": [
+          "server.js",
+          "package.json",
+          "lib/**",
+          "public/**",
+          "node_modules/pdfjs-dist/**",
+          "node_modules/@napi-rs/**"
+        ]
+      },
+      {
+        "from": "../app/node_modules/pdfjs-dist",
+        "to": "app/node_modules/pdfjs-dist",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../app/node_modules/@napi-rs",
+        "to": "app/node_modules/@napi-rs",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../sample-case",
+        "to": "sample-case"
+      },
+      {
+        "from": "runtime",
+        "to": "runtime",
+        "filter": [
+          "codex.exe",
+          "LICENSE-Codex.txt"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "artifactName": "Case-Forge-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "linux": {
+      "target": "AppImage"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CaseForgeHq",
+        "repo": "family-court-strategist",
+        "releaseType": "release"
+      }
+    ],
+    "releaseInfo": {
+      "releaseNotesFile": "../releases/windows/0.14.3.md"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9"
   }
 }

@@ -84,6 +84,33 @@ export class Providers {
     } };
   }
 
+  async localModels() {
+    // Explicit discovery reads installed names only. It never downloads a model,
+    // calls a cloud endpoint, starts an engine, or sends any case content.
+    try {
+      const result = await responseJson(await this.fetch("http://127.0.0.1:11434/api/tags", {
+        method: "GET", signal: AbortSignal.timeout(5_000), redirect: "error",
+      }));
+      if (!Array.isArray(result.models)) throw new Error("Invalid model list");
+      const seen = new Set(), models = [];
+      let excludedCloudModels = 0;
+      for (const item of result.models) {
+        const name = item?.name || item?.model;
+        if (typeof name !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,119}$/.test(name) || seen.has(name)) continue;
+        seen.add(name);
+        if (/cloud/i.test(name) || item.remote_host || item.remote_model || item.details?.remote_host || item.details?.remote_model) { excludedCloudModels++; continue; }
+        models.push({ name });
+      }
+      models.sort((a, b) => a.name.localeCompare(b.name));
+      return { available: true, models, excludedCloudModels, message: models.length
+        ? "Choose an installed model below. Check connection will confirm it can run locally."
+        : "No local models were found. Install a local model in Ollama, then try again. Case Forge does not include an AI engine or model." };
+    } catch {
+      return { available: false, models: [], excludedCloudModels: 0,
+        message: "Could not reach Ollama on this computer. If it is installed, open it and try again. Otherwise install Ollama and a local model first. Case Forge does not include either." };
+    }
+  }
+
   async connect({ provider, model, apiKey }) {
     if (!["claude-code", "anthropic", "ollama"].includes(provider)) throw new AppError("Choose a supported connection.");
     if (provider === "claude-code") {

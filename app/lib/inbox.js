@@ -5,6 +5,7 @@ import { AppError, publicError } from "./errors.js";
 import { safePath, readLocal, readJson, writeJson, writeNew } from "./files.js";
 import { extractDocument, MAX_UPLOAD } from "./extraction.js";
 import { analysisPrompt, validateAnalysis } from "./analysis.js";
+import { FileReferences, isFileReference } from "./file-references.js";
 
 const ID = /^[a-f0-9]{64}$/;
 const BUSY = new Set(["queued_read", "reading", "queued", "analysing"]);
@@ -17,16 +18,30 @@ const yaml = (v) => JSON.stringify(String(v));
 const prose = (v) => String(v).replace(/^---\s*$/gm, "—");
 
 export class Inbox {
-  constructor({ providers, assertWritable, extract = extractDocument }) {
+  constructor({ providers, assertWritable, extract = extractDocument, fileReferences = null }) {
     this.providers = providers;
     this.assertWritable = assertWritable;
     this.extract = extract;
+    this.fileReferences = fileReferences;
     this.jobs = new Map();
     this.tail = Promise.resolve();
     this.closed = false;
   }
 
   key(root, id) { return `${root}:${id}`; }
+  references(root) { return this.fileReferences || new FileReferences({ root, relativePath: ".strategist/file-references.json" }); }
+  reference(root, record) {
+    if (isFileReference(record.reference)) return record;
+    // Reading a bundled/read-only case must never create an identifier or write
+    // the profile registry. Desktop entitlement/lock guards remain authoritative.
+    try { this.assertWritable(root); } catch { return record; }
+    const reference = this.references(root).allocate(record.id);
+    this.assertWritable(root);
+    // Adding a reference is metadata migration, not new document activity.
+    const migrated = { ...record, reference };
+    writeJson(root, `${base(record.id)}/document.json`, migrated);
+    return migrated;
+  }
   record(root, id) {
     try { return readJson(root, `${base(id)}/document.json`); }
     catch (error) { if (error.code === "ENOENT") throw new AppError("Document not found.", 404); throw error; }
@@ -39,7 +54,9 @@ export class Inbox {
     if (!existsSync(folder)) return [];
     return readdirSync(folder).filter((id) => ID.test(id)).flatMap((id) => {
       try {
-        const record = this.record(root, id);
+        let record = this.record(root, id);
+        // A damaged reference register must not hide an otherwise readable file.
+        try { record = this.reference(root, record); } catch { /* imports surface storage errors; existing records remain readable */ }
         // Recovery is read-only. Never resume an external call silently after a restart.
         if (this.saved(root, id)) record.status = "saved";
         else if (BUSY.has(record.status) && !this.jobs.has(this.key(root, id))) {
@@ -100,7 +117,8 @@ export class Inbox {
     if (this.jobs.size >= 20) throw new AppError("The queue is full. Wait for a document to finish.", 429);
     const original = `${base(id)}/original${extension}`;
     if (!existsSync(safePath(root, original))) writeNew(root, original, bytes);
-    const record = { id, name, extension, bytes: bytes.length, original, status: "queued_read", createdAt: now(), error: null };
+    const reference = this.references(root).allocate(id);
+    const record = { id, reference, name, extension, bytes: bytes.length, original, status: "queued_read", createdAt: now(), error: null };
     this.put(root, record);
     this.read(root, id);
     return { document: record, duplicate: false };

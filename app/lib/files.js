@@ -3,6 +3,8 @@ import { join, resolve, relative, isAbsolute, dirname } from "node:path";
 import { randomUUID } from "node:crypto";
 import { AppError } from "./errors.js";
 
+const renamePause = new Int32Array(new SharedArrayBuffer(4));
+
 // All application-owned writes use generated path components beneath the selected
 // case. Refuse symlinks, including a replaced case root, instead of following them.
 export function caseRoot(path) {
@@ -49,8 +51,16 @@ export function writeJson(root, rel, value) {
   const temp = join(dirname(target), `.pending-${randomUUID()}`);
   try {
     writeFileSync(temp, JSON.stringify(value, null, 2) + "\n", { flag: "wx", mode: 0o600 });
-    safePath(root, rel);
-    renameSync(temp, target);
+    // Windows can briefly hold newly written metadata open. Retry the atomic
+    // rename for at most 300 ms; never delete the previous saved version.
+    for (let attempt = 0; ; attempt++) {
+      safePath(root, rel);
+      try { renameSync(temp, target); break; }
+      catch (error) {
+        if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(error.code) || attempt >= 5) throw error;
+        Atomics.wait(renamePause, 0, 0, (attempt + 1) * 20);
+      }
+    }
   } finally { rmSync(temp, { force: true }); }
 }
 

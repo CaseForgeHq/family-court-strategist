@@ -41,10 +41,10 @@ test("actual app shell imports documents and saves a journal draft across naviga
   picker.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
   await until(() => document.querySelector("#document-detail").textContent.includes("Ready to analyse"));
   assert.match(document.querySelector("#document-detail").textContent, /browser-flow.pdf/);
-  document.querySelector("#ask-claude").click();
+  document.querySelector("#inbox-connect").click();
   await until(() => document.querySelector("#provider-choice"));
-  assert.equal(document.querySelector("#provider-choice").value, "claude-code");
-  assert.equal(document.querySelector("#connect-submit").disabled, true);
+  assert.equal(document.querySelector("#provider-choice").value, "ollama");
+  assert.equal(document.querySelector("#connect-submit").disabled, false);
   document.querySelector("#modal-x").click();
   assert.equal(document.querySelector("#modal-back").hidden, true);
   document.querySelector('[data-view="journal"]').click();

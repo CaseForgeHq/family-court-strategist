@@ -20,13 +20,14 @@ function parseScalar(raw) {
 }
 
 export function parseFrontmatter(text) {
+  text = text.replaceAll("\r\n", "\n");
   if (!text.startsWith("---")) return { data: {}, body: text };
   const end = text.indexOf("\n---", 3);
   if (end === -1) return { data: {}, body: text };
   const block = text.slice(text.indexOf("\n") + 1, end);
   const body = text.slice(end + 4).replace(/^\r?\n/, "");
   const data = {};
-  for (const line of block.split("\n")) {
+  for (const line of block.split(/\r?\n/)) {
     const m = line.match(/^([A-Za-z0-9_-]+):(.*)$/);
     if (m) data[m[1]] = parseScalar(m[2]);
   }

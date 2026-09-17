@@ -1,0 +1,7 @@
+@import url('lock.css');
+#setup-pin-form{margin:0}#setup-pin-form label:first-child{margin-top:0}
+.pin-actions{display:flex;align-items:center;gap:12px;margin-top:14px}.pin-actions .main-button{flex:1}.pin-actions .small-button{margin:0;min-height:48px;padding-inline:8px}
+.card-footnote .small-button{display:flex;align-items:flex-start;margin:0;min-height:40px;padding:0;line-height:1.65;text-align:left}
+.setup-message{margin:14px 0 0}
+/* Keep the selected folder name visible while making room for PIN editing. */
+@media(max-height:720px) and (min-width:651px){.setup-cards:has(#setup-pin-form:not([hidden])) .folder-path{display:none}}

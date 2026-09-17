@@ -1,6 +1,8 @@
 import { lstatSync, readdirSync, readFileSync } from "node:fs";
-import { join, basename } from "node:path";
+import { join, basename, relative } from "node:path";
 import { parseFrontmatter } from "./frontmatter.js";
+import { buildGraph } from "./graph.js";
+import { createHash } from 'node:crypto';
 
 function walk(dir) {
   const out = [];
@@ -52,6 +54,7 @@ export function buildCaseModel(vaultDir) {
   const timeline = notes
     .filter((n) => n.data.date && n.data.event_id)
     .map((n) => ({
+      reference: relative(vaultDir, n.file).replaceAll('\\', '/'),
       date: String(n.data.date),
       title: n.title,
       type: n.data.type || "event",
@@ -61,11 +64,11 @@ export function buildCaseModel(vaultDir) {
 
   const people = notes
     .filter((n) => n.data.type === "person")
-    .map((n) => ({ name: n.title, role: n.data.role || "", eventId: n.data.event_id || "" }));
+    .map((n) => ({ name: n.title, role: n.data.role || "", notes: n.body.replace(/^\s*#\s+[^\n]*\n?/, '').trim(), related: asArray(n.data.related), revision: createHash('sha256').update(readFileSync(n.file)).digest('hex'), eventId: n.data.event_id || "", reference: relative(vaultDir,n.file).replaceAll('\\','/') }));
 
   const patterns = notes
     .filter((n) => n.data.type === "pattern")
-    .map((n) => ({ name: n.title, instances: 0, summary: "" }));
+    .map((n) => ({ name: n.title, instances: 0, summary: "", reference: relative(vaultDir,n.file).replaceAll('\\','/') }));
 
   const hasIssue = (n, key) => asArray(n.data.issue).includes(key);
 
@@ -86,10 +89,12 @@ export function buildCaseModel(vaultDir) {
 
   return {
     caseName,
+    graph: buildGraph(notes, vaultDir),
     court,
     stats,
     timeline,
     evidence: notes.filter((n) => n.data.type === "evidence").map((n) => ({
+      reference: relative(vaultDir,n.file).replaceAll('\\','/'),
       claim: n.title,
       source: `${n.data.source_name || n.data.source_file || "Source not recorded"}${n.data.source_page ? ` · page ${n.data.source_page}` : ""}`,
       status: "UNRESOLVED",

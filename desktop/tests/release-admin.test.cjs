@@ -1,0 +1,21 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { once } = require('node:events');
+test('release admin validates policy and requires private token, same origin and explicit publication', async t => {
+  const { startAdmin, validateReleaseInput } = await import('../../scripts/release-admin.mjs');
+  assert.throws(() => validateReleaseInput({ message: 'hello', required: 'true' }));
+  assert.throws(() => validateReleaseInput({ message: ' ', required: false }));
+  assert.equal(validateReleaseInput({ message: '<script>text</script>', required: true }).required, true);
+  let publishes = 0, prepares = 0;
+  const { server, token } = startAdmin({ actions: { candidate: async () => ({ version: '0.15.0' }), prepare: async () => { prepares++; return { ok: true }; }, publish: async () => { publishes++; return { ok: true }; } } });
+  t.after(() => { server.closeAllConnections(); server.close(); }); await once(server, 'listening');
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  assert.equal((await fetch(`${origin}/api/status`)).status, 403);
+  const headers = { Authorization: `Bearer ${token}`, Origin: origin };
+  assert.equal((await fetch(`${origin}/api/status`, { headers })).status, 200);
+  assert.equal((await fetch(`${origin}/api/publish`, { method: 'POST', headers: { ...headers, Origin: 'https://evil.example' }, body: '{"confirm":"PUBLISH"}' })).status, 403);
+  assert.equal((await fetch(`${origin}/api/publish`, { method: 'POST', headers, body: '{}' })).status, 400);
+  assert.equal(publishes, 0);
+  assert.equal((await fetch(`${origin}/api/prepare`, { method: 'POST', headers, body: '{}' })).status, 200); assert.equal(prepares, 1);
+  assert.equal((await fetch(`${origin}/api/publish`, { method: 'POST', headers, body: '{"confirm":"PUBLISH"}' })).status, 200); assert.equal(publishes, 1);
+});

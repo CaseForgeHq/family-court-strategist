@@ -1,0 +1,139 @@
+/* Workspace frame: keep the landscape margin visible and scroll the work inside it. */
+:root { --workspace-bottom-gap: var(--page-gutter); }
+.main { overflow: hidden; }
+.main > .content,
+body[data-workspace-view="map"] .main > .content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  margin-bottom: var(--workspace-bottom-gap);
+  padding: 12px var(--page-gutter) 0;
+  gap: 16px;
+}
+.content > *, .content .page-purpose { min-height: 0; }
+.content .page-purpose { flex: none; margin: 0; }
+.content :is(.inbox-message, .inbox-access, .home-setup-notice):empty { display: none; }
+
+/* A register has a fixed toolbar, an independently scrolling table, and a fixed footer. */
+.content :is(.case-desk.intake-shortcut, .files-register-panel) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  align-self: stretch;
+}
+#desk-files, .files-register-panel #document-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.file-register { --register-columns: 225px minmax(0, 1fr) 64px 76px 94px 110px; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; padding: 0; }
+.file-register table { display: flex; flex-direction: column; flex: 1; min-height: 0; border-collapse: separate; border-spacing: 0; }
+.file-register thead, .file-register tbody { display: block; padding: 0 20px; scrollbar-gutter: stable; scrollbar-width: thin; }
+.file-register thead { flex: none; overflow: hidden; border-bottom: 1px solid var(--surface-edge); }
+.file-register .register-rows { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.file-register tr { display: grid; grid-template-columns: var(--register-columns); }
+.file-register thead th:nth-child(n) { width: auto; min-width: 0; border-bottom: 0; background: none; }
+.file-register td { min-width: 0; }
+.file-register .register-rows:focus-visible { outline: 2px solid var(--action); outline-offset: -3px; }
+.content :is(.case-desk, .files-register-panel):has(.file-register) .desk-toolbar { border-bottom: 0; padding-bottom: 9px; }
+.desk-toolbar, .desk-bottom { flex: none; }
+#desk-files > .desk-empty { flex: 1; min-height: 0; overflow: auto; justify-content: safe center; }
+#document-list > .empty { min-height: 0; overflow: auto; }
+.files-register-panel .inbox-status-row { flex: none; margin: 0; padding: 11px 20px; border-top: 1px solid var(--surface-edge); }
+
+/* All other record collections use the same bounded body. */
+.content > .card:not(.movable-window) { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.content > .card:not(.movable-window) > .hd { flex: none; }
+.content > .card:not(.movable-window) > .bd { flex: 1; min-height: 0; overflow: auto; }
+.content > :is(.people-grid, .cards-list, .home-setup-cards) {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  align-content: start;
+  overscroll-behavior: contain;
+  padding-bottom: 2px;
+}
+.cards-list > .card { flex: none; }
+.content .inbox-layout {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
+  grid-template-columns: minmax(230px, .8fr) minmax(0, 1.7fr);
+}
+.inbox-layout > .card { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.inbox-layout > .card > .hd { flex: none; }
+#tasks-list, #journal-list { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.inbox-layout > :is(#tasks-detail, #journal-detail) { overflow: auto; }
+:is(#tasks-detail, #journal-detail) > * { flex-shrink: 0; }
+.content .task-counts { gap: 10px; }
+.task-count { padding: 10px 14px; flex-direction: row; align-items: baseline; gap: 10px; }
+.task-count strong { font-size: 23px; }
+.content > .workflow-warning { order: 20; margin: 0; padding: 0; background: none; font-size: 11px; line-height: 1.6; }
+.content > .inbox-access { order: 21; margin: 0; padding: 0; border: 0; background: none; font-size: 11px; }
+.content > .journal-privacy { flex: none; max-height: 110px; overflow: auto; padding: 0; border: 0; }
+.content > .journal-privacy[open] { padding: 8px 12px; background: var(--surface-glass); border-radius: 9px; }
+
+/* Calendar grids and agendas each scroll in their own panel. */
+.calendar-workspace { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 12px; overflow: hidden; }
+.calendar-workspace > .page-purpose { margin-bottom: 4px; }
+.calendar-workspace .calendar-toolbar { flex: none; position: static; margin: 0; padding: 0; }
+.calendar-workspace .calendar-sync-bar { flex: none; padding: 0; margin: 0; }
+.calendar-workspace .calendar-message { flex: none; margin: 0; }
+.calendar-workspace .calendar-message:empty { display: none; }
+.calendar-workspace .calendar-layout { flex: 1; min-height: 0; align-items: stretch; }
+.calendar-month, .calendar-agenda { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.calendar-weekdays, .calendar-legend, .calendar-agenda-head { flex: none; }
+.calendar-grid { flex: 1; min-height: 0; overflow: auto; grid-auto-rows: minmax(48px, 1fr); overscroll-behavior: contain; container: calendar-days / size; }
+.calendar-workspace .calendar-day { min-height: 48px; overflow: hidden; }
+.calendar-day-total { display: none; font-size: 10px; line-height: 14px; color: var(--ink-2); }
+@container calendar-days (height < 540px) {
+  .calendar-day { padding: 5px; }
+  .calendar-day-events { min-height: 0; margin-top: 3px; }
+  .calendar-cell-event, .calendar-more { display: none; }
+  .calendar-day-total { display: block; }
+}
+#calendar-agenda { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.calendar-workspace .calendar-footnote { flex: none; margin: 0; }
+.calendar-workspace :is(.calendar-google, .calendar-editor) {
+  position: absolute;
+  z-index: 12;
+  inset: 0 0 0 auto;
+  width: min(580px, 100%);
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  box-shadow: -15px 0 45px #12312e24;
+}
+
+/* The paper and map consume the remaining height, not a guessed viewport height. */
+.notebook-workspace { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 16px; padding-bottom: 6px; overflow: hidden; }
+.notebook-workspace .notebook-book { flex: 1; min-height: 0; height: auto; width: 100%; margin: 0 auto; }
+.case-map-shell > .page-purpose { margin: 0 0 6px; }
+.map-layout:has(#map-details[data-window-mode="right"]:not([hidden])) { padding-right: calc(max(370px, 38vw) + 12px); }
+.map-layout:has(#map-details[data-window-mode="left"]:not([hidden])) { padding-left: calc(max(370px, 38vw) + 12px); }
+
+.content :is(.file-register thead, .register-rows, .bd, .people-grid, .cards-list, .home-setup-cards, #tasks-list, #journal-list, #tasks-detail, #journal-detail, .calendar-grid, #calendar-agenda) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+@media (max-width: 1100px) {
+  .file-register { --register-columns: 202px minmax(0, 1fr) 48px 65px 78px 70px; }
+  .file-register thead, .file-register tbody { padding-inline: 12px; }
+}
+@media (max-width: 850px) {
+  .file-register { --register-columns: 195px minmax(0, 1fr) 45px 76px 100px; }
+  .main > .content { gap: 12px; }
+  .content .page-purpose > span, .content .page-purpose > div > span { font-size: 11px; }
+  .content .inbox-layout { gap: 12px; grid-template-columns: minmax(220px, .85fr) minmax(0, 1.5fr); }
+  .calendar-workspace { gap: 9px; }
+  .calendar-workspace .calendar-month-controls h2 { font-size: 18px; min-width: 142px; }
+  .calendar-workspace .calendar-toolbar { gap: 8px; }
+}

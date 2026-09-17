@@ -1,0 +1,43 @@
+/* Local-time colours come from the entry theme engine. The artwork is static. */
+.landscape{position:fixed;inset:0;overflow:hidden;pointer-events:none;isolation:isolate;background:linear-gradient(180deg,var(--sky-top,#152331),var(--sky-mid,#506776) 56%,var(--sky-horizon,#acb6ac))}
+.scene-sky,.scene-horizon-glow,.scene-stars,.alpine-scene{position:absolute;inset:0;width:100%;height:100%}
+.scene-sky{background-color:var(--sky-top,#152331)}
+.scene-sky::before,.scene-sky::after{content:"";position:absolute;inset:0}
+.scene-sky::before{background-color:var(--sky-mid,#506776);mask-image:linear-gradient(180deg,transparent 0%,#000 58%,#000 100%)}
+.scene-sky::after{background-color:var(--sky-horizon,#acb6ac);mask-image:linear-gradient(180deg,transparent 28%,#000 94%)}
+.scene-horizon-glow{background:radial-gradient(ellipse at var(--sun-x,25%) 53%,#f9d9a44d 0%,#f1c99014 30%,transparent 65%);opacity:var(--glow-opacity,.4)}
+.scene-stars{fill:#eef2e5;opacity:var(--stars-opacity,0)}
+.scene-sun{position:absolute;left:var(--sun-x,25%);top:var(--sun-y,25%);width:clamp(95px,8.2vw,130px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 48% 45%,#fff3cb,#f3d49d 80%,#edc486);opacity:var(--sun-opacity,.8);box-shadow:0 0 45px #ffe2ad12}
+.scene-sun::before{content:"";position:absolute;inset:-120%;border-radius:50%;background:radial-gradient(circle,#f7d69d16,transparent 69%);opacity:var(--glow-opacity,.4)}
+.scene-moon{position:absolute;left:var(--moon-x,76%);top:var(--moon-y,20%);width:clamp(29px,2.6vw,41px);aspect-ratio:1;transform:translate(-50%,-50%) rotate(-12deg);opacity:var(--moon-opacity,0);filter:drop-shadow(0 0 12px #e5efdc14)}
+.scene-moon svg{display:block;width:100%;height:100%;fill:#ebefdf}
+.alpine-scene{overflow:visible}
+.alpine-peak-far{fill:var(--peak-far,#738b91)}
+.alpine-far-east{opacity:.85}
+.alpine-peak-mid{fill:var(--peak-mid,#4d6974)}
+.alpine-ridge-back{fill:var(--ridge-back,#3a535f)}
+.alpine-ridge-middle{fill:var(--ridge-front,#283f48);opacity:.86}
+.alpine-ridge-front{fill:var(--ridge-front,#283f48)}
+.alpine-facet{fill:var(--facet,#a9bbb3);opacity:.12}
+.alpine-facet-west-secondary,.alpine-facet-east-secondary{opacity:.065}
+.alpine-forest-ground,.alpine-pines{fill:var(--forest,#142d32)}
+.alpine-mist-band{opacity:.72}
+.alpine-low-mist-band{opacity:.65}
+.weather-clouds,.weather-fog,.weather-rain,.weather-snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.weather-clouds{background:radial-gradient(ellipse at 12% 8%,var(--mist,#b6c7ca) 0,transparent 48%),radial-gradient(ellipse at 81% 14%,var(--mist,#b6c7ca) 0,transparent 49%),linear-gradient(180deg,#273c505c,transparent 58%);opacity:calc(var(--weather-cloud,0) * .45);filter:blur(12px)}
+.weather-fog{background:linear-gradient(180deg,transparent 24%,color-mix(in srgb,var(--mist,#b6c7ca) 35%,transparent) 69%,transparent 100%),radial-gradient(ellipse at 24% 67%,color-mix(in srgb,var(--mist,#b6c7ca) 24%,transparent),transparent 60%);opacity:var(--weather-fog,0)}
+.weather-rain{opacity:calc(var(--weather-rain,0) * .27)}
+.weather-snow{opacity:calc(var(--weather-snow,0) * .5)}
+@media(prefers-reduced-motion:no-preference){
+  .scene-sky,.scene-sky::before,.scene-sky::after{transition:background-color 1200ms linear}
+  .scene-horizon-glow,.scene-stars{transition:opacity 1200ms linear}
+  .scene-sun,.scene-moon{transition:left 1200ms linear,top 1200ms linear,opacity 1200ms linear}
+  .alpine-scene path,.alpine-scene g{transition:fill 1200ms linear}
+  .alpine-scene stop{transition:stop-color 1200ms linear}
+  .weather-clouds,.weather-fog,.weather-rain,.weather-snow{transition:opacity 1200ms linear}
+  :root:is([data-weather="rain"],[data-weather="storm"]):not([data-scene-hidden="true"]) .weather-rain-motion{animation:alpine-rain-fall 1500ms linear infinite}
+  :root[data-weather="snow"]:not([data-scene-hidden="true"]) .weather-snow-motion{animation:alpine-snow-fall 19s linear infinite}
+  @keyframes alpine-rain-fall{to{transform:translateY(180px)}}
+  @keyframes alpine-snow-fall{to{transform:translateY(300px)}}
+}
+@media(prefers-reduced-motion:reduce){.landscape,.landscape *,.landscape *::before,.landscape *::after{transition:none!important;animation:none!important}}

@@ -7,56 +7,90 @@
 <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/brand/tokens.css">
 <link rel="stylesheet" href="/app.css">
+
+<link rel="stylesheet" href="/scene/landscape.css">
+<link rel="stylesheet" href="/scene/scene-controls.css">
+<link rel="stylesheet" href="/workspace.css">
+<link rel="stylesheet" href="/calendar.css">
+<link rel="stylesheet" href="/topbar.css">
+<link rel="stylesheet" href="/admin.css">
+<link rel="stylesheet" href="/updates.css">
+<link rel="stylesheet" href="/map-space.css">
+<link rel="stylesheet" href="/refinement.css">
+<link rel="stylesheet" href="/layout.css">
+<link rel="stylesheet" href="/search.css">
+<script src="/scene/scene-time.js"></script>
 </head>
-<body>
+<body data-context-open="false">
+<div class="landscape workspace-landscape" aria-hidden="true"></div>
 <div class="app">
 
-  <!-- Sidebar -->
-  <aside class="side">
-    <div class="logo"><img src="/brand/logo.svg" alt="Case Forge" width="228" height="65"></div>
-    <button class="case-switch" id="current-matter" type="button" aria-label="Current matter. Choose a different case folder.">
-      <span class="lbl">Current matter</span>
-      <span class="nm"><span id="case-name">Loading…</span>
-        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
-    </button>
-
-    <div class="navlbl">Overview</div>
-    <button type="button" class="nav" data-view="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 7 2 2 4-4M12 7h9M3 16l2 2 4-4M12 16h9"/></svg>Tasks &amp; deadlines</button>
-    <button type="button" class="nav" data-view="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14v18H5zM9 3v18M12 8h4M12 12h4"/></svg>Case journal</button>
-    <button type="button" class="nav on" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Case overview</button>
-    <button type="button" class="nav" data-view="timeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Case Timeline<span class="ct" id="count-timeline">0</span></button>
-    <button type="button" class="nav" data-view="evidence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>Evidence Matrix<span class="ct" id="count-evidence">0</span></button>
-    <button type="button" class="nav" data-view="patterns"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4" stroke-linecap="round" stroke-linejoin="round"/></svg>Patterns<span class="ct alert" id="count-patterns">0</span></button>
-    <button type="button" class="nav" data-view="people"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 7a3 3 0 010 6M21 20a6 6 0 00-4-5.7" stroke-linecap="round"/></svg>People<span class="ct" id="count-people">0</span></button>
-
-    <div class="navlbl">Build</div>
-    <button type="button" class="nav" data-view="documents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v5h5M7 3h8l5 5v13H7z" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 13h6M10 17h6" stroke-linecap="round"/></svg>Evidence Vault</button>
-    <button type="button" class="nav" data-view="exports">Document Studio</button>
-    <button type="button" class="nav" data-view="legal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10" stroke-linecap="round"/></svg>Legal Research</button>
-
-    <div class="foot"><span class="lk"></span>Files stay local · you choose your AI</div>
-  </aside>
-
-  <!-- Main -->
-  <main class="main">
+  <header class="workspace-shell">
     <div class="bar">
-      <div>
-        <div class="crumb"><b id="crumb-view">Dashboard</b> · <span id="case-court">local vault</span></div>
-        <h1 id="view-title">Case overview</h1>
-      </div>
-      <div class="sp"></div>
-      <input class="search" id="search" placeholder="Search timeline…" aria-label="Search timeline" autocomplete="off">
-      <button class="ask" id="ask-claude"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z" stroke-linejoin="round"/></svg>Connect <span class="gd">AI</span></button>
-    </div>
+    <div class="logo"><img class="brand-light" src="/brand/logo.svg" alt="Case Forge" width="228" height="65"><img class="brand-dark" src="/brand/logo-reversed.svg" alt="Case Forge" width="228" height="65"><span class="workspace-beta">Beta</span></div>
+    <span class="header-divider" aria-hidden="true"></span>
+    <div class="case-selector"><button class="case-switch" id="current-matter" type="button" aria-label="Current case. Open case menu." aria-expanded="false" aria-controls="case-menu" aria-haspopup="dialog">
+      <span class="lbl">Current case</span>
+      <span class="nm"><span id="case-name">Loading…</span>
+        <span class="case-chevron" data-icon="chevron"></span>
+      </span>
+    </button><button class="icon-button new-case" id="new-case" type="button" aria-label="Create a new case" title="Create a new case" hidden><span data-icon="plus"></span></button><div class="case-menu" id="case-menu" role="dialog" aria-label="Current case actions" hidden></div></div>
 
-    <div class="banner" id="data-banner">
+
+      <div class="global-search"><span data-icon="search"></span><input class="search" id="search" placeholder="Search case… press Enter" aria-label="Search all case records. Press Enter." maxlength="300" autocomplete="off"></div>
+      <button class="ask" id="ask-claude" type="button" aria-controls="workspace-context" aria-label="Open AI chat" title="AI chat"><span data-icon="ai"></span><span class="header-action-label">AI</span></button>
+
+      <div id="scene-controls" class="workspace-atmosphere"></div>
+      <div class="header-tools" role="group" aria-label="Workspace controls">
+      <button id="open-updates" class="icon-button updates-trigger" type="button" aria-label="Updates" aria-haspopup="dialog" aria-expanded="false" aria-controls="updates-popover" hidden><span data-icon="download"></span><span class="update-dot" hidden></span></button>
+      <button class="workspace-settings icon-button" type="button" data-view="settings" aria-label="Workspace settings" title="Workspace settings"><span data-icon="settings"></span></button>
+      <button class="icon-button lock-app" id="lock-app" type="button" aria-label="Lock app" title="Save your work before locking. Unsaved drafts will be cleared." hidden><span data-icon="lock"></span></button>
+      <button id="toggle-context" class="icon-button" type="button" aria-label="Toggle case details" aria-controls="workspace-context" aria-expanded="false" title="Case details"><span data-icon="panelRight"></span></button>
+      </div>
+    </div>
+    <nav id="workspace-navigation" class="workspace-nav" aria-label="Your workspace">
+
+    <button type="button" class="nav on" data-view="dashboard"><span data-icon="desk"></span>Case desk</button>
+    <button type="button" class="nav" data-view="documents"><span data-icon="file"></span>Files &amp; AI</button>
+    <button type="button" class="nav" data-view="map"><span data-icon="map"></span>Case map</button>
+    <button type="button" class="nav" data-view="timeline"><span data-icon="clock"></span>Timeline<span class="ct" id="count-timeline">0</span></button>
+    <button type="button" class="nav" data-view="calendar"><span data-icon="calendar"></span>Calendar</button>
+    <button type="button" class="nav" data-view="people"><span data-icon="people"></span>People<span class="ct" id="count-people">0</span></button>
+    <button type="button" class="nav" data-view="notebook"><span data-icon="notebook"></span>Notebook</button>
+    <details class="more-tools"><summary><span data-icon="tools"></span>More tools<span class="menu-chevron" data-icon="chevron"></span></summary><div class="nav-popover">
+    <button type="button" class="nav" data-view="search"><span data-icon="search"></span>Case search</button>
+    <button type="button" class="nav" data-view="tasks"><span data-icon="tasks"></span>Tasks &amp; deadlines</button>
+    <button type="button" class="nav" data-view="journal"><span data-icon="notebook"></span>Case journal</button>
+    <button type="button" class="nav" data-view="evidence"><span data-icon="evidence"></span>Evidence Matrix<span class="ct" id="count-evidence">0</span></button>
+    <button type="button" class="nav" data-view="patterns"><span data-icon="patterns"></span>Patterns<span class="ct alert" id="count-patterns">0</span></button>
+
+
+    <button type="button" class="nav" data-view="exports"><span data-icon="print"></span>Print &amp; export</button>
+    <button type="button" class="nav" data-view="legal"><span data-icon="book"></span>Legal Research</button>
+
+    <button id="open-admin" class="nav" type="button" aria-haspopup="dialog" hidden><span data-icon="tools"></span>Sample data</button>
+    <div class="app-version" id="app-version" data-app-version>Case Forge</div></div></details>
+    </nav>
+
+  </header>
+  <main class="main">
+<div class="workspace-viewline"><h1 id="view-title">Case desk</h1>    <div class="banner" id="data-banner" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01" stroke-linecap="round"/></svg>
       <span><b>Sample case loaded.</b> This is fictional demo data. Imports stay local; cloud analysis sends only the document text you explicitly select.</span>
     </div>
 
-    <div class="content" id="view"></div>
+    </div>
+    <div class="content" id="view" aria-label="Case workspace"></div>
   </main>
+
+  <aside class="workspace-context" id="workspace-context" aria-label="Case panel" hidden>
+    <div class="context-heading"><div class="panel-tabs"><button type="button" data-panel="details" aria-pressed="true">Details</button><button type="button" data-panel="ai" aria-pressed="false">AI chat</button></div><button class="icon-button" id="close-context" type="button" aria-label="Close side panel"><span data-icon="close"></span></button></div>
+    <div id="panel-details">
+    <div class="context-identity"><span class="context-emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7ZM3 10h18"/></svg></span><h2 id="context-case-name">Your case</h2></div>
+    <section class="context-section" aria-labelledby="context-records-title"><h3 id="context-records-title">In your case</h3><button data-go="timeline" type="button"><span>Timeline events</span><strong id="context-events">0</strong></button><button data-go="evidence" type="button"><span>Evidence notes</span><strong id="context-evidence">0</strong></button><button data-go="people" type="button"><span>People</span><strong id="context-people">0</strong></button><button data-go="map" type="button"><span>Recorded connections</span><strong id="context-connections">0</strong></button></section>
+    <div class="context-privacy"><span class="privacy-dot" aria-hidden="true"></span><div><strong>Your files stay in your folder.</strong><p>You choose which text goes to cloud AI.</p></div></div>
+    </div><div id="panel-ai" hidden></div>
+  </aside>
 </div>
 
 <!-- Modal host -->
@@ -70,6 +104,9 @@
 <!-- Print host (for PDF export) -->
 <div id="print-area"></div>
 
+<script src="/scene/landscape.js"></script>
+<script src="/scene/scene-controls.js"></script>
+<script src="/workspace-chrome.js" type="module"></script>
 <script src="/app.js" type="module"></script>
 </body>
 </html>

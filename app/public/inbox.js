@@ -1,3 +1,6 @@
+import { icon } from './icons.js';
+import { fileRegister } from './file-register.js';
+import { makeWindow } from './windows.js';
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const STATUS = { queued_read: "Waiting to read", reading: "Reading", ready: "Ready to analyse", queued: "Analysis queued", analysing: "Analysing", review: "Ready for review", saved: "Saved to case", failed: "Needs attention", cancelled: "Cancelled", interrupted: "Interrupted", needs_ocr: "Needs text recognition" };
 const BUSY = ["queued_read", "reading", "queued", "analysing"];
@@ -6,7 +9,7 @@ const KIND = { event: "Timeline event", claim: "Attributed claim", inconsistency
 
 export function createInbox({ api, getSession, updateSession, showModal, closeModal, onSaved }) {
   let host = null, selected = null, documents = [], signature = "", timer = null, generation = 0;
-  let refreshing = false;
+  let refreshing = false, inspectorWindow = null, registerMarkup = '';
 
   function notice(message, error = false) {
     const element = host?.querySelector("#inbox-message");
@@ -15,20 +18,11 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
 
   function mount(element) {
     unmount(); host = element;
-    host.innerHTML = `
-      <div class="inbox-heading"><div><p class="eyebrow">Your document inbox</p><h2>Build your case, one document at a time.</h2>
-      <p>Add a document, review what your AI finds, then choose what to save.</p></div>
-      <button class="btn" id="inbox-connect" type="button">Connect AI</button></div>
-      <div class="inbox-access" id="inbox-access"></div>
-      <label class="dropzone" id="document-drop" tabindex="0" role="button" aria-label="Add PDF or text documents">
-        <span class="drop-icon" aria-hidden="true">＋</span><strong>Add documents</strong>
-        <span>Drop files here or click to browse · PDF, TXT or Markdown · up to 20 MB each</span>
-        <small>Originals stay in your case folder. Adding a file does not send it to AI. Scanned PDFs need a text layer.</small>
-        <input id="document-picker" type="file" accept=".pdf,.txt,.md" multiple hidden>
-      </label>
-      <p id="inbox-message" class="inbox-message" role="status" aria-live="polite"></p>
-      <div class="inbox-layout"><section class="card inbox-list" aria-label="Imported documents"><div class="hd"><h2>Documents</h2><span id="document-count">0</span></div><div id="document-list"></div></section>
-      <section class="card inbox-detail" id="document-detail" aria-label="Document details"><div class="welcome-panel"><h3>Your originals. Your findings. Your case.</h3><p>Add a document to get started. You choose when analysis runs and which findings become case notes.</p></div></section></div>`;
+    host.innerHTML = `<div class="page-purpose"><p>Read your files and review what AI finds.</p><span>Only findings you approve are added to Timeline and Evidence. Original files stay local.</span></div>
+      <section class="card files-register-panel"><div class="desk-toolbar"><h2>Your files <span id="document-count">0</span></h2><div class="file-actions"><button class="btn" id="inbox-connect" type="button">${icon('ai')} Connect AI</button><label class="btn primary dropzone" id="document-drop" tabindex="0" role="button" aria-label="Add PDF or text documents">${icon('plus')} Add files<input id="document-picker" type="file" accept=".pdf,.txt,.md" multiple hidden></label></div></div><div id="document-list"></div>
+      <div class="inbox-status-row"><small>PDF, TXT or Markdown · up to 20 MB per file · drag files onto Add files</small><div class="inbox-access" id="inbox-access" role="status"></div></div></section><p id="inbox-message" class="inbox-message" role="status" aria-live="polite"></p>
+      <section class="card inbox-detail" id="document-inspector" aria-label="Document inspector" hidden><div id="document-detail"><div class="welcome-panel"><h3>Select a document</h3><p>Its contents and review tools will appear here.</p></div></div></section>`;
+    inspectorWindow = makeWindow(host.querySelector('#document-inspector'), { title: 'Document', onClose: () => { host.querySelector('#document-inspector').hidden = true; host.querySelector('[data-document][aria-pressed="true"]')?.focus(); } });
     host.querySelector("#inbox-connect").addEventListener("click", connectionModal);
     host.querySelector("#document-picker").addEventListener("change", (event) => { void upload(event.target.files); event.target.value = ""; });
     const drop = host.querySelector("#document-drop");
@@ -45,7 +39,8 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
     generation++;
     if (timer) clearInterval(timer);
     host?.removeEventListener("click", handleClick);
-    host = null; signature = ""; refreshing = false;
+    inspectorWindow?.destroy(); inspectorWindow = null;
+    host = null; signature = ""; registerMarkup = ''; refreshing = false;
   }
 
   async function refresh(force = false) {
@@ -58,18 +53,26 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
       documents = result.documents;
       const session = getSession();
       updateSession({ ...session, access: result.access });
-      host.querySelector("#inbox-access").textContent = `${result.access.message}. ${session.connection ? `${LABEL[session.connection.provider]} connected.` : "No AI connected yet."}`;
+      host.querySelector("#inbox-access").textContent = `${result.access.canWrite ? "" : `${result.access.message}. `}${session.connection ? `${LABEL[session.connection.provider]} connected` : "AI not connected"}`;
       host.querySelector("#document-picker").disabled = !result.access.canWrite;
       host.querySelector("#document-drop").setAttribute("aria-disabled", String(!result.access.canWrite));
-      host.querySelector("#inbox-connect").textContent = session.connection ? "AI connection" : "Connect AI";
+      host.querySelector('#inbox-connect').innerHTML = icon('ai') + (session.connection ? ' AI connection' : ' Connect AI');
       host.querySelector("#document-count").textContent = documents.length;
       if (!selected || !documents.some((d) => d.id === selected)) selected = documents[0]?.id || null;
-      host.querySelector("#document-list").innerHTML = documents.length ? documents.map((d) => `
-        <button type="button" class="document-item ${selected === d.id ? "selected" : ""}" data-document="${esc(d.id)}" aria-pressed="${selected === d.id}">
-          <span class="file-badge">${esc(d.extension.slice(1).toUpperCase())}</span><span><strong>${esc(d.name)}</strong>
-          <small>${esc(d.pageCount ? `${d.pageCount} page${d.pageCount === 1 ? "" : "s"} · ` : "")}${esc(STATUS[d.status] || d.status)}</small></span>
-          ${BUSY.includes(d.status) ? '<span class="job-spinner" aria-label="Processing"></span>' : ""}</button>`).join("")
-        : '<p class="empty">Your imported documents will appear here.</p>';
+      const nextRegister = documents.length ? fileRegister(documents, { inbox: true, selected }) : '<p class="empty">Your imported documents will appear here. Add a file to begin.</p>';
+      if (nextRegister !== registerMarkup) {
+        const list = host.querySelector('#document-list'), rows = list.querySelector('.register-rows');
+        const scrollTop = rows?.scrollTop || 0, scrollLeft = rows?.scrollLeft || 0;
+        const focusRows = rows && document.activeElement === rows;
+        const focusedDocument = list.contains(document.activeElement) ? document.activeElement.dataset.document : null;
+        list.innerHTML = nextRegister; registerMarkup = nextRegister;
+        const nextRows = list.querySelector('.register-rows');
+        if (nextRows) {
+          nextRows.scrollTop = scrollTop; nextRows.scrollLeft = scrollLeft;
+          if (focusRows) nextRows.focus({ preventScroll: true });
+          else if (focusedDocument) Array.from(list.querySelectorAll('[data-document]')).find(el => el.dataset.document === focusedDocument)?.focus({ preventScroll: true });
+        }
+      }
       if (selected) {
         const item = documents.find((d) => d.id === selected);
         const next = JSON.stringify([item, session.connection, result.access]);
@@ -96,7 +99,7 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
       try {
         const result = await api(`/api/documents?name=${encodeURIComponent(file.name)}`, { method: "POST", body: file, raw: true });
         if (revision !== generation) return;
-        selected = result.document.id;
+        selected = result.document.id; host.querySelector('#document-inspector').hidden = false;
         notice(result.duplicate ? `${file.name} is already in this case. No duplicate was created.` : `${file.name} added. Reading locally; no analysis has been sent.`);
         await refresh(true);
       } catch (error) { notice(`${file.name}: ${error.message}`, true); }
@@ -110,7 +113,7 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
     const pageContent = d.pages.length ? `<details class="source-pages"><summary>Read extracted text (${d.pages.length} page${d.pages.length === 1 ? "" : "s"})</summary>
       ${d.pages.map((p) => `<details><summary>Page ${p.page}${p.text ? "" : " · no text found"}</summary><pre>${esc(p.text || "No text was extracted from this page.")}</pre></details>`).join("")}</details>` : "";
     host.querySelector("#document-detail").innerHTML = `
-      <div class="detail-header"><span class="eyebrow">${esc(STATUS[d.status] || d.status)}</span><h2>${esc(d.name)}</h2>
+      <div class="detail-header"><p class="record-link file-reference">${esc(d.reference || "")}</p><span class="eyebrow">${esc(STATUS[d.status] || d.status)}</span><h2>${esc(d.name)}</h2>
       <p>${(d.bytes / 1024).toFixed(1)} KB${d.pageCount ? ` · ${d.pageCount} pages` : ""} · Original preserved locally</p>
       <button class="text-button" data-action="original" type="button">Save a copy of original</button></div>
       <div class="detail-body">
@@ -125,7 +128,7 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
         ${!connection ? '<button class="btn" data-action="connect" type="button">Connect AI</button>' : ""}
         </section>` : ""}
       ${!running && !hasText && !d.saved && d.status !== "needs_ocr" ? `<button class="btn" data-action="retry" type="button" ${writable ? "" : "disabled"}>Retry reading</button>` : ""}
-      ${d.saved ? `<div class="saved-notice"><h3>Reviewed findings saved</h3><p>${d.saved.findingIds.length} findings saved to your local case. Timeline events and evidence now appear in the dashboard.</p><p class="file-location">${esc(d.saved.folder)}</p></div>` : ""}
+      ${d.saved ? `<div class="saved-notice"><h3>Reviewed findings saved</h3><p>${d.saved.findingIds.length} findings saved to your local case. Find saved events in <button type="button" class="record-link" data-go="timeline">Timeline</button> and claims in <button type="button" class="record-link" data-go="evidence">Evidence matrix</button>.</p><p class="file-location">${esc(d.saved.folder)}</p></div>` : ""}
       ${d.draft ? reviewMarkup(d, writable && d.status === "review" && !running) : ""}
       ${pageContent}</div>`;
   }
@@ -151,7 +154,7 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
 
   async function handleClick(event) {
     const item = event.target.closest("[data-document]");
-    if (item) { selected = item.dataset.document; signature = ""; await refresh(true); return; }
+    if (item) { host.querySelector('#document-inspector').hidden = false; selected = item.dataset.document; signature = ""; await refresh(true); return; }
     const source = event.target.closest("[data-source]");
     if (source) {
       try {
@@ -194,20 +197,47 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
     const session = getSession();
     showModal(`<h2 class="modal-title">Connect your AI</h2><p class="modal-p">Your case stays on this computer. Choose where its selected text is analysed.</p>
       <form id="connection-form" class="connection-form">
-        <label>Connection<select id="provider-choice"><option value="claude-code">Existing Claude sign-in · development preview</option><option value="anthropic">Claude API key</option><option value="ollama">Local model · Ollama</option></select></label>
+        <label>Where should AI analyse your files?<select id="provider-choice"><option value="ollama">On this computer · Ollama</option><option value="anthropic">Optional cloud AI · Claude API</option><option value="claude-code">Existing Claude sign-in · development preview</option></select></label>
         <div id="connection-fields"></div><p id="connection-message" class="inbox-message" role="status"></p>
         <button class="btn primary" id="connect-submit" type="submit">Check connection</button>
         ${session.connection ? '<button class="btn" id="disconnect-ai" type="button">Disconnect AI</button>' : ""}
       </form>`);
     const choice = document.getElementById("provider-choice");
-    if (session.connection) choice.value = session.connection.provider;
+    const preferredProvider = session.workspacePreferences?.preferredProvider;
+    choice.value = session.connection?.provider || (["ollama", "anthropic"].includes(preferredProvider) ? preferredProvider : "ollama");
     const fields = () => {
       const provider = choice.value;
       document.getElementById("connection-fields").innerHTML = provider === "claude-code"
         ? `<p class="modal-p">${session.claudeCodeEnabled ? "Uses your separately installed and signed-in Claude Code. Claude Desktop/Cowork alone does not provide this connection. Your existing account limits apply. This preview does not offer public subscription sign-in." : "Existing-subscription connection is not enabled in this build. Public provider sign-in is still being verified. Use an API key or local model to try analysis."}</p>`
-        : `<label>Model name<input id="provider-model" required autocomplete="off" placeholder="${provider === "ollama" ? "Exact model name from Ollama" : "Full Claude API model ID"}" value="${session.connection?.provider === provider ? esc(session.connection.model) : ""}"></label>
-        ${provider === "anthropic" ? '<label>API key<input id="provider-key" type="password" required autocomplete="off" placeholder="Paste your API key"></label><p class="modal-p">Held in memory for this app session only. Never saved in your case folder. API billing is separate from your AI subscription.</p>' : '<p class="modal-p">Start Ollama and install a local model first. This connects only to Ollama on this computer; cloud-routed models are not accepted.</p>'}`;
+        : provider === "ollama"
+          ? `<p class="modal-p">Ollama is a separate app that runs AI on this computer. Install and open Ollama with a local model first. Neither the engine nor a model is included with Case Forge.</p>
+            <button class="btn" id="find-local-models" type="button">Find models on this computer</button>
+            <p id="local-models-message" class="inbox-message" role="status" aria-live="polite"></p>
+            <div id="local-model-options" hidden><label>Choose an installed model<select id="local-model-picker"><option value="">Choose a model…</option></select></label></div>
+            <details${session.connection?.provider === "ollama" ? " open" : ""}><summary>Enter a model name yourself</summary><label>Model name<input id="provider-model" autocomplete="off" placeholder="Model name from your Ollama app" value="${session.connection?.provider === "ollama" ? esc(session.connection.model) : ""}"></label></details>
+            <p class="modal-p">This check reads model names on this computer. It does not analyse your files, install anything or download a model.</p>`
+          : `<label>Model name<input id="provider-model" required autocomplete="off" placeholder="Full Claude API model ID" value="${session.connection?.provider === provider ? esc(session.connection.model) : ""}"></label><label>API key<input id="provider-key" type="password" required autocomplete="off" placeholder="Paste your API key"></label><p class="modal-p">Held in memory for this app session only. Never saved in your case folder. API billing is separate from your AI subscription.</p>`;
       document.getElementById("connect-submit").disabled = !session.access.canWrite || (provider === "claude-code" && !session.claudeCodeEnabled);
+      const findModels = document.getElementById("find-local-models");
+      if (findModels) {
+        const modelInput = document.getElementById("provider-model"), picker = document.getElementById("local-model-picker");
+        picker.addEventListener("change", () => { modelInput.value = picker.value; });
+        modelInput.addEventListener("input", () => { picker.value = [...picker.options].some((option) => option.value === modelInput.value) ? modelInput.value : ""; });
+        findModels.addEventListener("click", async () => {
+          const message = document.getElementById("local-models-message"), optionsHost = document.getElementById("local-model-options");
+          findModels.disabled = true; message.textContent = "Looking for installed models on this computer…";
+          optionsHost.hidden = true;
+          try {
+            const result = await api("/api/providers/local-models");
+            if (!findModels.isConnected || choice.value !== "ollama" || getSession().caseKey !== session.caseKey) return;
+            message.textContent = result.message;
+            picker.innerHTML = `<option value="">Choose a model…</option>${result.models.map((item) => `<option value="${esc(item.name)}">${esc(item.name)}</option>`).join("")}`;
+            if (result.models.some((item) => item.name === modelInput.value)) picker.value = modelInput.value;
+            optionsHost.hidden = !result.models.length;
+          } catch (error) { if (findModels.isConnected) message.textContent = error.message; }
+          finally { if (findModels.isConnected) findModels.disabled = false; }
+        });
+      }
     };
     choice.addEventListener("change", fields); fields();
     document.getElementById("disconnect-ai")?.addEventListener("click", async () => {
@@ -219,6 +249,10 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
       const button = document.getElementById("connect-submit"), message = document.getElementById("connection-message");
       button.disabled = true; message.textContent = "Checking connection. No case documents are sent during this check…";
       const body = { provider: choice.value, model: document.getElementById("provider-model")?.value.trim(), apiKey: document.getElementById("provider-key")?.value.trim() };
+      if (body.provider === "ollama" && !body.model) {
+        message.textContent = "Find and choose an installed model, or enter its name yourself.";
+        button.disabled = !session.access.canWrite; document.getElementById("find-local-models")?.focus(); return;
+      }
       try {
         const result = await api("/api/providers/connect", { method: "POST", body });
         const key = document.getElementById("provider-key"); if (key) key.value = "";
@@ -227,5 +261,5 @@ export function createInbox({ api, getSession, updateSession, showModal, closeMo
     });
   }
 
-  return { mount, unmount, refresh, connectionModal };
+  return { mount, unmount, refresh, connectionModal, open: (id) => { if (host) host.querySelector('#document-inspector').hidden = false; selected = id; signature = ""; return refresh(true); } };
 }

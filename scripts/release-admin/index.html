@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Case Forge — Release admin</title><link rel="stylesheet" href="admin.css"></head><body><main>
+<header><span class="brand">CASE FORGE</span><span class="badge">Owner console · this computer</span></header>
+<h1>Release an update.</h1><p class="intro">One message. The same update card in the workspace and registration.</p>
+<div class="layout"><section class="editor"><h2>Release details</h2><p id="version">Loading candidate…</p>
+<label for="message">Message from admin</label><textarea id="message" maxlength="6000" rows="10" placeholder="What changed, why it matters, and what users need to do."></textarea>
+<label class="policy"><input id="required" type="checkbox"><span><strong>Require this update</strong><small>Users must install before opening a case. Open cases stay available so users can save their work.</small></span></label>
+<p class="hint">Online clients check every minute. Versions through 0.13.1 need one manual installation first. Offline clients receive the update when they reconnect.</p>
+<button id="prepare" class="primary">Save message & prepare release</button><p id="status" role="status" aria-live="polite"></p></section>
+<aside><span class="eyebrow">USER NOTIFICATION PREVIEW</span><section class="preview"><header><span class="download">↓</span><h2 id="preview-title">Update available</h2></header><p id="preview-version"></p><span class="eyebrow">MESSAGE FROM THE CASE FORGE TEAM</span><p id="preview-message"></p><button class="primary" disabled>Download update</button></section>
+<section class="publish"><h2>Publish to everyone</h2><p>Requires a verified build, a clean committed checkout and its version tag pushed to GitHub. Published versions cannot be replaced.</p><label for="confirmation">Type PUBLISH to release the prepared update</label><input id="confirmation" autocomplete="off"><button id="publish" disabled>Publish update</button></section></aside></div>
+</main><script src="admin.js"></script></body></html>

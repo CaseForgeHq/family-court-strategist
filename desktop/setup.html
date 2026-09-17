@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'">
+<title>Case Forge — Set up your workspace</title><link rel="stylesheet" href="setup.css"><link rel="stylesheet" href="onboarding.css"><link rel="stylesheet" href="plans.css"><link rel="stylesheet" href="terms.css"><link rel="stylesheet" href="scene-controls.css"><script src="scene-time.js"></script><link rel="stylesheet" href="updates.css"></head>
+<body data-entry-loading="true">
+<div class="landscape" aria-hidden="true"></div><script src="landscape.js"></script>
+<header class="entry-header"><div class="entry-brand"><img src="brand/logo-reversed.svg" alt="Case Forge" width="144" height="41"></div></header>
+<main id="entry-main" class="entry-main setup-main" aria-label="Set up your workspace">
+  <nav class="setup-progress" aria-label="Setup progress"><ol><li data-step="configure" data-state="current" aria-current="step"><span class="progress-number">01</span> <span>Set up</span></li><li data-step="preferences" data-state="pending"><span class="progress-number">02</span> <span>Preferences</span></li><li data-step="ready" data-state="pending"><span class="progress-number">03</span> <span>Terms</span></li></ol><div class="progress-track" aria-hidden="true"><span id="setup-progress-fill"></span></div></nav>
+  <section id="configure-stage" class="entry-stage" aria-label="Set up your workspace">
+    <div class="entry-cards setup-cards">
+      <section id="setup-pin-card" class="entry-card setup-card pin-card" data-status="checking" aria-labelledby="pin-heading">
+        <div class="card-body"><div class="card-top"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><span id="setup-pin-badge" class="card-state" role="status">Checking…</span></div><h2 id="pin-heading">PIN</h2><p class="card-status" id="setup-pin-status" role="status">Checking your PIN…</p></div>
+        <button id="setup-configure-pin" class="main-button entry-control" type="button" disabled>Configure PIN <span aria-hidden="true">↗</span></button><p class="pin-notice card-footnote">Your PIN locks the app. It does not encrypt your files.</p>
+      </section>
+      <section id="setup-folder-card" class="entry-card setup-card folder-card" data-status="checking" aria-labelledby="folder-heading">
+        <div class="card-body"><div class="card-top"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7ZM3 10h18"/></svg></span><span id="setup-folder-badge" class="card-state" role="status">Checking…</span></div><h2 id="folder-heading">Case folder</h2><p class="card-copy">Select and keep your files locally.</p><p class="card-status" id="setup-folder-status" role="status" hidden></p><p id="setup-folder-path" class="folder-path"></p></div>
+        <button id="setup-choose-folder" type="button" class="main-button entry-control" disabled>Choose location <span aria-hidden="true">↗</span></button><div class="card-footnote"><p class="folder-hint">Select once, you can change later in settings.</p><button id="setup-create-folder" type="button" class="small-button" disabled>Or create a new folder</button></div>
+      </section>
+    </div>
+    <p class="setup-message" id="setup-message" role="status" aria-live="polite"></p><div class="stage-navigation"><button id="configure-continue" class="stage-primary stage-continue" type="button" disabled>Continue <span aria-hidden="true">→</span></button></div>
+  </section>
+  <section id="preferences-stage" class="entry-stage preferences-stage" aria-labelledby="preferences-title" hidden>
+    <div class="plans-experience">
+      <form id="preferences-form">
+        <div class="plans-heading">
+          <div class="plans-heading-copy"><h1 id="preferences-title">Space to make sense of it.</h1><p>AI help for your documents. A pace that works for you.</p></div>
+          <div class="plans-case-name"><label class="preferences-label" for="preferences-case-name">Your case name</label><input id="preferences-case-name" name="case-name" type="text" maxlength="80" autocomplete="off" placeholder="e.g. Family case" required></div>
+        </div>
+        <fieldset class="plan-options" aria-describedby="plan-preview-note">
+          <legend>Choose your AI plan preview</legend>
+          <div class="plan-grid">
+            <label class="plan-card hero-glass" data-plan="free">
+              <input id="preferences-plan-free" type="radio" name="ai-plan" value="free" checked>
+              <span class="plan-topline"><span>FREE</span><span class="plan-tag">No card required <span class="plan-indicator" aria-hidden="true"></span></span></span>
+              <h2>Find your footing.</h2><p class="plan-benefit">Bring your questions. Start seeing what matters.</p>
+              <span class="plan-price"><strong id="free-plan-price">A$0</strong><span>/ month</span></span>
+              <span class="plan-allowance"><strong id="free-plan-allowance">1.5 million</strong><span>tokens/day</span></span>
+              <span class="plan-detail">One daily balance for reading and generated text.</span>
+              <span class="plan-selection-copy"><span><span class="select-label">Choose Free</span><span class="selected-label">Free selected</span></span><span aria-hidden="true">↗</span></span>
+            </label>
+            <label class="plan-card hero-glass" data-plan="everyday">
+              <input id="preferences-plan-everyday" type="radio" name="ai-plan" value="everyday">
+              <span class="plan-topline"><span>EVERYDAY</span><span class="plan-tag">More room to read <span class="plan-indicator" aria-hidden="true"></span></span></span>
+              <h2>Keep your momentum.</h2><p class="plan-benefit">For regular reading, questions and follow-ups.</p>
+              <span class="plan-price"><strong id="everyday-plan-price">A$50</strong><span>/ month · incl. GST</span></span>
+              <span class="plan-allowance"><span>Up to</span><strong id="everyday-plan-allowance">3.5 million</strong><span>tokens/day</span></span>
+              <span class="plan-detail"><span id="everyday-plan-split">3M reading + 500k generated.</span><span>Separate daily limits.</span></span>
+              <span class="plan-chatgpt"><strong>Sign in with ChatGPT</strong><span>Own subscription + forensic guidance.</span><small>Your ChatGPT limits apply.</small></span>
+              <span class="plan-selection-copy"><span><span class="select-label">Choose Everyday</span><span class="selected-label">Everyday selected</span></span><span aria-hidden="true">↗</span></span>
+            </label>
+            <label class="plan-card hero-glass" data-plan="plus">
+              <input id="preferences-plan-plus" type="radio" name="ai-plan" value="plus">
+              <span class="plan-topline"><span>PLUS</span><span class="plan-tag">Your largest allowance <span class="plan-indicator" aria-hidden="true"></span></span></span>
+              <h2>Room to explore.</h2><p class="plan-benefit">More room to read, ask and connect the details.</p>
+              <span class="plan-price"><strong id="plus-plan-price">A$90</strong><span>/ month · incl. GST</span></span>
+              <span class="plan-allowance"><strong id="plus-plan-allowance">30 million</strong><span>tokens/day</span></span>
+              <span class="plan-detail">One daily balance for reading and generated text.</span>
+              <span class="plan-chatgpt"><strong>Sign in with ChatGPT</strong><span>Own subscription + forensic guidance.</span><small>Your ChatGPT limits apply.</small></span>
+              <span class="plan-selection-copy"><span><span class="select-label">Choose Plus</span><span class="selected-label">Plus selected</span></span><span aria-hidden="true">↗</span></span>
+            </label>
+          </div>
+        </fieldset>
+        <label class="astra-option" for="preferences-astra">
+          <span class="astra-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="m12 2 2.8 7.2L22 12l-7.2 2.8L12 22l-2.8-7.2L2 12l7.2-2.8Z"/><path d="m19 2 .8 2.2L22 5l-2.2.8L19 8l-.8-2.2L16 5l2.2-.8Z"/></svg></span>
+          <span class="astra-copy"><span class="astra-heading"><strong>GPT-6 Astra</strong><span class="astra-preview-tag">Planned upgrade</span></span><span class="astra-tagline">Customised for Case Forge.</span><span class="astra-features"><span>Custom case skills</span><span>Research plugins</span><span>Source-linked lookup</span></span><span class="astra-usage-note" id="astra-usage-note">Includes Everyday. Separate Astra usage allowance to be confirmed.</span></span>
+          <span class="astra-price"><span><strong id="astra-plan-price">A$75</strong><span>/ month total</span></span><span id="astra-price-detail">A$25 extra · incl. GST</span></span>
+          <input id="preferences-astra" type="checkbox" name="advanced-intelligence" aria-label="Choose Everyday with Astra" aria-describedby="astra-plan-price astra-price-detail astra-usage-note"><span class="astra-choice"><span id="astra-preview-status">Choose Astra</span><span class="astra-switch" aria-hidden="true"></span></span>
+        </label>
+      </form>
+    </div>
+    <p id="preferences-message" class="stage-feedback" role="status" aria-live="polite"></p>
+    <div class="stage-navigation preferences-navigation"><button id="preferences-back" class="stage-back" type="button"><span aria-hidden="true">←</span> Back</button><p id="plan-preview-note" class="plan-navigation-note">Beta plan preview. AI access and billing are not active.</p><button id="preferences-continue" class="stage-primary stage-continue" type="submit" form="preferences-form">Continue <span aria-hidden="true">→</span></button></div>
+  </section>
+  <section id="ready-stage" class="entry-stage ready-stage" aria-labelledby="ready-title" hidden>
+    <div class="hero-glass terms-glass">
+      <header class="terms-heading"><div class="terms-heading-copy"><p class="stage-eyebrow">BEFORE YOU BEGIN</p><h1 id="ready-title">Terms &amp; conditions</h1><p>A few things to know about your Case Forge workspace.</p></div><div class="terms-version"><strong>DESKTOP BETA</strong><span id="terms-version">Loading terms…</span></div></header>
+      <div id="terms-reader" class="terms-reader" tabindex="0" role="region" aria-label="Case Forge beta terms and conditions" aria-describedby="terms-scroll-status"><article id="terms-document" class="terms-document"></article></div>
+      <div class="terms-reading-status"><span id="terms-scroll-status" role="status">Scroll to the end to continue.</span><progress id="terms-progress" max="100" value="0" aria-label="Position in terms"></progress><span id="terms-progress-value" aria-hidden="true">0%</span></div>
+    </div>
+    <p id="ready-message" class="stage-feedback" role="status" aria-live="polite"></p>
+    <div class="stage-navigation ready-navigation terms-navigation"><button id="ready-back" class="stage-back" type="button"><span aria-hidden="true">←</span> Back</button><label class="terms-agreement" hidden><input id="terms-agree" type="checkbox" disabled aria-describedby="terms-scroll-status"><span id="terms-agree-label">I agree to the Beta terms &amp; conditions.</span></label><button id="ready-open" class="stage-primary stage-continue" type="button" disabled hidden>Accept &amp; enter <span aria-hidden="true">→</span></button></div>
+  </section>
+</main>
+<dialog id="pin-dialog" class="pin-dialog" aria-labelledby="pin-dialog-title"><div class="dialog-heading"><span class="dialog-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><h2 id="pin-dialog-title">Your PIN</h2><p>Choose 6–12 digits you can remember.</p></div><form id="setup-pin-form" novalidate hidden>
+  <div id="setup-current-wrap" hidden><label for="setup-current-pin">Current PIN</label><input id="setup-current-pin" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="current-password" placeholder="6–12 digits" aria-describedby="setup-current-pin-feedback"><p id="setup-current-pin-feedback" class="field-feedback" aria-live="polite">Enter your current PIN.</p></div>
+  <label for="setup-new-pin">New PIN</label><input id="setup-new-pin" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="new-password" placeholder="Choose 6–12 digits" aria-describedby="setup-new-pin-feedback" required><p id="setup-new-pin-feedback" class="field-feedback" aria-live="polite">6–12 digits.</p>
+  <label for="setup-confirm-pin">Confirm PIN</label><input id="setup-confirm-pin" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="new-password" placeholder="Enter your PIN again" aria-describedby="setup-confirm-pin-feedback" required><p id="setup-confirm-pin-feedback" class="field-feedback" aria-live="polite">Enter the same PIN again.</p>
+  <p class="pin-message" id="setup-pin-message" role="status" aria-live="polite"></p><div class="pin-actions"><button id="setup-save-pin" type="submit" class="main-button pin-save"><span id="setup-save-pin-label">Save PIN</span><span class="pin-action-icon" aria-hidden="true"><svg class="pin-action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg><svg class="pin-action-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg></span></button><button id="setup-cancel-pin" type="button" class="small-button">Cancel</button></div>
+</form><p class="dialog-footnote">Your PIN locks the app. It does not encrypt your files.</p></dialog>
+<footer class="entry-footer"><div class="footer-identity"><div class="footer-tools"><span class="footer-version"><span id="app-version" data-app-version>Case Forge</span><span class="beta-badge" aria-label="Beta version">Beta</span></span><button id="setup-reset-app" class="reset-app-setup" type="button" title="Clear this app’s PIN and setup. Saved case files are kept." hidden>Reset app setup</button></div></div><div id="scene-controls" class="scene-controls-host"></div></footer>
+<script src="glass-effects.js"></script><script src="scene-controls.js"></script><script src="entry-flow.js"></script><script src="ai-plans.js"></script><script src="terms.js"></script><script src="terms-screen.js"></script><script src="setup.js"></script><script type="module" src="updates-entry.js"></script></body></html>
+
+
+
+
+
+
+
+

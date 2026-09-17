@@ -16,7 +16,7 @@ export function createTasks({ api, getSession }) {
     unmount(); host = element;
     if (caseKey !== getSession().caseKey) { setDraft(null); selected = null; targets = []; journalChoices = []; filter = "open"; }
     caseKey = getSession().caseKey;
-    host.innerHTML = `<div class="inbox-heading"><div><p class="eyebrow">Tasks, obligations and deadlines</p><h2>Know what needs doing next.</h2><p>Record the action, who is responsible and the source behind it.</p></div><button type="button" class="btn primary" id="tasks-new">New task</button></div>
+    host.innerHTML = `<div class="page-purpose purpose-with-action"><div><p>Know what needs doing next.</p><span>Record the action, who is responsible and the source behind it.</span></div><button type="button" class="btn primary" id="tasks-new">New task</button></div>
       <p class="workflow-warning">Confirm dates after reviewing them. This calendar-date tracker does not calculate court deadlines or cut-off times. Check any required time separately.</p>
       <p class="inbox-access" id="tasks-access"></p><div class="task-counts" id="tasks-counts" aria-label="Task counts"></div>
       <p class="inbox-message" id="tasks-message" role="status" aria-live="polite"></p>
@@ -75,7 +75,7 @@ export function createTasks({ api, getSession }) {
       ${c.details ? `<h3>What needs doing</h3><p class="journal-text">${esc(c.details)}</p>` : ""}
       <h3>Deadline</h3><p>${esc(dateLabel(c))}</p>${c.deadlineBasis ? `<p class="journal-text">${esc(c.deadlineBasis)}</p>` : ""}<p class="journal-meta">Date origin: ${esc({ personal: "personal planning", source: "source document or case note", suggested: "suggested date" }[c.dateOrigin])}. No cut-off time is assumed.</p>
       ${c.confirmedAt ? `<p class="journal-meta">Confirmed by ${esc(c.confirmedBy)} · ${esc(stamp(c.confirmedAt))}</p>` : ""}${c.reminderDate ? `<p>In-app reminder from ${esc(c.reminderDate)} (${esc(c.timeZone)})</p>` : ""}
-      ${c.source ? `<h3>Source reference</h3><p class="journal-text">${esc(c.source.title)}${c.source.locator ? ` · ${esc(c.source.locator)}` : ""}</p><p class="journal-meta">${esc(c.source.id)}</p>${c.source.kind === "journal" ? '<p class="journal-meta">Journal reference only. No account text or reflection has been copied.</p>' : ""}` : ""}
+      ${c.source ? `<h3>Source reference</h3><p class="journal-text">${c.sourceState === "missing" ? esc(c.source.title) : `<a class="record-link" href="#record/${c.source.id.split(":")[0]}/${encodeURIComponent(c.source.id.slice(c.source.id.indexOf(":")+1))}" data-record-kind="${esc(c.source.id.split(":")[0])}" data-record-id="${esc(c.source.id.slice(c.source.id.indexOf(":")+1))}">${esc(c.source.title)}</a>`}${c.source.locator ? ` · ${esc(c.source.locator)}` : ""}</p><p class="journal-meta">${esc(c.source.id)}</p>${c.source.kind === "journal" ? '<p class="journal-meta">Journal reference only. No account text or reflection has been copied.</p>' : ""}` : ""}
       ${c.reviewedAt ? `<p class="journal-meta">Obligation reviewed by ${esc(c.reviewedBy)} · ${esc(stamp(c.reviewedAt))}</p>` : ""}
       ${c.completedAt ? `<h3>Completion record</h3><p class="journal-text">${esc(c.completionNote)}</p><p class="journal-meta">Marked complete ${esc(stamp(c.completedAt))}; this records your update, not independent proof of compliance.</p>` : ""}`;
   }
@@ -83,7 +83,7 @@ export function createTasks({ api, getSession }) {
     const latest = entry.revisions.at(-1);
     find("#tasks-detail").innerHTML = `<div class="detail-header"><p class="eyebrow">${esc(BUCKET[entry.bucket])}</p><h2>${esc(latest.content.title)}</h2><p>Version ${latest.revision} · updated ${esc(stamp(latest.savedAt))}</p></div><div class="detail-body">
       ${["changed", "missing"].includes(entry.sourceState) ? `<p class="workflow-warning">The linked source is ${esc(entry.sourceState)}. Review it again. Active tasks with changed or missing sources are excluded from confirmed deadline and reminder queues.</p>` : ""}
-      ${contentView({ ...latest.content, effectiveDeadlineStatus: entry.effectiveDeadlineStatus })}<button type="button" class="btn" id="tasks-edit" ${getSession().access.canWrite && !busy ? "" : "disabled"}>Update task</button>
+      ${contentView({ ...latest.content, effectiveDeadlineStatus: entry.effectiveDeadlineStatus, sourceState: entry.sourceState })}<button type="button" class="btn" id="tasks-edit" ${getSession().access.canWrite && !busy ? "" : "disabled"}>Update task</button>
       <details class="journal-history"><summary>Change history (${entry.revisions.length})</summary><p class="journal-meta">Names are entered by the user, not authenticated signatures. Times come from this computer.</p>${[...entry.revisions].reverse().map((r) => `<details><summary>Version ${r.revision} · ${esc(stamp(r.savedAt))}</summary><h3>${esc(r.content.title)}</h3><p class="journal-text">${esc(r.actor)}: ${esc(r.reason || "Created task")}</p>${contentView(r.content)}</details>`).join("")}</details></div>`;
     find("#tasks-edit").addEventListener("click", () => {
       const c = latest.content;
@@ -178,5 +178,5 @@ export function createTasks({ api, getSession }) {
       if (host) { find("#tasks-new").disabled = !getSession().access.canWrite; if (draft) renderForm(); else if (generation !== turn && selected) void refresh(); }
     }
   }
-  return { mount, unmount };
+  return { mount, unmount, open: (id) => { if (draft) return notice("Save or discard your draft before opening another record."); return open(id); } };
 }

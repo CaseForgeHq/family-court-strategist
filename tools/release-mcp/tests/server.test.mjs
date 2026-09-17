@@ -1,0 +1,44 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { createReleaseMcp } from '../server.mjs';
+import { withReleaseLock } from '../../../scripts/release-lock.mjs';
+import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+test('MCP discovery, validation, shared actions and explicit version-bound publication', async t => {
+  const calls = [];
+  const actions = Object.fromEntries(['status','verify','build','prepare','publication','openAdmin','publish'].map(name => [name, async input => { calls.push({ name, input }); return { action: name }; }]));
+  const server = createReleaseMcp(actions), client = new Client({ name: 'release-test', version: '1' });
+  const [a, b] = InMemoryTransport.createLinkedPair(); await server.connect(a); await client.connect(b);
+  t.after(async () => { await client.close(); await server.close(); });
+  const { tools } = await client.listTools(); assert.equal(tools.length, 7);
+  assert.equal(tools.find(t => t.name === 'release_status').annotations.readOnlyHint, true);
+  assert.equal(tools.find(t => t.name === 'publish_release').annotations.destructiveHint, true);
+  assert.equal((await client.callTool({ name: 'release_status', arguments: {} })).structuredContent.action, 'status');
+  assert.equal((await client.callTool({ name: 'prepare_release', arguments: { version: 'bad', message: 'Hello', required: true } })).isError, true);
+  assert.equal((await client.callTool({ name: 'prepare_release', arguments: { version: '0.14.0', message: 'Hello', required: 'true' } })).isError, true);
+  await client.callTool({ name: 'prepare_release', arguments: { version: '0.14.0', message: 'Hello', required: true } });
+  assert.equal(calls.at(-1).name, 'prepare'); assert.equal(calls.filter(x => x.name === 'publish').length, 0);
+  assert.equal((await client.callTool({ name: 'publish_release', arguments: { version: '0.14.0', message: 'Hello', required: true, confirmation: 'PUBLISH 0.15.0' } })).isError, true);
+  assert.equal(calls.filter(x => x.name === 'publish').length, 0);
+  await client.callTool({ name: 'publish_release', arguments: { version: '0.14.0', message: 'Hello', required: true, confirmation: 'PUBLISH 0.14.0' } });
+  assert.deepEqual(calls.at(-1), { name: 'publish', input: { version: '0.14.0', message: 'Hello\n', required: true } });
+});
+test('browser and MCP release operations cannot overlap; failures release the lock', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'caseforge-release-lock-'));
+  assert.ok(dir.startsWith(join(tmpdir(), 'caseforge-release-lock-')));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const path = join(dir, 'release.lock'); let finish;
+  const first = withReleaseLock('build', () => new Promise(resolve => { finish = resolve; }), path);
+  while (!finish) await new Promise(resolve => setTimeout(resolve, 5));
+  await assert.rejects(withReleaseLock('publish', () => {}, path), /already running/);
+  finish(); await first;
+  await assert.rejects(withReleaseLock('verify', () => { throw Error('failed'); }, path), /failed/);
+  assert.equal(await withReleaseLock('prepare', () => 'ok', path), 'ok');
+  await writeFile(path, '{"pid":0,"operation":"unknown"}');
+  await assert.rejects(withReleaseLock('publish', () => {}, path), /invalid owner/);
+  assert.equal(await readFile(path, 'utf8'), '{"pid":0,"operation":"unknown"}');
+});

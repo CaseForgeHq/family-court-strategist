@@ -1,7 +1,7 @@
 // Keep both independently deployable surfaces on the same local brand assets.
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 const source = new URL('../brand/', import.meta.url);
-for (const destination of ['../website/brand/', '../app/public/brand/']) {
+for (const destination of ['../website/brand/', '../app/public/brand/', '../desktop/brand/']) {
   const target = new URL(destination, import.meta.url);
   await mkdir(target, { recursive: true });
   for (const name of ['tokens.css', 'logo.svg', 'logo-reversed.svg', 'symbol.svg', 'favicon.svg', 'fonts']) {
@@ -16,3 +16,11 @@ for (const destination of ['../website/brand/', '../app/public/brand/']) {
   }
 }
 console.log('Case Forge brand assets synced to website and app.');
+// The workspace and setup share the same offline scene and font sources.
+const sceneTarget = new URL('../app/public/scene/', import.meta.url);
+await mkdir(sceneTarget, { recursive:true });
+for (const name of ['landscape.css','landscape.js','scene-time.js','scene-controls.css','scene-controls.js','fonts']) {
+  await cp(new URL(`../desktop/${name}`, import.meta.url), new URL(name, sceneTarget), { recursive:true });
+}
+console.log('Shared desktop atmosphere and typefaces synced to the workspace.');
+await import('./sync-map-engine.mjs');

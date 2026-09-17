@@ -20,7 +20,7 @@ export function createJournal({ api, getSession }) {
     unmount(); host = element;
     if (draftCase !== getSession().caseKey) { setDraft(null); selected = null; }
     draftCase = getSession().caseKey;
-    host.innerHTML = `<div class="inbox-heading"><div><p class="eyebrow">Case journal · parenting log</p><h2>A place to record your experience.</h2><p>Keep what happened, remembered words and personal reflections distinct.</p></div><button class="btn primary" id="journal-new" type="button">New entry</button></div>
+    host.innerHTML = `<div class="page-purpose purpose-with-action"><div><p>A place to record your experience.</p><span>Keep what happened, remembered words and personal reflections distinct.</span></div><button class="btn primary" id="journal-new" type="button">New entry</button></div>
       <p class="workflow-warning">Personal accounts, not verified facts. Entries stay out of AI analysis and chronology exports. Linking a record does not verify your account.</p>
       <details class="journal-privacy"><summary>How your journal is kept</summary><p>Saved locally in this case folder. Reflections are hidden until you open them. Local storage is not encrypted and does not imply legal privilege. Back up the whole case folder, including hidden files. Nothing is sent to AI by this journal.</p></details>
       <p id="journal-access" class="inbox-access"></p><p id="journal-message" class="inbox-message" role="status" aria-live="polite"></p>
@@ -64,6 +64,7 @@ export function createJournal({ api, getSession }) {
       const entry = await api(`/api/journal/${id}`);
       if (!host || turn !== generation || selected !== id || draft) return;
       renderEntry(entry);
+      find("#journal-detail")?.scrollIntoView?.({block:"nearest"});
       notice("");
     } catch (error) { if (host && turn === generation) notice(error.message, true); }
   }
@@ -73,7 +74,7 @@ export function createJournal({ api, getSession }) {
       ${c.happened ? `<h3>What happened · your account</h3><p class="journal-text">${esc(c.happened)}</p>` : ""}
       ${c.words ? `<h3>Remembered words · your recollection</h3><p class="journal-text">${esc(c.words)}</p>` : ""}
       ${c.reflection ? `<details class="journal-reflection"><summary>Personal reflection · open to read</summary><p class="journal-text">${esc(c.reflection)}</p></details>` : ""}
-      ${c.links.length ? `<h3>Linked records</h3><ul class="journal-links">${c.links.map((l) => `<li>${esc(l.kind)}: ${esc(l.title)}${l.available === false ? " · no longer available" : ""}<small>${esc(l.id)}</small></li>`).join("")}</ul><p class="journal-meta">Connections for context; supporting evidence has not been verified.</p>` : ""}`;
+      ${c.links.length ? `<h3>Linked records</h3><ul class="journal-links">${c.links.map((l) => `<li>${esc(l.kind)}: ${l.available === false ? esc(l.title)+" · no longer available" : `<a class="record-link" href="#record/${l.id.startsWith("document:") ? "document" : "note"}/${encodeURIComponent(l.id.slice(l.id.indexOf(":")+1))}" data-record-kind="${l.id.startsWith("document:") ? "document" : "note"}" data-record-id="${esc(l.id.slice(l.id.indexOf(":")+1))}">${esc(l.title)}</a>`}<small>${esc(l.id)}</small></li>`).join("")}</ul><p class="journal-meta">Connections for context; supporting evidence has not been verified.</p>` : ""}`;
   }
   function renderEntry(entry) {
     const latest = entry.revisions.at(-1);
@@ -150,5 +151,5 @@ export function createJournal({ api, getSession }) {
       }
     }
   }
-  return { mount, unmount };
+  return { mount, unmount, open: (id) => { if (draft) return notice("Save or discard your draft before opening another record."); return open(id); } };
 }

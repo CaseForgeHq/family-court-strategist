@@ -1,4 +1,5 @@
 .superpowers/
+output/
 .DS_Store
 node_modules/
 .playwright-mcp/
@@ -18,3 +19,10 @@ output/brand-preview/
 .dist/
 .dev.vars*
 .env*
+desktop/dist/
+desktop/brand/
+output/desktop-preview/
+
+desktop/runtime/*.exe
+output/codex-schema/
+output/page-audit/
