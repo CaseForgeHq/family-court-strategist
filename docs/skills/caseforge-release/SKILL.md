@@ -24,6 +24,20 @@ Workspace: `C:/Users/alias/Desktop/CaseForgeHq`. Canonical source for this skill
 
 Read `PROJECT-MEMORY.md`, `docs/DESKTOP-UPDATES.md` and current git status first. Repository and public feed: `CaseForgeHq/family-court-strategist`. Verify the remote and authenticated push permissions live. This workflow does not grant standing permission to publish; follow the current user's scope. Do not request approval again when publication to this repository is already authorised in the current task.
 
+## Queue independent agents before building
+
+All publishers must use this procedure on the same Windows publisher account/host. The durable queue and operation lock live in `%LOCALAPPDATA%/CaseForgeRelease`, shared across checkouts and MCP processes. This is not a distributed lock across machines. Reconnect older MCP/admin processes after upgrading the tools; do not run an old publisher alongside them.
+
+1. Give each agent an isolated checkout containing its reviewed intended changes. Connect to `tools/release-mcp/server.mjs` in that checkout, not the shared dirty project. The server is bound to its own checkout. Never repoint shared Codex MCP configuration while other agents are using it; use an SDK stdio client for the isolated server when the registered server belongs to another checkout.
+2. Read `release_queue`, then `enqueue_release` with a stable unique requestId, the exact administrator message and required=false unless requested otherwise. Retry with the same requestId. Each entry retains its own message. One unfinished request per checkout is allowed.
+3. Call `claim_release` with that entry's id. If it returns waiting, leave its message intact and continue independent source work; check again after the preceding release finishes. Only the first unfinished entry can claim. This is agent-driven queuing, not a background publisher.
+4. When active, use the returned reserved version. Fetch and integrate the returned mainCommit into the agent's source, preserving preceding published changes. Update package, lock and notes together. Build, prepare and publish enforce the queue slot/message/policy. Never choose a competing version or bypass a queue gate.
+5. Run the checks below; commit, tag and push the reviewed cumulative release to main. Publish through MCP. Successful publication marks the entry published so the next agent can claim. A failed publication retains the active slot for retry. Cancel only the owning checkout's queued/active entry when the owner cancels that work; never delete another agent's entry or a live lock. Crashed/ambiguous locks require inspection before recovery.
+
+Queue acceptance is owner-only. Client messages become available only after verified public publication. Every public release uploads `update-messages.json` containing all completed Windows release messages, with distinct version IDs. Clients show each message newer than their installed version separately and use one Download action for the newest available version. A download already in progress keeps its verified target; newer messages still appear, and the next version remains available after reopening.
+
+Messages refresh every 10 seconds while online, including during downloads; this is polling, not instant server push. Network/CDN delay can extend discovery. Installer metadata checks run every minute, on new-message arrival and before Download. The panel remains closed on arrival and only the icon animates. Older clients gain message history after installing the new client once. Test concurrent queue submissions, retries, per-message rendering, and discovery without reopening the app.
+
 ## Prepare one immutable release
 
 - Windows x64 NSIS is the established target. The app identity is `org.familycourtstrategist.app`; retain it and the installer profile/directory conventions so upgrades preserve users' cases, PIN, preferences and licences.
@@ -36,7 +50,7 @@ Read `PROJECT-MEMORY.md`, `docs/DESKTOP-UPDATES.md` and current git status first
 
 ## Publish and verify
 
-When publication is authorised, commit the reviewed source, create the matching version tag, and push to the verified repository. Create a **draft** GitHub Release with the versioned release-message file and upload the installer, its `.blockmap`, `latest.yml`, `SHA256SUMS.txt` and `release-report.json`. Check every uploaded asset name and size before making the draft public. The desktop CI workflow produces reviewable artifacts; it does not publish them automatically.
+When publication is authorised, commit the reviewed source, create the matching version tag, and push to the verified repository. Create a **draft** GitHub Release through MCP with the versioned release-message file and upload the installer, its `.blockmap`, `latest.yml`, `update-messages.json`, `SHA256SUMS.txt` and `release-report.json`. The publisher assembles history from completed public Windows releases, validates it and verifies every uploaded asset digest before making the draft public. The desktop CI workflow produces reviewable artifacts; it does not publish them automatically.
 
 Publish as a normal GitHub release marked latest, with “Windows beta” in its title while the product remains beta. GitHub's prerelease flag is deliberately not used by this single Windows feed: the client excludes prereleases. If separate stable/beta channels are requested, implement and test that migration before changing the flag.
 

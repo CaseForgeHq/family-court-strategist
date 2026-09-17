@@ -21,11 +21,11 @@ Registered name: `caseforge_release`. Local stdio server, launched by Codex. No 
 - “Open the Case Forge release admin panel.”
 - “Publish the prepared version 0.14.0 to everyone.” Only do this when intended; it is a real public write.
 
-Tools: `release_status`, `verify_release`, `build_release`, `prepare_release`, `check_publication`, `open_admin_panel`, `publish_release`. Build and prepare never publish or install. Publishing requires the exact version/message/policy and `confirmation: "PUBLISH <version>"`, in addition to the existing reviewed-source/tag/asset checks. A tool argument is not a substitute for the user's authorization.
+Tools: `release_queue`, `enqueue_release`, `claim_release`, `cancel_queued_release`, `release_status`, `verify_release`, `build_release`, `prepare_release`, `check_publication`, `open_admin_panel`, `publish_release`. Enqueue and claim before building; independent agents use separate checkout-bound servers. A waiting result requires the preceding release to finish. Claim reserves the version and main commit to integrate. Build and prepare never publish or install. Publishing requires the exact queued version/message/policy and `confirmation: "PUBLISH <version>"`, in addition to the existing reviewed-source/tag/asset checks. A tool argument is not a substitute for the user's authorization. See [queue procedure](../../docs/RELEASE-QUEUE.md).
 
 The server imports the same `releaseActions` used by the browser panel. Both use an exclusive filesystem lock, preventing two MCP processes or an MCP and a new admin-panel process from changing release files simultaneously. Restart any older admin-panel process after updating this code.
 
-If a process crashes while holding `output/release-operation.lock`, the next write fails closed. Inspect its owner and build log before removing that exact stale lock. Live or ambiguous locks must not be deleted. Raw shell builds outside these interfaces do not participate in the lock; source/package verification still rejects a changing candidate.
+The queue and locks live in `%LOCALAPPDATA%/CaseForgeRelease`, shared across checkouts on one publisher account/host. If a process crashes holding `release-operation.lock` or `queue.lock`, the next write fails closed. Inspect its owner and logs before removing that exact stale lock. Live or ambiguous locks must not be deleted. Old processes and raw shell builds outside these interfaces do not participate; reconnect older MCP/admin processes. Use one publisher host, not separate machines with independent queues.
 
 ## Setup and verification
 
@@ -33,12 +33,12 @@ From PowerShell: `& .\tools\release-mcp\install.ps1`. This installs locked depen
 
 - `codex mcp get caseforge_release --json`: inspect only this connection.
 - `npm test --prefix tools/release-mcp`: protocol/validation/shared-lock tests with mocked publication.
-- `node tools/release-mcp/smoke.mjs`: real stdio handshake, discovery, local verify/prepare and panel HTTP check; no publish.
+- `node tools/release-mcp/smoke.mjs`: real stdio handshake, discovery, local verify/prepare and panel HTTP check; requires a claimed matching release; no publish.
 - Add `--build` for an actual local build and `--github` for read-only publisher/release checks.
 - Build log: `output/release-mcp/build.log`. Smoke report: `output/release-mcp/smoke.json`.
 
 Requires Node.js, the locked desktop/MCP dependencies, Git and GitHub CLI. GitHub publication/checks use the owner's existing `gh` login. Do not put tokens in this package, config examples or PDF reports. There are no arbitrary shell, path, download URL or repository tools.
 
-`release_status` reports the last verification timestamp, not a fresh binary verification. `verify_release` compares the current packaged bytes and regenerates metadata/checksums. `check_publication` reads GitHub metadata; a real installed upgrade and anonymous asset access remain separate checks. The MCP does not commit, tag, push source, choose a new version, configure signing, update the website or install into the user's profile.
+`release_status` reports the last verification timestamp, not a fresh binary verification. `verify_release` compares the current packaged bytes and regenerates metadata/checksums. `check_publication` reads GitHub metadata; a real installed upgrade and anonymous asset access remain separate checks. Claim reserves the next version. The MCP does not edit package versions, commit, tag, push source, configure signing, update the website or install into the user's profile.
 
 Reference: [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) and [official MCP SDK guidance](https://modelcontextprotocol.io/docs/develop/build-server).

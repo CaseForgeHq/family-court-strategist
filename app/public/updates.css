@@ -95,3 +95,10 @@
 @keyframes update-flow{to{background-position:-220% 0}}
 @keyframes update-download{0%,100%{transform:translateY(-2px)}50%{transform:translateY(2px)}}
 @media(prefers-reduced-motion:reduce){.updates-spinner,.is-transferring .updates-download,.updates-transfer progress:not([value]){animation:none}.updates-transfer progress::-webkit-progress-value{transition:none}}
+.updates-version{font-size:10px;color:#93b1c8;white-space:nowrap}
+.updates-version[hidden],.updates-history[hidden]{display:none}
+.updates-history-message{border-top:1px solid #3989df38;border-radius:0}
+.updates-history-message .updates-copy{flex:1}
+.updates-copy .updates-sender{display:inline}
+.updates-copy .updates-sender[hidden]{display:none}
+.updates-copy p{margin-top:3px;overflow:auto;overflow-wrap:anywhere}

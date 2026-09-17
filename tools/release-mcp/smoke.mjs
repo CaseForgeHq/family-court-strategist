@@ -12,7 +12,7 @@ const call = async (name, args = {}) => {
 };
 try {
   await client.connect(transport);
-  const { tools } = await client.listTools(); assert.equal(tools.length, 7);
+  const { tools } = await client.listTools(); assert.equal(tools.length, 11);
   const status = await call('release_status');
   if (process.argv.includes('--build')) {
     const result = await client.callTool({ name: 'build_release', arguments: {} }, undefined, { timeout: 900000 });

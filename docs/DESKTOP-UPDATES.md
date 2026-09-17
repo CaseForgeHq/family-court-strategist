@@ -4,7 +4,9 @@ The update icon changes from a shield to a download arrow with a gold ! badge wh
 
 `desktop/updates.cjs` wraps the pinned `electron-updater` dependency. `desktop/main.cjs` exposes fixed status/check/download/install IPC actions to its own main workspace, registration and PIN screens. These actions do not unlock case data. The renderer cannot supply a URL or installer path. The packaged provider is the public GitHub repository `CaseForgeHq/family-court-strategist`.
 
-Packaged Windows builds check 15 seconds after startup, every minute and before opening a case. Development builds do not contact the feed. Downloads are manual; install-on-quit, prereleases and downgrades are disabled. Download verifies the update while the app stays open, then uses the normal unsaved-work close guard and installs silently with automatic relaunch. Late checks cannot reset an active download. A differential fallback switches to an indeterminate complete-update animation instead of a backwards percentage. The updater checks asset checksums; Windows publisher signing is not configured yet.
+From 0.14.19, packaged Windows builds begin checking after 1.5 seconds. Published messages refresh every 10 seconds; installer metadata checks run every minute, on a new-message arrival and before Download/case entry. Network/CDN delay may extend discovery. Development builds do not contact the feed. Downloads are manual; install-on-quit, prereleases and downgrades are disabled. Download verifies the update while the app stays open, then uses the normal unsaved-work close guard and installs silently with automatic relaunch. Late checks cannot reset an active download. A differential fallback switches to an indeterminate complete-update animation instead of a backwards percentage. The updater checks asset checksums; Windows publisher signing is not configured yet.
+
+Each published message newer than the installed version has its own row, newest first, with one Download action for the newest release. New messages continue to arrive during a download without changing its target or progress. See [publisher queue and history](RELEASE-QUEUE.md) for the multi-agent procedure and bootstrap behavior.
 
 Registration, PIN entry and the workspace share updates.js and updates.css. Arrival only animates the icon; it does not open a message or move focus. Real-time IPC reports download, verification and restarting stages. Required updates retain their existing case-entry gate.
 
@@ -12,7 +14,7 @@ Registration, PIN entry and the workspace share updates.js and updates.css. Arri
 
 Run `node scripts/release-admin.mjs` from the repository and open the private URL printed in the terminal. Keep that process running while using the panel. It binds only to 127.0.0.1, checks the Host and request origin and requires a random session token. It uses the owner's existing GitHub CLI authentication; no publishing credentials or admin panel are shipped to customers. Restart the command for a fresh link if the page is refreshed or closed.
 
-Edit the admin message and select **Require this update**, then **Save message & prepare release**. A built, source-matching installer is required. Preparation saves the versioned Markdown and a sibling JSON policy, updates the feed metadata and regenerates checksums. It does not publish. After reviewing/committing the source and pushing the matching version tag, type PUBLISH and select **Publish update**. The panel checks the prepared version/message/policy, verifies the build, stages a draft, checks uploaded SHA256 digests and sizes, then publishes it as latest. Public versions cannot be replaced. A failed upload remains a draft and can be retried.
+Submit and claim the release through the MCP queue before building. The panel displays pending releases and prepares the matching claimed message/policy. A built, source-matching installer is required. Preparation saves the versioned Markdown and a sibling JSON policy, updates the feed metadata and regenerates checksums. It does not publish. After reviewing/committing the source and pushing the matching version tag to main, type PUBLISH and select **Publish update**. The panel checks the queue slot and prepared version/message/policy, verifies the build, stages a draft, checks uploaded SHA256 digests and sizes, then publishes it as latest and completes the queue entry. Public versions cannot be replaced. A failed upload remains a draft and retains its slot for retry.
 
 The strict boolean `caseForgeRequired` in `latest.yml` requires users on earlier updater-enabled versions to install before opening a case. An already open case remains usable to save work. The app never forcibly terminates a user's session. A remembered requirement survives transient download/check errors for that running session; offline clients cannot discover a new requirement. The policy is versioned with each release, so changing a public release's policy requires a new version. This is a required-update gate, not a remote kill switch.
 
@@ -23,6 +25,7 @@ Release messages are plain text in `releases/windows/<version>.md`; the build pl
 - `Case-Forge-Setup-<version>.exe`
 - `Case-Forge-Setup-<version>.exe.blockmap`
 - `latest.yml`
+- `update-messages.json`
 - `SHA256SUMS.txt`
 - `release-report.json`
 

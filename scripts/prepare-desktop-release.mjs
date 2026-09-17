@@ -3,6 +3,7 @@ import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { releaseQueue } from './release-queue.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(new URL('../desktop/package.json', import.meta.url));
 const yaml = require('js-yaml'), { extractFile } = require('@electron/asar');
@@ -47,9 +48,20 @@ if (feed.provider !== 'github' || feed.owner !== 'CaseForgeHq' || feed.repo !== 
 const policyPath = join(root, 'releases/windows', `${version}.json`);
 const policy = existsSync(policyPath) ? JSON.parse(readFileSync(policyPath, 'utf8')) : { required: false };
 if (typeof policy.required !== 'boolean') fail('Release required policy must be a boolean.');
+await releaseQueue.assertCandidate(root, { version, message: notes, required: policy.required });
 metadata.caseForgeRequired = policy.required;
 writeFileSync(join(dist, 'latest.yml'), yaml.dump(metadata, { lineWidth: -1 }));
-const assets = [installer, `${installer}.blockmap`, 'latest.yml'].map(name => ({ name, bytes: statSync(join(dist, name)).size, sha256: createHash('sha256').update(readFileSync(join(dist, name))).digest('hex') }));
+const messagesPath = join(dist, 'update-messages.json');
+let messageAssets = [];
+if (existsSync(messagesPath)) {
+  const messages = JSON.parse(readFileSync(messagesPath, 'utf8'));
+  if (messages.latestVersion === version) {
+    require('../desktop/update-messages.cjs').validateMessages(messages, '0.0.0');
+    if (!messages.entries.some(e => e.version === version && e.message.trim() === notes.trim())) fail('Update messages differ from release notes.');
+    messageAssets = ['update-messages.json'];
+  }
+}
+const assets = [installer, `${installer}.blockmap`, 'latest.yml', ...messageAssets].map(name => ({ name, bytes: statSync(join(dist, name)).size, sha256: createHash('sha256').update(readFileSync(join(dist, name))).digest('hex') }));
 writeFileSync(join(dist, 'SHA256SUMS.txt'), assets.map(a => `${a.sha256}  ${a.name}`).join('\n') + '\n');
 const report = { version, repository: 'CaseForgeHq/family-court-strategist', assets, checkedSourceFiles: checked, verifiedAt: new Date().toISOString(), limits: ['Authenticode signing must be checked separately.', 'Does not prove an installed upgrade or public availability.'] };
 writeFileSync(join(dist, 'release-report.json'), JSON.stringify(report, null, 2) + '\n');

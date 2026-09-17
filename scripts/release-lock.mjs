@@ -1,8 +1,8 @@
 import { mkdir, open, readFile, unlink } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { homedir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-const defaultPath = fileURLToPath(new URL('../output/release-operation.lock', import.meta.url));
+const defaultPath = join(process.env.LOCALAPPDATA || join(homedir(), '.local', 'share'), 'CaseForgeRelease', 'release-operation.lock');
 // Shared across the browser console and every MCP process. Fail closed on ambiguous owners.
 export async function withReleaseLock(operation, action, path = defaultPath) {
   await mkdir(dirname(path), { recursive: true });

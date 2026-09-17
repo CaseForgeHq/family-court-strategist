@@ -13,6 +13,7 @@ const { createGoogleCalendar } = require('./google-calendar.cjs');
 const { createUpdates, closeForUpdate, downloadAndInstall } = require('./updates.cjs');
 const { showUpdateHandoff } = require('./update-handoff.cjs');
 const { createFastUpdate, markBootReady } = require('./fast-update.cjs');
+const { createUpdateMessages } = require('./update-messages.cjs');
 const { createDocumentExports } = require('./document-exports.cjs');
 const { createDemoCases } = require('./demo-cases.cjs');
 // Test profiles never set or read the user's actual PIN. Packaged builds ignore this variable.
@@ -371,6 +372,7 @@ else {
     workspaceIPC('documents:history', value => documentExports.history(value));
     const fastUpdate = createFastUpdate({ resources: process.resourcesPath, executable: process.execPath, temp: app.getPath('temp'), userData: app.getPath('userData'), electron: process.versions.electron });
     updates = createUpdates({ updater: app.isPackaged ? require('electron-updater').autoUpdater : null, version: appInfo().version, enabled: app.isPackaged && process.platform === 'win32',
+      messages: app.isPackaged ? createUpdateMessages({ userData: app.getPath('userData'), version: appInfo().version, fetch: (...args) => net.fetch(...args) }) : null,
       prepareFast: input => app.isPackaged ? fastUpdate.prepare(input) : null,
       installFast: async plan => { await fastUpdate.launch(plan); app.quit(); return true; },
       onChange: state => { if (win && !win.isDestroyed()) win.webContents.send('updates:status-changed', state); } });
@@ -404,8 +406,18 @@ else {
     };
     updateIPC('updates:download', event => downloadAndInstall(updates, () => installVerifiedUpdate(event)));
     updateIPC('updates:install', installVerifiedUpdate);
-    const firstUpdateCheck = setTimeout(() => void updates.check(), 15000); firstUpdateCheck.unref();
-    updateTimer = setInterval(() => void updates.check(), 60 * 1000); updateTimer.unref();
+    void updates.refreshMessages(true);
+    let lastMetadataCheck = 0, lastMessageVersion = '';
+    const refreshUpdates = async () => {
+      const state = await updates.refreshMessages();
+      const newest = state.notices[0]?.version || '';
+      if (Date.now() - lastMetadataCheck >= 60000 || newest !== lastMessageVersion) {
+        lastMetadataCheck = Date.now(); lastMessageVersion = newest;
+        void updates.check();
+      }
+    };
+    const firstUpdateCheck = setTimeout(refreshUpdates, 1500); firstUpdateCheck.unref();
+    updateTimer = setInterval(refreshUpdates, 10 * 1000); updateTimer.unref();
     workspaceIPC('admin:status', () => {
       const state = demoCases.status(currentVault);
       return { ...state, returnName: state.returnFolder ? workspacePreferences.get(state.returnFolder).caseName : null, canReturn: !!state.returnFolder, returnFolder: undefined };

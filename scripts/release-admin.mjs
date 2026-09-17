@@ -8,13 +8,14 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createRequire } from 'node:module';
 import { withReleaseLock } from './release-lock.mjs';
+import { releaseQueue } from './release-queue.mjs';
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(new URL('../desktop/package.json', import.meta.url));
 const yaml = require('js-yaml');
 const repository = 'CaseForgeHq/family-court-strategist';
 const dist = join(root, 'desktop/dist');
-const command = (name, args) => exec(name, args, { cwd: root, windowsHide: true, timeout: 180000, maxBuffer: 2 * 1024 * 1024 });
+const command = (name, args) => exec(name, args, { cwd: root, windowsHide: true, timeout: 180000, maxBuffer: 32 * 1024 * 1024 });
 const git = args => command('git', ['-c', `safe.directory=${root.replaceAll('\\', '/').replace(/\/$/, '')}`, ...args]);
 export function validateReleaseInput(value) {
   if (!value || typeof value.message !== 'string' || !value.message.trim() || value.message.length > 6000 || typeof value.required !== 'boolean') throw Error('Enter a release message of 1–6,000 characters and select an update policy.');
@@ -31,6 +32,7 @@ async function candidate() {
 async function verify() { await command(process.execPath, ['scripts/prepare-desktop-release.mjs']); }
 async function prepare(value) {
   const input = validateReleaseInput(value), info = await candidate();
+  await releaseQueue.assertTurn(root, { ...info, ...input });
   if (value.version && value.version !== info.version) throw Error('Release version changed. Read the candidate again.');
   // Refuse stale binaries before altering metadata. Release notes are not executable code.
   await verify();
@@ -46,10 +48,15 @@ async function prepare(value) {
 async function publish(value) {
   await verify();
   const info = await candidate(), tag = `v${info.version}`;
+  const queued = await releaseQueue.assertTurn(root, info);
   if (value.version !== info.version || value.message !== info.message || value.required !== info.required) throw Error('The prepared release changed. Review and prepare it again.');
   const status = await git(['status', '--porcelain']);
   if (status.stdout.trim()) throw Error('Commit and review the release source first. Publication is blocked while the checkout has uncommitted files.');
   const head = (await git(['rev-parse', 'HEAD'])).stdout.trim();
+  await git(['merge-base', '--is-ancestor', queued.mainCommit, head]);
+  await git(['merge-base', '--is-ancestor', queued.sourceCommit, head]);
+  const main = (await git(['ls-remote', 'origin', 'refs/heads/main'])).stdout.trim().split(/\s/)[0];
+  if (main !== head) throw Error('Reconcile with current main and push the reviewed cumulative release before publishing.');
   if ((await git(['rev-parse', `${tag}^{commit}`])).stdout.trim() !== head) throw Error('The release tag must point to the reviewed source commit.');
   const remote = (await git(['ls-remote', 'origin', `refs/tags/${tag}`, `refs/tags/${tag}^{}`])).stdout;
   if (!remote.split(/\r?\n/).some(line => line.split(/\s/)[0] === head)) throw Error('Push the reviewed version tag before publishing.');
@@ -59,8 +66,29 @@ async function publish(value) {
   let release;
   try { release = JSON.parse((await command('gh', ['release', 'view', tag, '--repo', repository, '--json', 'isDraft,url'])).stdout); }
   catch { /* create --verify-tag below still fails safely on access/network errors */ }
-  if (release && !release.isDraft) throw Error('This version is already public. Build a new version.');
-  const names = [`Case-Forge-Setup-${info.version}.exe`, `Case-Forge-Setup-${info.version}.exe.blockmap`, 'latest.yml', 'SHA256SUMS.txt', 'release-report.json'];
+  if (release && !release.isDraft) {
+    // A lost response after publication must not permanently block the queue.
+    const publicRelease = JSON.parse((await command('gh', ['release', 'view', tag, '--repo', repository, '--json', 'assets,body'])).stdout);
+    if (publicRelease.body?.trim() !== info.message.trim()) throw Error('Public release differs from the queued message. Inspect it before proceeding.');
+    for (const name of [`Case-Forge-Setup-${info.version}.exe`, `Case-Forge-Setup-${info.version}.exe.blockmap`, 'latest.yml', 'update-messages.json', 'SHA256SUMS.txt']) {
+      const bytes = await readFile(join(dist, name));
+      if (!publicRelease.assets.some(a => a.name === name && a.digest === `sha256:${createHash('sha256').update(bytes).digest('hex')}`)) throw Error('Public release differs from this verified build.');
+    }
+    await releaseQueue.complete(root, queued.id, release.url); return { ...info, result: 'Previously published release verified; queue completed.' };
+  }
+  // Append every published message, not just the newest release's body. Only
+  // completed public releases with actual Windows assets enter this client feed.
+  const pages = JSON.parse((await command('gh', ['api', `repos/${repository}/releases?per_page=100`, '--paginate', '--slurp'])).stdout);
+  const entries = pages.flat().filter(r => !r.draft && !r.prerelease && /^v\d+\.\d+\.\d+$/.test(r.tag_name) && r.assets?.some(a => a.name === 'latest.yml') && r.assets?.some(a => a.name === `Case-Forge-Setup-${r.tag_name.slice(1)}.exe`))
+    .map(r => ({ id: r.tag_name, version: r.tag_name.slice(1), message: String(r.body || '').trim().slice(0, 6000) || 'Update ready.', publishedAt: r.published_at }));
+  entries.push({ id: tag, version: info.version, message: info.message.trim(), publishedAt: new Date().toISOString() });
+  const messages = { schema: 1, latestVersion: info.version, entries };
+  require('../desktop/update-messages.cjs').validateMessages(messages, '0.0.0');
+  const messageBytes = JSON.stringify(messages, null, 2) + '\n';
+  if (Buffer.byteLength(messageBytes) > 8 * 1024 * 1024) throw Error('Update message history exceeds the client limit. Review retention before publishing.');
+  await writeFile(join(dist, 'update-messages.json'), messageBytes);
+  await verify();
+  const names = [`Case-Forge-Setup-${info.version}.exe`, `Case-Forge-Setup-${info.version}.exe.blockmap`, 'latest.yml', 'update-messages.json', 'SHA256SUMS.txt', 'release-report.json'];
   // Snapshot validated assets so a concurrent desktop build cannot alter the upload.
   const staging = join(root, 'output', `release-upload-${randomBytes(8).toString('hex')}`);
   await mkdir(staging, { recursive: true });
@@ -82,14 +110,22 @@ async function publish(value) {
     const asset = uploaded.assets.find(asset => asset.name === name);
     if (!asset || asset.size !== bytes.length || asset.digest !== `sha256:${createHash('sha256').update(bytes).digest('hex')}`) throw Error('Uploaded asset verification failed. Release remains a draft.');
   }
+  const latest = JSON.parse((await command('gh', ['release', 'view', '--repo', repository, '--json', 'tagName'])).stdout).tagName.replace(/^v/, '');
+  if (require('../desktop/update-messages.cjs').compare(latest, info.version) >= 0) throw Error('A same or newer release is already public. Reconcile the queue before publishing.');
   await command('gh', ['release', 'edit', tag, '--repo', repository, '--draft=false', '--latest']);
+  await releaseQueue.complete(root, queued.id, `https://github.com/${repository}/releases/tag/${tag}`);
   return { ...info, result: 'Release published. Online updater-enabled clients discover it on their next check. Public download and real installed-upgrade verification are still required.' };
 }
 export const releaseActions = {
   candidate,
+  queue: () => releaseQueue.status(root),
   verify: () => withReleaseLock('verify', async () => { await verify(); return JSON.parse(await readFile(join(dist, 'release-report.json'), 'utf8')); }),
   prepare: value => withReleaseLock('prepare', () => prepare(value)),
-  publish: value => withReleaseLock('publish', () => publish(value)),
+  publish: value => withReleaseLock('publish', async () => {
+    const queued = await releaseQueue.assertTurn(root, value); await releaseQueue.publishing(root, queued.id);
+    try { return await publish(value); }
+    catch (error) { await releaseQueue.failed(root, queued.id, error.message); throw error; }
+  }),
 };
 export function startAdmin({ port = 0, actions = releaseActions, log = console.error } = {}) {
   const token = randomBytes(32).toString('hex'); let busy = false;
@@ -107,6 +143,7 @@ export function startAdmin({ port = 0, actions = releaseActions, log = console.e
       }
       if (req.headers.authorization !== `Bearer ${token}` || (req.method !== 'GET' && req.headers.origin !== origin)) return send(403, { error: 'Open the private console link printed in your terminal.' });
       if (req.method === 'GET' && req.url === '/api/status') return send(200, await actions.candidate());
+      if (req.method === 'GET' && req.url === '/api/queue') return send(200, await actions.queue());
       if (req.method !== 'POST' || !['/api/prepare', '/api/publish'].includes(req.url)) return send(404, { error: 'Not found.' });
       if (busy) return send(409, { error: 'A release operation is already running.' });
       let body = ''; for await (const chunk of req) { body += chunk; if (Buffer.byteLength(body) > 30000) return send(413, { error: 'Message is too large.' }); }

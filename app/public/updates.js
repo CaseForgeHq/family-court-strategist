@@ -16,11 +16,18 @@ export function createUpdates({ desktop, format = 'popover' }) {
   panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Update message');
   panel.innerHTML = `<div class="updates-body"><section class="updates-message"><span class="updates-sigil" aria-hidden="true"></span><div class="updates-copy"><span class="updates-sender" hidden>Case Forge Admin Says</span><p></p></div><button class="btn primary" data-update-action hidden title="Download, install and reopen Case Forge">Download</button><button class="updates-close" aria-label="Close updates" title="Close">${icon('close')}</button></section><p class="updates-status" role="status" aria-live="polite" hidden></p><div class="updates-transfer" hidden><span class="updates-spinner" aria-hidden="true"></span><span class="updates-transfer-label" role="status" aria-live="polite"></span><progress max="100" aria-label="Update download progress"></progress></div></div>`;
   document.body.append(panel);
+  const versionLabel = document.createElement('span'); versionLabel.className = 'updates-version';
+  panel.querySelector('.updates-copy').insertBefore(versionLabel, panel.querySelector('.updates-copy p'));
+  const history = document.createElement('div'); history.className = 'updates-history'; history.hidden = true;
+  panel.querySelector('.updates-message').after(history);
   const $ = selector => panel.querySelector(selector);
   let state = { phase: 'idle' }, pinned = false, timer, busy = false, focusSuppressed = false, announced = '';
   function position() { const r = trigger.getBoundingClientRect(); panel.style.left = `${Math.max(12, Math.min(r.right - panel.offsetWidth, window.innerWidth - panel.offsetWidth - 12))}px`; panel.style.top = `${Math.min(r.bottom + 10, window.innerHeight - 180)}px`; panel.style.maxHeight = `${Math.max(160, window.innerHeight - r.bottom - 22)}px`; }
   function render() {
     const phase = state.phase;
+    const notices = Array.isArray(state.notices) ? state.notices.filter(item => item && typeof item.message === 'string' && /^\d+\.\d+\.\d+$/.test(item.version)).map(item => ({ ...item })) : [];
+    if (state.version && state.message && phase !== 'current' && !notices.some(item => item.version === state.version)) notices.push({ id: `v${state.version}`, version: state.version, message: state.message });
+    notices.sort((a, b) => { const x = a.version.split('.').map(Number), y = b.version.split('.').map(Number); return y[0]-x[0] || y[1]-x[1] || y[2]-x[2]; });
     panel.setAttribute('aria-label', state.required ? 'Required update message' : 'Update message');
     $('.updates-status').textContent = state.error || '';
     $('.updates-status').hidden = !state.error;
@@ -30,8 +37,21 @@ export function createUpdates({ desktop, format = 'popover' }) {
     if (phase === 'downloading' && Number.isFinite(state.progress)) $('progress').value = state.progress;
     else $('progress').removeAttribute('value');
     trigger.classList.toggle('is-transferring', transferring);
-    const hasRelease = ['available', 'downloading', 'verifying', 'preparing', 'ready', 'restarting', 'installing'].includes(phase) || (phase === 'error' && Boolean(state.version));
-    $('.updates-message p').textContent = phase === 'current' ? 'You are currently up to date' : hasRelease ? (state.message || 'A new update is ready.') : phase === 'error' ? 'Unable to check for updates' : phase === 'unavailable' ? 'Updates are available in the installed app' : 'Checking for updates…';
+    const hasRelease = notices.length > 0 || ['available', 'downloading', 'verifying', 'preparing', 'ready', 'restarting', 'installing'].includes(phase) || (phase === 'error' && Boolean(state.version));
+    $('.updates-message p').textContent = notices[0]?.message || (phase === 'current' ? 'You are currently up to date' : hasRelease ? (state.message || 'A new update is ready.') : phase === 'error' ? 'Unable to check for updates' : phase === 'unavailable' ? 'Updates are available in the installed app' : 'Checking for updates…');
+    versionLabel.hidden = !hasRelease || !notices[0]?.version;
+    versionLabel.textContent = notices[0]?.version ? ` · v${notices[0].version}` : '';
+    const historyKey = JSON.stringify(notices.slice(1));
+    if (history.dataset.key !== historyKey) {
+      history.dataset.key = historyKey; history.replaceChildren();
+      for (const notice of notices.slice(1)) {
+        const row = document.createElement('section'); row.className = 'updates-message updates-history-message'; row.dataset.releaseId = notice.id;
+        row.innerHTML = '<span class="updates-sigil" aria-hidden="true">!</span><div class="updates-copy"><span class="updates-sender">Case Forge Admin Says</span><span class="updates-version"></span><p></p></div>';
+        row.querySelector('.updates-version').textContent = ` · v${notice.version}`;
+        row.querySelector('p').textContent = notice.message; history.append(row);
+      }
+    }
+    history.hidden = notices.length < 2;
     $('.updates-sender').hidden = !hasRelease;
     $('.updates-sigil').textContent = hasRelease ? '!' : phase === 'current' ? '✓' : '·';
     panel.dataset.phase = phase;
@@ -39,15 +59,16 @@ export function createUpdates({ desktop, format = 'popover' }) {
     action.hidden = !['available', 'downloading', 'verifying', 'preparing', 'ready', 'restarting', 'installing'].includes(phase) && !(phase === 'error' && state.version);
     action.textContent = phase === 'ready' ? 'Restart and install' : phase === 'downloading' ? (state.fullDownload ? 'Downloading…' : `${Math.round(state.progress || 0)}%`) : phase === 'preparing' ? 'Preparing…' : phase === 'verifying' ? 'Verifying…' : ['restarting', 'installing'].includes(phase) ? 'Restarting…' : 'Download';
     action.disabled = busy || ['downloading', 'verifying', 'preparing', 'restarting', 'installing'].includes(phase);
-    const available = ['available', 'downloading', 'verifying', 'preparing', 'ready', 'restarting', 'installing'].includes(phase) || (phase === 'error' && Boolean(state.version));
+    if (transferring && notices[0]?.version && state.version !== notices[0].version) action.textContent = `Updating v${state.version}`;
+    const available = hasRelease;
     trigger.hidden = format === 'notification' && !available;
     if (trigger.hidden) close();
     trigger.classList.toggle('has-update', available);
     panel.classList.toggle('has-update', available);
     trigger.querySelector('.update-dot').hidden = !available;
-    trigger.setAttribute('aria-label', available ? 'Updates — new version available' : 'Updates');
-    const notice = `${state.version}:${state.required}`;
-    if (available && state.version && notice !== announced) {
+    trigger.setAttribute('aria-label', available ? `Updates — ${Math.max(1, notices.length)} available` : 'Updates');
+    const notice = notices.map(item => item.id || item.version).join('|') || `${state.version}:${state.required}`;
+    if (available && (state.version || notices.length) && notice !== announced) {
       trigger.classList.remove('update-arrival'); void trigger.offsetWidth; trigger.classList.add('update-arrival');
       announced = notice;
     }

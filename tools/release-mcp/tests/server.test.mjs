@@ -10,14 +10,19 @@ import { join } from 'node:path';
 
 test('MCP discovery, validation, shared actions and explicit version-bound publication', async t => {
   const calls = [];
-  const actions = Object.fromEntries(['status','verify','build','prepare','publication','openAdmin','publish'].map(name => [name, async input => { calls.push({ name, input }); return { action: name }; }]));
+  const actions = Object.fromEntries(['queue','enqueue','claim','cancel','status','verify','build','prepare','publication','openAdmin','publish'].map(name => [name, async input => { calls.push({ name, input }); return { action: name }; }]));
   const server = createReleaseMcp(actions), client = new Client({ name: 'release-test', version: '1' });
   const [a, b] = InMemoryTransport.createLinkedPair(); await server.connect(a); await client.connect(b);
   t.after(async () => { await client.close(); await server.close(); });
-  const { tools } = await client.listTools(); assert.equal(tools.length, 7);
+  const { tools } = await client.listTools(); assert.equal(tools.length, 11);
   assert.equal(tools.find(t => t.name === 'release_status').annotations.readOnlyHint, true);
   assert.equal(tools.find(t => t.name === 'publish_release').annotations.destructiveHint, true);
   assert.equal((await client.callTool({ name: 'release_status', arguments: {} })).structuredContent.action, 'status');
+  assert.equal((await client.callTool({ name: 'release_queue', arguments: {} })).structuredContent.action, 'queue');
+  await client.callTool({ name: 'enqueue_release', arguments: { requestId: 'notebook-1', message: 'Notebook updated.', required: false } });
+  assert.equal(calls.at(-1).name, 'enqueue');
+  await client.callTool({ name: 'claim_release', arguments: { id: 'a137a6b4-e170-4c30-8eaf-fc53d21f83f1' } });
+  assert.equal(calls.at(-1).name, 'claim');
   assert.equal((await client.callTool({ name: 'prepare_release', arguments: { version: 'bad', message: 'Hello', required: true } })).isError, true);
   assert.equal((await client.callTool({ name: 'prepare_release', arguments: { version: '0.14.0', message: 'Hello', required: 'true' } })).isError, true);
   await client.callTool({ name: 'prepare_release', arguments: { version: '0.14.0', message: 'Hello', required: true } });

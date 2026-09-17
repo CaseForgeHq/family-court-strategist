@@ -42,6 +42,28 @@ const env = { ...process.env, CASEFORGE_TEST_USER_DATA: profile }; delete env.EL
     await page.waitForFunction(() => document.querySelector('[data-update-action]').textContent === 'Restart and install');
     await page.keyboard.press('Escape'); assert.equal(await page.locator('#updates-popover').isVisible(), false);
     await page.locator('#open-updates').click(); assert.equal(await page.locator('#updates-popover').isVisible(), true);
+    await app.evaluate(({ BrowserWindow }) => {
+      global.fixtureUpdate = { ...global.fixtureUpdate, phase: 'available', version: '0.15.2', notices: [
+        { id:'v0.15.0', version:'0.15.0', message:'Notebook updated.' },
+        { id:'v0.15.2', version:'0.15.2', message:'People connections updated.' },
+        { id:'v0.15.1', version:'0.15.1', message:'File search updated.' },
+      ] };
+      BrowserWindow.getAllWindows()[0].webContents.send('updates:status-changed',global.fixtureUpdate);
+    });
+    await page.waitForFunction(() => document.querySelectorAll('.updates-message').length === 3);
+    assert.deepEqual(await page.locator('.updates-message p').allTextContents(), ['People connections updated.','File search updated.','Notebook updated.']);
+    assert.equal(await page.locator('[data-update-action]').count(),1);
+    assert.equal(await page.locator('#updates-popover').isVisible(),true);
+    await page.screenshot({ path: join(out,'independent-messages.png') }); captures.push('independent-messages');
+    await page.keyboard.press('Escape');
+    await app.evaluate(({ BrowserWindow }) => {
+      global.fixtureUpdate.notices.unshift({ id:'v0.15.3',version:'0.15.3',message:'<img src=x onerror=alert(1)> Separate message.' });
+      BrowserWindow.getAllWindows()[0].webContents.send('updates:status-changed',global.fixtureUpdate);
+    });
+    await page.waitForFunction(() => document.querySelectorAll('.updates-message').length === 4);
+    assert.equal(await page.locator('#updates-popover').isVisible(),false,'New message must not force the panel open');
+    assert.equal(await page.locator('#updates-popover img').count(),0,'Admin messages are plain text');
+    await page.locator('#open-updates').click();
     for (const [phase, progress, fullDownload] of [['downloading', 70, false], ['downloading', null, true], ['verifying', null, true], ['restarting', 100, false]]) {
       await app.evaluate(({ BrowserWindow }, value) => {
         global.fixtureUpdate = { ...global.fixtureUpdate, ...value };

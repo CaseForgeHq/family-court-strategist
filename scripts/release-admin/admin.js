@@ -22,3 +22,15 @@ async function run(action) {
 }
 $('prepare').addEventListener('click', () => run('prepare')); $('publish').addEventListener('click', () => run('publish'));
 api('status').then(info => { $('version').textContent = `Version ${info.version} · ${info.repository}`; $('preview-version').textContent = `Case Forge ${info.version}`; $('message').value = info.message; $('required').checked = info.required; preview(); }).catch(error => { $('status').textContent = error.message; });
+async function refreshQueue() {
+  try {
+    const { entries } = await api('queue'); $('queue').replaceChildren();
+    for (const entry of entries.filter(e => !['published','cancelled'].includes(e.state))) {
+      const item = document.createElement('li');
+      item.textContent = `${entry.state}${entry.version ? ' · v' + entry.version : ''}: ${entry.message}`;
+      $('queue').append(item);
+    }
+    if (!$('queue').children.length) { const item = document.createElement('li'); item.textContent = 'No pending releases.'; $('queue').append(item); }
+  } catch (error) { $('queue').textContent = error.message; }
+}
+void refreshQueue(); setInterval(refreshQueue, 5000);

@@ -1,10 +1,21 @@
 // Only the packaged GitHub provider controls download URLs. The renderer never supplies one.
-function createUpdates({ updater, version, enabled, now = () => new Date().toISOString(), onChange = () => {}, prepareFast = async () => null, installFast = null }) {
-  let state = { currentVersion: version, phase: enabled ? 'idle' : 'unavailable', version: null, required: false, message: '', progress: 0, checkedAt: null, error: null };
+function createUpdates({ updater, version, enabled, now = () => new Date().toISOString(), onChange = () => {}, prepareFast = async () => null, installFast = null, messages = null }) {
+  let state = { currentVersion: version, phase: enabled ? 'idle' : 'unavailable', version: null, required: false, message: '', notices: [], progress: 0, checkedAt: null, error: null };
   let checking = null, downloading = null;
   let downloadedInfo, fastPlan;
+  let messageRead = 0;
   const status = () => ({ ...state });
   const set = patch => { state = { ...state, ...patch, revision: (state.revision || 0) + 1 }; onChange(status()); };
+  async function refreshMessages(cached = false) {
+    if (!enabled || !messages) return status();
+    const request = ++messageRead;
+    try {
+      const notices = await (cached ? messages.read() : messages.refresh());
+      if (request !== messageRead) return status();
+      if (JSON.stringify(notices) !== JSON.stringify(state.notices)) set({ notices });
+    } catch { /* Keep independent published messages through transient network failures. */ }
+    return status();
+  }
   const active = () => ['downloading','verifying', 'preparing','ready','restarting','installing'].includes(state.phase);
   const notes = info => {
     const value = Array.isArray(info.releaseNotes) ? info.releaseNotes.map(n => n.note || '').join('\n\n') : info.releaseNotes;
@@ -44,6 +55,9 @@ function createUpdates({ updater, version, enabled, now = () => new Date().toISO
   async function download() {
     if (downloading) return downloading;
     if (!enabled || state.phase !== 'available') return status();
+    if (state.notices.some(notice => require('./update-messages.cjs').compare(notice.version, state.version) > 0)) {
+      set({ phase: 'error', error: 'A newer update is available. Please try Download again shortly.' }); return status();
+    }
     downloadedInfo = null; fastPlan = null;
     set({ phase: 'downloading', progress: 0, fullDownload: false, error: null });
     downloading = (async () => {
@@ -75,7 +89,7 @@ function createUpdates({ updater, version, enabled, now = () => new Date().toISO
   }
   function restarting() { if (state.phase === 'ready') { if (fastPlan) fastPlan.startedAt = Date.now(); set({ phase: 'restarting', error: null }); } }
   function restartBlocked() { if (state.phase === 'restarting') set({ phase: 'ready', error: 'Save your unfinished work, then select Restart and install.' }); }
-  return { status, check, download, install, restarting, restartBlocked };
+  return { status, check, download, install, restarting, restartBlocked, refreshMessages };
 }
 function closeForUpdate(target, install) {
   const contents = target.webContents;
@@ -89,7 +103,7 @@ function closeForUpdate(target, install) {
   });
 }
 async function downloadAndInstall(updates, install) {
-  if (updates.status().phase === 'error') await updates.check();
+  if (['error', 'available'].includes(updates.status().phase)) await updates.check();
   const result = await updates.download();
   return result.phase === 'ready' ? install() : result;
 }

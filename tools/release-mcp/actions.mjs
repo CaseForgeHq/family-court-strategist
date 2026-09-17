@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
 import { releaseActions, startAdmin } from '../../scripts/release-admin.mjs';
 import { withReleaseLock } from '../../scripts/release-lock.mjs';
+import { releaseQueue } from '../../scripts/release-queue.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const exec = promisify(execFile);
 const repository = 'CaseForgeHq/family-court-strategist';
@@ -19,13 +20,24 @@ const childEnv = process.platform === 'win32' ? { ...process.env,
 const run = (command, args, options = {}) => exec(command, args, { cwd: root, env: childEnv, windowsHide: true, timeout: 180000, maxBuffer: 4 * 1024 * 1024, ...options });
 let admin;
 export const actions = {
+  queue: () => releaseQueue.status(root),
+  async enqueue(input) {
+    const sourceCommit = (await run('git', ['-c', `safe.directory=${root.replaceAll('\\', '/').replace(/\/$/, '')}`, 'rev-parse', 'HEAD'])).stdout.trim();
+    return releaseQueue.enqueue({ ...input, root, sourceCommit });
+  },
+  async claim({ id }) {
+    const latest = JSON.parse((await run('gh', ['release', 'view', '--repo', repository, '--json', 'tagName'])).stdout);
+    const mainCommit = (await run('git', ['-c', `safe.directory=${root.replaceAll('\\', '/').replace(/\/$/, '')}`, 'ls-remote', 'origin', 'refs/heads/main'])).stdout.trim().split(/\s/)[0];
+    return releaseQueue.claim({ root, id, latestVersion: latest.tagName.replace(/^v/, ''), mainCommit });
+  },
+  cancel: ({ id }) => releaseQueue.cancel(root, id),
   async status() {
     const candidate = await releaseActions.candidate();
     const dirty = (await run('git', ['-c', `safe.directory=${root.replaceAll('\\', '/').replace(/\/$/, '')}`, 'status', '--porcelain'])).stdout.trim();
     const installerPath = join(root, 'desktop/dist', `Case-Forge-Setup-${candidate.version}.exe`);
     const installer = await stat(installerPath).then(s => ({ path: installerPath, bytes: s.size }), () => null);
     const lastVerification = await readFile(join(root, 'desktop/dist/release-report.json'), 'utf8').then(JSON.parse, () => null);
-    return { ...candidate, installer, sourceClean: !dirty, changedFileCount: dirty ? dirty.split(/\r?\n/).length : 0,
+    return { ...candidate, queue: await releaseQueue.status(root), installer, sourceClean: !dirty, changedFileCount: dirty ? dirty.split(/\r?\n/).length : 0,
       lastVerification: lastVerification ? { version: lastVerification.version, verifiedAt: lastVerification.verifiedAt, checkedSourceFiles: lastVerification.checkedSourceFiles.length } : null,
       publicationBlockers: dirty ? ['Review and commit source, then push the matching version tag.'] : [],
       note: 'Status does not reverify binaries or contact GitHub. Use verify_release and check_publication for fresh evidence.' };
@@ -35,6 +47,7 @@ export const actions = {
   publish: releaseActions.publish,
   async build() {
     return withReleaseLock('build', async () => {
+      await releaseQueue.assertTurn(root, await releaseActions.candidate());
       const logPath = join(root, 'output/release-mcp/build.log');
       await mkdir(join(root, 'output/release-mcp'), { recursive: true }); await writeFile(logPath, `Build started ${new Date().toISOString()}\n`);
       const step = async (args, options) => {
