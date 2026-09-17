@@ -15,7 +15,7 @@ function createUpdates({ updater, version, enabled, now = () => new Date().toISO
     updater.allowPrerelease = false;
     updater.on('checking-for-update', () => set({ phase: 'checking', error: null }));
     updater.on('update-available', info => set({ phase: 'available', version: info.version, required: info.caseForgeRequired === true, message: notes(info), progress: 0, error: null, checkedAt: now() }));
-    updater.on('update-not-available', info => set({ phase: 'current', version: null, required: false, message: notes(info), error: null, checkedAt: now() }));
+    updater.on('update-not-available', info => set({ phase: 'current', version: null, required: false, message: '', error: null, checkedAt: now() }));
     updater.on('download-progress', value => set({ phase: 'downloading', progress: Math.max(0, Math.min(100, Number(value.percent) || 0)) }));
     updater.on('update-downloaded', info => set({ phase: 'ready', version: info.version, message: notes(info), progress: 100, error: null }));
     updater.on('error', () => set({ phase: 'error', error: 'The update could not complete. Check your connection and try again.' }));

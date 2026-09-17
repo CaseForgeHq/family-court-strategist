@@ -57,3 +57,21 @@
 .updates-message p{flex:1;min-width:0}
 .updates-message [data-update-action]{flex:none;max-width:130px}
 .updates-message .updates-close{position:static;flex:none;width:26px;height:30px;padding:4px}
+
+/* Compact game-chat whisper: one frame, one message, one action. */
+.updates-popover{width:min(440px,calc(100vw - 24px));color:#edf4fb;background:linear-gradient(135deg,#142936f7,#0c1b28fa);border:1px solid #3989df99;border-radius:11px;box-shadow:0 12px 36px #030b1855,inset 0 1px 0 #ffffff0a;backdrop-filter:blur(18px)}
+.updates-popover[data-phase="current"]{width:min(330px,calc(100vw - 24px))}
+.updates-body{padding:0}
+.updates-message{border:0;background:none;border-radius:0;box-shadow:none;padding:13px 14px;gap:12px;align-items:center}
+.updates-copy{flex:1;min-width:0}
+.updates-sender{display:block;color:#d8b4fe;font:600 11px/1.4 var(--ui);margin-bottom:3px;letter-spacing:.01em}
+.updates-sender[hidden]{display:none}
+.updates-message p{font:500 13px/1.55 var(--ui);color:#edf4fb;margin:0;max-height:200px}
+.updates-sigil{flex:none;width:18px;text-align:center;color:#f3ce75;font:700 25px/1 Georgia,serif;text-shadow:0 0 10px #e9ad3840}
+[data-phase="current"] .updates-sigil{font:600 17px/1 var(--ui);color:#73b7ff;text-shadow:none}
+.updates-message .updates-close{color:#a5bdce;width:24px;height:26px}
+.updates-message .updates-close:hover{background:#ffffff12;color:#fff}
+.updates-popover .btn.primary{min-height:32px;padding:6px 11px;font-size:11px;border-radius:7px;background:#287bea;border-color:#4996ff}
+.updates-status{color:#b8c8d6;margin:0;padding:0 16px 12px;font-size:12px}
+.updates-popover progress{display:block;width:calc(100% - 32px);margin:0 16px 12px}
+.updates-popover progress[hidden]{display:none}

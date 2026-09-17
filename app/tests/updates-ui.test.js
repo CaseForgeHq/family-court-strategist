@@ -65,6 +65,6 @@ test('shield changes on arrival, optional notices open once per version and clos
   document.querySelector('.updates-close').click();
   trigger.dispatchEvent(new dom.window.Event('pointerenter')); await tick(); assert.equal(panel.hidden, false); document.querySelector('.updates-close').click(); await tick(); assert.equal(panel.hidden, true);
   state.version = '0.15.1'; trigger.dispatchEvent(new dom.window.Event('pointerenter')); await tick(); assert.equal(panel.hidden, false);
-  state = { phase: 'current', currentVersion: '0.15.1', version: '0.15.1' };
-  trigger.dispatchEvent(new dom.window.Event('pointerenter')); await tick(); assert.equal(trigger.classList.contains('has-update'), false);
+  state = { phase: 'current', currentVersion: '0.15.1', version: '0.15.1', message: 'Old release instructions must not appear' };
+  trigger.dispatchEvent(new dom.window.Event('pointerenter')); await tick(); assert.equal(trigger.classList.contains('has-update'), false); assert.equal(panel.querySelector('.updates-message p').textContent, 'You are currently up to date');
 });

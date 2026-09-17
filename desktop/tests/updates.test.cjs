@@ -70,3 +70,8 @@ test('installer handoff does not access BrowserWindow.webContents after destruct
   window.close = () => { destroyed = true; window.emit('closed'); };
   assert.equal(await closeForUpdate(window, () => { installed = true; }), true); assert.equal(installed, true);
 });
+
+test('up-to-date response discards historical release notes', () => {
+  const f = fixture(); f.updater.emit('update-not-available', { version: '0.14.0', releaseNotes: 'Old installer instructions' });
+  assert.equal(f.updates.status().phase, 'current'); assert.equal(f.updates.status().message, '');
+});
