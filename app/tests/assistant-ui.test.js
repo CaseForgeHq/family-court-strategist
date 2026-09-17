@@ -79,11 +79,16 @@ test('status push updates the assistant without manual polling and transport err
   const f=fixture(t,{state:{available:true,connected:false,checking:false,signingIn:false,state:'signed_out'}});await f.assistant.mount();
   assert.equal(f.chat.submitDisabled,true);f.push(connected);
   assert.equal(f.chat.submitDisabled,false);assert.equal(document.querySelector('#chat-login').textContent,'Sign out');
+  assert.equal(document.querySelector('.ai-connection').hidden,true);
+  assert.equal(document.querySelector('.ai-session-menu').hidden,false);
+  assert.equal(document.querySelector('.ai-chat-note'),null);
   await f.chat.send({messages:[{text:'Fictional question'}]});
   f.push({connected:false,email:null,state:'error',error:'Connection temporarily unavailable.'});
   assert.equal(f.chat.clears,0);assert.equal(f.connection.state.connected,true);assert.match(document.querySelector('.ai-status').textContent,/temporarily unavailable/);
   f.push({available:true,connected:false,email:null,state:'signed_out',error:null});
   assert.equal(f.chat.clears,1);assert.equal(f.chat.submitDisabled,true);
+  assert.equal(document.querySelector('.ai-connection').hidden,false);
+  assert.equal(document.querySelector('.ai-session-menu').hidden,true);
 });
 
 test('stop interrupts the matching reply and closes streaming without appending a late answer',async t=>{
@@ -117,14 +122,46 @@ test('explicit sign-out clears visible history and a new conversation resets the
   await f.chat.send({messages:[{text:'Fictional question'}]});document.querySelector('#chat-new').click();await until(()=>resetDone);
   assert.equal(f.chat.clears,0);resetDone({cleared:true});await until(()=>f.chat.clears===1);
   assert.equal(f.calls.filter(call=>call.method==='new').length,1);
-  document.querySelector('#chat-login').click();await until(()=>f.chat.clears===2);
+  document.querySelector('.ai-session-menu').open=true;
+  document.querySelector('#chat-signout').click();await until(()=>f.chat.clears===2);
   assert.equal(f.calls.filter(call=>call.method==='logout').length,1);assert.equal(f.chat.submitDisabled,true);
+  assert.equal(document.querySelector('.ai-session-menu').open,false);
 });
 
 test('browser mode disables sign-in and sending while rendering the chat component locally',async t=>{
   const f=fixture(t,{browser:true});await f.assistant.mount();
   assert.equal(document.querySelector('#chat-login').disabled,true);assert.equal(f.chat.submitDisabled,true);assert.match(document.querySelector('.ai-status').textContent,/desktop app/);
   await f.chat.send({messages:[{text:'Must not send'}]});assert.equal(f.calls.length,0);assert.match(f.chat.responses[0].error,/Sign in/);
+});
+
+test('pending conversation reset blocks sends and duplicate resets without clearing history early',async t=>{
+  let finish;
+  const f=fixture(t,{newConversation:()=>new Promise(resolve=>{finish=resolve;})});
+  await f.assistant.mount();await until(()=>!f.chat.submitDisabled);
+  await f.chat.send({messages:[{text:'Previous fictional question'}]});
+  const button=document.querySelector('#chat-new');button.click();await until(()=>finish);
+  assert.equal(f.chat.submitDisabled,true);assert.equal(button.disabled,true);
+  assert.equal(document.querySelector('#chat-signout').disabled,true);
+  button.dispatchEvent(new window.Event('click'));
+  await f.chat.send({messages:[{text:'Must wait until reset finishes'}]});
+  assert.equal(f.calls.filter(call=>call.method==='new').length,1);
+  assert.equal(f.calls.filter(call=>call.method==='chat').length,1);
+  assert.equal(f.chat.clears,0);
+  finish({cleared:true});await until(()=>!f.chat.submitDisabled);
+  assert.equal(f.chat.clears,1);assert.equal(button.disabled,false);
+  await f.chat.send({messages:[{text:'New fictional question'}]});
+  assert.deepEqual(f.chat.responses,[{text:'Fictional reply.'}]);
+});
+
+test('failed conversation reset retains history and re-enables the composer',async t=>{
+  const f=fixture(t,{newConversation:async()=>({error:'Reset unavailable'})});
+  await f.assistant.mount();await until(()=>!f.chat.submitDisabled);
+  await f.chat.send({messages:[{text:'Previous fictional question'}]});
+  document.querySelector('#chat-new').click();
+  await until(()=>document.querySelector('.ai-status').textContent==='Reset unavailable');
+  assert.equal(f.chat.clears,0);assert.equal(f.chat.submitDisabled,false);
+  assert.equal(document.querySelector('#chat-new').disabled,false);
+  assert.deepEqual(f.chat.responses,[{text:'Fictional reply.'}]);
 });
 
 test('rendered links require an explicit click and safe HTTP(S) target',async t=>{

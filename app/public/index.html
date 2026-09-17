@@ -22,6 +22,7 @@
 <link rel="stylesheet" href="/document-creator.css">
 <link rel="stylesheet" href="/files-ai.css">
 <link rel="stylesheet" href="/assistant.css">
+<link rel="stylesheet" href="/case-details.css">
 <script src="/scene/scene-time.js"></script>
 </head>
 <body data-context-open="false">
@@ -89,11 +90,7 @@
 
   <aside class="workspace-context" id="workspace-context" aria-label="Case panel" hidden>
     <div class="context-heading"><div class="panel-tabs"><button type="button" data-panel="details" aria-pressed="true">Details</button><button type="button" data-panel="ai" aria-pressed="false">AI chat</button></div><button class="icon-button" id="close-context" type="button" aria-label="Close side panel"><span data-icon="close"></span></button></div>
-    <div id="panel-details">
-    <div class="context-identity"><span class="context-emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7ZM3 10h18"/></svg></span><h2 id="context-case-name">Your case</h2></div>
-    <section class="context-section" aria-labelledby="context-records-title"><h3 id="context-records-title">In your case</h3><button data-go="timeline" type="button"><span>Timeline events</span><strong id="context-events">0</strong></button><button data-go="evidence" type="button"><span>Evidence notes</span><strong id="context-evidence">0</strong></button><button data-go="people" type="button"><span>People</span><strong id="context-people">0</strong></button><button data-go="map" type="button"><span>Recorded connections</span><strong id="context-connections">0</strong></button></section>
-    <div class="context-privacy"><span class="privacy-dot" aria-hidden="true"></span><div><strong>Your files stay in your folder.</strong><p>You choose which documents to scan with ChatGPT.</p></div></div>
-    </div><div id="panel-ai" hidden></div>
+    <div id="panel-details"></div><div id="panel-ai" hidden></div>
   </aside>
 </div>
 
