@@ -151,10 +151,9 @@
 @media(max-width:850px) { .scan-plan-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .scan-card-body { padding-inline: 12px; } .scan-answer-fields { grid-template-columns: 75px minmax(0,1fr); } }
 @media(prefers-reduced-motion:reduce) { .scan-card-chevron { transition: none; } }
 .files-ai-toolbar > div { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.scan-card { background: #edf3f2; color: #19313a; overflow: clip; }
-[data-scene-mode=dark] .scan-card { background: #19323d; color: #eef4f5; }
-.scan-card-heading { position: sticky; top: 0; z-index: 2; background: #edf3f2; }
-[data-scene-mode=dark] .scan-card-heading { background: #19323d; }
+.scan-card { color: var(--record-ink); overflow: clip; }
+.scan-card-heading { position: sticky; top: 0; z-index: 2; background: transparent; }
+.scan-card[open] > .scan-card-heading { backdrop-filter: blur(13px) saturate(125%); }
 .scan-section { scroll-margin-top: 92px; }
 .files-ai-workbench { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-rows: auto minmax(0,1fr) auto; column-gap: 14px; }
 .files-ai-toolbar { grid-column: 2; grid-row: 1; align-self: start; padding: 0 0 8px; }
@@ -193,3 +192,39 @@
   .scan-card-name .file-reference { grid-column: 1 / -1; }
 }
 .scan-card-chevron { transition: none; }
+/* One readable type scale and full available width for file headers. */
+.scan-card-list { padding-inline: 0; scrollbar-gutter: auto; }
+.scan-card { width: 100%; box-sizing: border-box; }
+.scan-card-heading { gap: 16px; padding: 16px 20px; }
+.scan-card-name { grid-template-columns: minmax(220px,.95fr) minmax(0,2fr) minmax(190px,1fr); gap: 24px; }
+.scan-card-name .file-reference,
+.scan-card-name strong,
+.scan-card-status,
+.scan-card-type { font: 500 14px/1.5 var(--ui); opacity: 1; }
+.scan-card-name strong { font-weight: 600; }
+.scan-card-type { min-width: 34px; text-align: center; color: inherit; }
+@media(max-width:950px) {
+  .scan-card-heading { gap: 12px; padding-inline: 14px; }
+  .scan-card-name { grid-template-columns: minmax(190px,.95fr) minmax(0,1.4fr) minmax(130px,.8fr); gap: 14px; }
+}
+@media(max-width:700px) {
+  .scan-card-name { grid-template-columns: minmax(0,1fr) minmax(110px,.7fr); gap: 6px 12px; }
+  .scan-card-name .file-reference { grid-column: 1 / -1; }
+}
+/* Match the description exactly; keep the scrollbar outside the card edge. */
+.scan-card-name .file-reference,
+.scan-card-name strong,
+.scan-card-status,
+.scan-card-type { font: 500 15px/1.5 var(--ui); }
+.files-ai-workbench { margin-right: -9px; }
+.scan-card-list { scrollbar-gutter: stable; padding-inline: 0; }
+.scan-card-list::-webkit-scrollbar { width: 9px; }
+
+/* Use the same glass surface as the Case desk file register. */
+.scan-card {
+  background: linear-gradient(135deg,var(--surface-shine),transparent 62%),var(--surface-glass);
+  border: 1px solid var(--surface-edge);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 var(--surface-shine),0 8px 24px #1031290b;
+  backdrop-filter: blur(13px) saturate(125%);
+}
