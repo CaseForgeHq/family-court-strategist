@@ -1,0 +1,15 @@
+FICTIONAL TEST RECORD - no real people, accounts, property or case.
+
+Message log: 24 August 2026
+Participants: Jamie Morgan and Alex Morgan
+Place: Brisbane, Queensland
+
+08:10 Jamie: Riley has a routine appointment on Wednesday 26 August at 2 pm. Can you take Riley? This is a request, not a confirmed booking with you.
+08:45 Alex: I cannot leave work before 2:30 pm. Could we ask the clinic about 4 pm instead?
+09:15 Jamie: The clinic offered 4 pm on the same date. I accepted that time. The earlier 2 pm appointment is cancelled.
+09:22 Alex: I agree to take Riley at 4 pm. I will collect at 3:30 pm from your home, then return Riley after the appointment.
+09:30 Jamie: Agreed. Please keep the appointment receipt so we can reconcile the agreed contribution later.
+
+Calendar export created 25 August: Appointment, 26 August 2026, 16:00. Collection reminder, 15:30. The reminder is a travel arrangement and is not the appointment time.
+
+This log contains no medical diagnosis, attendance record or payment receipt. No claim is made about who attended. Times use AEST (UTC+10). Both adults state that this single change leaves the usual parenting schedule unchanged.

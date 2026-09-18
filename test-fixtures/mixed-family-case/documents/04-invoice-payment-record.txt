@@ -1,0 +1,17 @@
+FICTIONAL TEST RECORD - no real people, accounts, property or case.
+
+Fictional supplier: Example Learning Services
+Invoice EL-104, issued 3 August 2026
+Service description: four activity sessions in August
+Invoice amount: AUD $240.00
+Due date printed by supplier: 17 August 2026
+Account customer: Jamie Morgan
+
+Payment table supplied with the invoice:
+10 August 2026 - payment received - $100.00 - reference EL-104-A.
+17 August 2026 - payment received - $80.00 - reference EL-104-B.
+Balance displayed below table: $60.00 outstanding.
+
+Cover note from Jamie dated 19 August: This invoice was paid in full by 17 August; the attached table shows all payments to that date. I have no other receipt to add.
+
+The supplier asks the customer to quote the invoice number when requesting an account statement. There are no later entries in this export. The cover note, table and invoice were bundled as a single text export. Their originals and bank confirmation have not been supplied. The customer has requested confirmation from the supplier.

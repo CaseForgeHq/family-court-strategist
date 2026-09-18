@@ -1,0 +1,17 @@
+FICTIONAL TEST RECORD - no real people, accounts, property or case.
+
+Fictional Example Bank account ending 7788
+Statement period: 1-31 August 2026
+Supplied extract: page 2 of 3 only
+Customer name: Alex Morgan
+
+Visible entries:
+12 August - incoming transfer - $1,200.00 - reference FAMILY.
+18 August - outgoing transfer - $450.00 - reference RENT.
+24 August - incoming transfer - amount unreadable - reference partly cropped.
+
+The opening balance, closing balance, account-holder address and page totals are not visible in the supplied page. Page 1 and page 3 were not supplied. The scan has a crop across the right-hand amount column for the 24 August entry. No amount can be reliably read there.
+
+A handwritten margin note appears to say 'balance 9600?' but the first digit and date are unclear. This note is not a legible bank-printed closing balance.
+
+The excerpt does not identify the source of the FAMILY transfer beyond the reference text. It contains no evidence of beneficial ownership of the transferred funds. A complete statement and clearer image would be needed for reconciliation.

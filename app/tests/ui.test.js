@@ -89,10 +89,11 @@ test('summary precedes 13 expandable checks and citations preserve attribution a
   await until(() => f.document.querySelector('.scan-report'));
   assert.equal(f.document.querySelectorAll('.scan-report > .scan-section').length, 13);
   assert.match(f.document.querySelector('.scan-report > h3').textContent, /Document summary/);
-  assert.match(f.document.querySelector('.scan-attribution').textContent, /Speaker: Fictional author.*Recipient: Fictional recipient.*Sequence: 1/);
+  assert.equal(f.document.querySelector('.scan-report blockquote'),null);
   f.document.querySelector('[data-source-document]').click();
   await until(() => f.document.querySelector('#modal .source-modal'));
   assert.equal(f.document.querySelector('#modal .source-modal').textContent, 'Fictional source passage');
+  assert.match(f.document.querySelector('#modal .scan-attribution').textContent, /Speaker: Fictional author.*Recipient: Fictional recipient.*Sequence: 1/);
   assert.ok(f.calls.some(call => call.path.includes('reportId=report-1') && call.path.includes('sourceMatch=text_match')));
   assert.match(f.document.querySelector('#modal').textContent, /Paragraph 1/);
 });
@@ -233,8 +234,22 @@ test('review navigation focuses the matching visible review without scanning', a
   f.document.querySelector('[data-question-target="contradictions"]').click();
   assert.equal(f.document.querySelectorAll('.scan-report details').length,0);
   assert.equal(f.document.activeElement,f.document.querySelector('[data-section="contradictions"] > h3'));
-  assert.match(f.document.querySelector('[data-question-id="contradictions"]').textContent,/Answer not recorded/);
+  assert.match(f.document.querySelector('.scan-report').textContent,/This older report shows saved findings/);
   assert.equal(f.calls.some(c=>c.request.method==='POST'),false);
   await f.inbox.refresh(true);
   assert.equal(f.document.querySelectorAll('.scan-report > .scan-section').length,13);
+});
+
+
+test('older context uses readable document facts and keeps full review notes behind an action', async t => {
+  const older={...report,context:{documentType:'Email',needsClarification:true,reason:'Long repeated reason',eventDates:['2026-09-16'],regions:[]},attention:['First limitation.','Second limitation.'],jurisdiction:{country:'AU',regions:['Commonwealth'],confirmed:false}};
+  const html=reportMarkup(older,'done');
+  const dom=new JSDOM(html);
+  assert.doesNotMatch(dom.window.document.body.textContent,/NeedsClarification|EventDates|DocumentType|Long repeated reason|First limitation/);
+  assert.match(dom.window.document.body.textContent,/LocationNot established/);
+  const f=setup(t,{docs:[{...record('done',{state:'completed'}),latestReportId:'r'}],api:path=>path==='/api/documents/done'?{...record('done'),reports:[older]}:undefined});
+  f.inbox.mount(f.host);await f.inbox.open('done');await until(()=>f.document.querySelector('[data-review-notes]'));
+  f.document.querySelector('[data-review-notes]').click();
+  assert.match(f.document.querySelector('#modal').textContent,/First limitation.*Second limitation/s);
+  dom.window.close();
 });

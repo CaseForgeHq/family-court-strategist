@@ -62,6 +62,12 @@ async function capture(name,width,height,night=false){
   await win.webContents.executeJavaScript(`document.querySelector('#modal-x').click();document.querySelector('.scan-card[open]').open=false;document.querySelector('.scan-card-list').scrollTop=0`);
   for(let i=1;i<7;i++)await server.inbox.enqueue(caseFolder,docs[i].id);await pause(3000);await capture('queue-compact',804,619);await capture('queue-desktop',1380,890);
   const text=await win.webContents.executeJavaScript(`document.querySelector('#view').textContent`);assert.match(text,/Scan scheduled/);assert.match(text,/Scan in progress/);assert.match(text,/Scan completed/);
+  const {DEMO_PRESETS}=await import(pathToFileURL(join(repo,'app/lib/demo-data.js')).href);
+  await win.webContents.executeJavaScript(`(async()=>{const {createAdmin}=await import('/admin.js');createAdmin({desktop:{adminStatus:async()=>({presets:${JSON.stringify(DEMO_PRESETS)},entries:[],canReturn:false})}});document.querySelector('#open-admin').click()})()`);
+  await until(`document.querySelector('[name="demo-size"][value="review"]')`);
+  await win.webContents.executeJavaScript(`document.querySelector('[name="demo-size"][value="review"]').click()`);
+  await capture('review-test-picker',804,619);
+  assert.ok(await win.webContents.executeJavaScript(`(()=>{const dialog=document.querySelector('.admin-dialog[open]');return dialog.scrollWidth<=dialog.clientWidth+1 && dialog.querySelector('.admin-preview').textContent.includes('No pre-filled findings')})()`));
   assert.equal(errors.length,0,errors.join('\n'));
   writeFileSync(join(out,'report.json'),JSON.stringify({simulatedAI:true,shots,errors},null,2));console.log(JSON.stringify({ok:true,captures:shots.length,output:out}));
 })().catch(async error=>{console.error(error.stack);const ui=win && !win.isDestroyed() ? await win.webContents.executeJavaScript(`({view:document.querySelector('#view')?.innerHTML,message:document.querySelector('#inbox-message')?.textContent,buttons:[...document.querySelectorAll('[data-scan-document]')].map(b=>({text:b.textContent,dataset:{...b.dataset}}))})`).catch(()=>null):null;writeFileSync(join(out,'failure.json'),JSON.stringify({error:error.message,shots,errors,ui},null,2));process.exitCode=1;}).finally(async()=>{win?.destroy();await server?.closeWorkspace();if(server)await new Promise(r=>server.close(r));app.exit(process.exitCode || 0);});

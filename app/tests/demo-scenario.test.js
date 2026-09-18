@@ -9,7 +9,7 @@ import { Notebook } from '../lib/notebook.js';
 import { parseFrontmatter } from '../lib/frontmatter.js';
 import { Inbox } from '../lib/inbox.js';
 
-for (const preset of DEMO_PRESETS) test(`${preset.label} creates a linked fictional case with readable sources and private notes`, async () => {
+for (const preset of DEMO_PRESETS.filter(p=>p.id!=='review')) test(`${preset.label} creates a linked fictional case with readable sources and private notes`, async () => {
   const root = mkdtempSync(join(tmpdir(), 'caseforge-scenario-'));
   await generateDemo({ root, size: preset.id, now: new Date('2026-09-17T00:00:00Z') });
   const model = buildCaseModel(root), manifest = JSON.parse(readFileSync(join(root, '.case-forge/demo.json')));

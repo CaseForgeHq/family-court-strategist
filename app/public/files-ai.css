@@ -258,3 +258,15 @@
 .scan-card-error-box { margin: 12px 0 20px; }
 .scan-card-error-box .scan-warning { margin: 0; }
 @media(max-width:850px) { .scan-card-body { padding-inline: 14px; } }
+
+/* Keep review content primary; source metadata belongs with the source. */
+.scan-document-facts { display: grid; grid-template-columns: max-content minmax(0,1fr); gap: 6px 16px; margin: 0 0 14px; }
+.scan-document-facts dt { color: var(--ink-2); }
+.scan-document-facts dd { margin: 0; }
+.scan-report .scan-review-notes { border: 0; padding: 0; margin: 14px 0; }
+.scan-review-notes .text-button { margin-left: 8px; }
+.scan-source-link { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.scan-source-link .text-button { font-size: 13px; }
+.scan-source-quote { margin: 16px 0; border-left: 2px solid var(--surface-edge); padding-left: 14px; white-space: pre-wrap; font: 500 14px/1.6 var(--ui); }
+.scan-notes-modal { font: 500 15px/1.65 var(--ui); }
+.scan-notes-modal li + li { margin-top: 14px; }

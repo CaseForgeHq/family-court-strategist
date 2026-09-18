@@ -40,7 +40,7 @@ function valueMarkup(value) {
   return `<p>${esc(value)}</p>`;
 }
 function lawUrl(value) { try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password ? url.href : null; } catch { return null; } }
-function sourceMarkup(source, id, reportId = '') {
+function sourceMarkup(source, id, reportId = '', finding = null) {
   const sourceDocument = source.documentId || id;
   // Legacy reports may reference a comparison document. Keep its original
   // document identity without requesting another document's report identifier.
@@ -48,11 +48,11 @@ function sourceMarkup(source, id, reportId = '') {
   id = sourceDocument;
   const location = source.locator || anchorLabel(source.anchor, Number(source.page) || 1);
   const attribution = [['Speaker', source.speaker], ['Recipient', source.recipient], ['Reporting source', source.reportingSource], ['Sequence', source.sequence]].filter(([, value]) => value !== undefined && value !== null && value !== '');
-  if (source.sourceMatch === 'visual_observation') return `<div class="scan-source"><p><strong>Visual observation</strong></p><p class="scan-muted">Check this finding against the original image or sampled video frame.</p><button type="button" class="text-button" data-source-document="${esc(id)}" data-source-page="${Number(source.page) || 1}" data-report-id="${esc(reportId)}" data-source-match="visual_observation">${esc(location)} · View source image</button></div>`;
-  return `<div class="scan-source"><blockquote>${esc(source.quote || 'No quotation recorded.')}</blockquote><p class="scan-attribution">${attribution.map(([key, value]) => `${key}: ${esc(value)}`).join(' · ') || 'Attribution not identified.'}</p><button type="button" class="text-button" data-source-document="${esc(id)}" data-source-page="${Number(source.page) || 1}" data-report-id="${esc(reportId)}" data-source-match="${esc(source.sourceMatch || '')}">${esc(location)} · Read source</button>${source.sourceMatch === false || source.matched === false ? '<span class="scan-warning">Quotation could not be matched to extracted text.</span>' : ''}</div>`;
+  const context = JSON.stringify({finding:finding ? {title:finding.title,detail:finding.detail || finding.statement,strength:finding.strength,limitations:finding.limitations} : null,quote:source.quote || '',attribution:attribution.map(([key,value])=>`${key}: ${value}`).join(' · ')});
+  return `<div class="scan-source-link"><button type="button" class="text-button" data-source-document="${esc(id)}" data-source-page="${Number(source.page) || 1}" data-report-id="${esc(reportId)}" data-source-match="${esc(source.sourceMatch || '')}" data-source-context="${esc(context)}">${source.sourceMatch==='visual_observation' ? 'View source image' : 'Read source'} · ${esc(location)}</button>${source.sourceMatch === false || source.matched === false ? '<span class="scan-warning">Quotation not matched to extracted text.</span>' : ''}</div>`;
 }
 function findingMarkup(finding, id, reportId = '') {
-  return `<article class="scan-finding"><h4>${esc(finding.title || words(finding.kind))}</h4><p>${esc(finding.detail || finding.statement || '')}</p>${finding.strength ? `<p><strong>Evidence strength:</strong> ${esc(finding.strength)}</p>` : ''}${finding.limitations?.length ? `<div class="scan-muted">${valueMarkup(finding.limitations)}</div>` : ''}${(finding.sources || []).map(source => sourceMarkup(source, id, reportId)).join('')}</article>`;
+  return `<article class="scan-finding"><h4>${esc(finding.title || words(finding.kind))}</h4><p>${esc(finding.detail || finding.statement || '')}</p>${finding.strength && !['identity','provenance','metadata'].includes(finding.kind) ? `<p class="scan-muted">Support in this document: ${esc(words(finding.strength))}</p>` : ''}${finding.limitations?.length ? `<div class="scan-muted">${valueMarkup(finding.limitations)}</div>` : ''}${(finding.sources || []).map(source => sourceMarkup(source, id, reportId)).join('')}</article>`;
 }
 
 const answerLabels = {answered:'Answered',no_findings:'No finding identified',needs_review:'Needs review',not_applicable:'Not applicable',not_assessed:'Not assessed'};
@@ -61,14 +61,30 @@ export function scanPlan() {
 }
 function questionAnswer(report, q) {
   const answer = report.questionAnswers?.find(a=>a.id===q.id);
-  if (!answer) return `<div class="scan-question-answer" data-question-id="${q.id}"><p class="scan-muted">Answer not recorded. Scan again for a review of this point.</p></div>`;
+  if (!answer) return `<div class="scan-question-answer" data-question-id="${q.id}"></div>`;
   return `<div class="scan-question-answer" data-question-id="${q.id}"><p>${esc(answer.answer || answerLabels[answer.status] || 'Not assessed.')}</p>${answer.limitations ? `<p class="scan-review-detail"><strong>Limitations</strong> ${esc(answer.limitations)}</p>` : ''}${answer.followUp ? `<p class="scan-review-detail"><strong>Follow-up</strong> ${esc(answer.followUp)}</p>` : ''}</div>`;
+}
+
+function contextMarkup(report) {
+  const c=report.context || {}, j=report.jurisdiction || {};
+  const regions=c.regions?.length ? c.regions : (j.confirmed ? j.regions : []);
+  const items=[['Document',c.documentType],['Location',regions?.length ? regions.join(', ') : 'Not established'],['Dates mentioned',(c.eventDates || []).join(', ')]];
+  return `<dl class="scan-document-facts">${items.filter(([,v])=>v).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>${c.summary && c.summary!==report.summary ? `<p>${esc(c.summary)}</p>` : ''}`;
+}
+function reviewNotes(report) {
+  const notes=[...new Set((report.attention || []).filter(Boolean))];
+  if (!notes.length) return '';
+  const actions=[];
+  if(report.context?.needsClarification && !report.jurisdiction?.confirmed)actions.push('Confirm the applicable jurisdiction');
+  if(report.coverage?.complete===false)actions.push('Check missing or unreadable content');
+  if(report.legalLimitations?.length)actions.push('Verify legal sources before relying on them');
+  return `<aside class="scan-review-notes"><p>${esc(actions.join(' · ') || 'This scan has limitations to review.')} <button type="button" class="text-button" data-review-notes="${esc(JSON.stringify(notes))}">Read review notes (${notes.length})</button></p></aside>`;
 }
 
 export function reportMarkup(report, id) {
   const questionDetails = (key, title, body, count = '') => {
     const q=SCAN_QUESTIONS.find(q=>q.id===key), answer=report.questionAnswers?.find(a=>a.id===key);
-    if(answer && !['context','output'].includes(key)) body=(report.findings || []).filter(f=>answer.findingIds?.includes(f.id)).map(f=>findingMarkup(f,id,report.id)).join('')+(answer.lawIndexes || []).map(i=>report.laws?.[i]).filter(Boolean).map(l=>`<article class="scan-law"><h4>${esc(l.title)}${l.provision ? ` · ${esc(l.provision)}` : ''}</h4><blockquote>${esc(l.text || 'Provision text unavailable.')}</blockquote><p>${esc(l.relevance)}</p><p class="scan-muted">${esc(l.version || 'Applicable version not confirmed')} · ${esc(words(l.versionStatus || 'needs verification'))}</p>${l.assumptions ? valueMarkup(l.assumptions) : ''}${lawUrl(l.url) ? `<a href="${esc(lawUrl(l.url))}" target="_blank" rel="noopener noreferrer">Official source</a>` : ''}</article>`).join('') || '';
+    if(answer && !['context','output'].includes(key)) body=(report.findings || []).filter(f=>answer.findingIds?.includes(f.id)).map(f=>(f.sources || []).map(source=>sourceMarkup(source,id,report.id,f)).join('')).join('')+(answer.lawIndexes || []).map(i=>report.laws?.[i]).filter(Boolean).map(l=>`<article class="scan-law"><h4>${esc(l.title)}${l.provision ? ` · ${esc(l.provision)}` : ''}</h4><blockquote>${esc(l.text || 'Provision text unavailable.')}</blockquote><p>${esc(l.relevance)}</p><p class="scan-muted">${esc(l.version || 'Applicable version not confirmed')} · ${esc(words(l.versionStatus || 'needs verification'))}</p>${l.assumptions ? valueMarkup(l.assumptions) : ''}${lawUrl(l.url) ? `<a href="${esc(lawUrl(l.url))}" target="_blank" rel="noopener noreferrer">Official source</a>` : ''}</article>`).join('') || '';
     if (answer && ['context','output'].includes(key)) body = '';
     return `<section class="scan-section" data-section="${q.id}" aria-labelledby="review-${esc(id)}-${q.id}"><h3 id="review-${esc(id)}-${q.id}" tabindex="-1">${q.number}. ${esc(q.title)}</h3><div class="scan-section-body">${questionAnswer(report,q)}${body ? `<div class="scan-answer-evidence">${body}</div>` : ''}</div></section>`;
   };
@@ -80,7 +96,7 @@ export function reportMarkup(report, id) {
   });
   rows.splice(3, 0, questionDetails('laws', '5. Relevant law', law + (report.legalLimitations?.length ? valueMarkup(report.legalLimitations) : ''), (report.laws || []).length));
   const unknown = findings.filter(finding => !SECTIONS.some(([, , kinds]) => kinds.includes(finding.kind)));
-  return `<section class="scan-report">${report.legacy ? '<p class="scan-warning">Legacy analysis — retained from the previous workflow. This is not a new completed scan.</p>' : ''}${scanPlan()}<h3>Document summary</h3><p class="scan-summary-text">${esc(report.summary || 'No summary was recorded.')}</p>${report.attention?.length ? `<section class="scan-review-notes"><h3>Review notes</h3>${valueMarkup([...new Set(report.attention)])}</section>` : ''}<p class="scan-muted">Findings describe this document only. A source match confirms a quotation exists, not that an allegation is true.</p>${questionDetails('context', '1. Context and jurisdiction', valueMarkup(report.context) + '<h4>Jurisdiction</h4>' + valueMarkup(report.jurisdiction))}${rows.join('')}${questionDetails('output', '13. Saved output and coverage', `${unknown.map(finding => findingMarkup(finding, id)).join('')}<h4>Coverage</h4>${valueMarkup(report.coverage)}<h4>Model and usage</h4><p>${esc(report.model || (report.legacy ? 'Legacy provider' : 'GPT-6 Astra'))}${report.effort ? ` · ${esc(report.effort)}` : ''}</p>${valueMarkup(report.usage)}<p>Saved within Files &amp; AI. No records are automatically added to other case tools.</p>`)}</section>`;
+  return `<section class="scan-report">${report.legacy ? '<p class="scan-warning">Legacy analysis — retained from the previous workflow. This is not a new completed scan.</p>' : ''}${scanPlan()}<h3>Document summary</h3><p class="scan-summary-text">${esc(report.summary || 'No summary was recorded.')}</p>${reviewNotes(report)}${!report.questionAnswers?.length ? '<p class="scan-muted">This older report shows saved findings. Scan again for a direct review of each point.</p>' : ''}<p class="scan-muted">Findings describe this document only. A source match confirms a quotation exists, not that an allegation is true.</p>${questionDetails('context', '1. Context and jurisdiction', contextMarkup(report))}${rows.join('')}${questionDetails('output', '13. Saved output and coverage', `${unknown.map(finding => findingMarkup(finding, id)).join('')}<p>${report.coverage?.complete===true ? 'The file reader reported complete extraction.' : report.coverage?.complete===false ? 'Some content could not be read. Review the original before relying on this scan.' : 'Extraction coverage was not recorded.'} Findings are saved with this document.</p>`)}</section>`;
 }
 
 export function createInbox({ api, getSession, updateSession, showModal, onOpenScan, desktop = () => globalThis.window?.strategistDesktop }) {
@@ -296,6 +312,9 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
     finally { pending.delete(id); if (revision === generation) await refresh(true); }
   }
   async function handleClick(event) {
+    const notes=event.target.closest('[data-review-notes]');
+    if(notes) { showModal(`<h2 class="modal-title">Review notes</h2><div class="scan-notes-modal">${valueMarkup(JSON.parse(notes.dataset.reviewNotes))}</div>`); return; }
+
     const question=event.target.closest('[data-question-target]');
     if(question) {
       const card=question.closest('.scan-card'), target=card?.querySelector(`[data-section="${question.dataset.questionTarget}"]`), list=find('#scan-card-list');
@@ -317,7 +336,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       return;
     }
     const original = event.target.closest('[data-open-document]'); if (original) { await openDocument(original.dataset.openDocument); return; }
-    const source = event.target.closest('[data-source-document]'); if (source) { await openSource(source.dataset.sourceDocument, Number(source.dataset.sourcePage), source.dataset.reportId, source.dataset.sourceMatch); return; }
+    const source = event.target.closest('[data-source-document]'); if (source) { await openSource(source.dataset.sourceDocument, Number(source.dataset.sourcePage), source.dataset.reportId, source.dataset.sourceMatch, JSON.parse(source.dataset.sourceContext || '{}')); return; }
     const button = event.target.closest('[data-file-action]'); if (!button || button.disabled) return;
     if (button.dataset.fileAction === 'connect') { await connectionModal(); return; }
     button.disabled = true;
@@ -358,7 +377,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       document.getElementById('scan-open-original')?.addEventListener('click', () => { void originalPreview(detail, 1, null, context).catch(error => { if (currentSource(context)) notice(error.message, true); }); });
     } catch (error) { if (currentSource(context)) showModal(`<h2 class="modal-title">Document unavailable</h2><p>${esc(error.message)}</p>`); }
   }
-  async function openSource(id, page, reportId, sourceMatch) {
+  async function openSource(id, page, reportId, sourceMatch, evidence = {}) {
     const context = sourceContext();
     try {
       const params = new URLSearchParams({ page: String(page), ...(reportId ? { reportId } : {}), ...(['text_match', 'machine_transcription'].includes(sourceMatch) ? { sourceMatch } : {}) });
@@ -372,7 +391,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       const source = await api(`${endpoint(id)}/source?${params}`);
       if (!currentSource(context)) return;
       const location = anchorLabel(source.anchor, page);
-      showModal(`<h2 class="modal-title">${esc(source.name || 'Source document')} · ${esc(location)}</h2><pre class="source-modal">${esc(source.text || source.source?.text || 'Text unavailable. Review the original.')}</pre><button class="btn" id="scan-source-original" type="button">Open original at source</button>`);
+      showModal(`<h2 class="modal-title">${esc(source.name || 'Source document')} · ${esc(location)}</h2>${evidence.finding ? `<h3>${esc(evidence.finding.title || 'Supporting finding')}</h3><p>${esc(evidence.finding.detail || '')}</p>${evidence.finding.limitations ? valueMarkup(evidence.finding.limitations) : ''}` : ''}<p class="scan-attribution">${esc(evidence.attribution || '')}</p>${evidence.quote ? `<blockquote class="scan-source-quote">${esc(evidence.quote)}</blockquote>` : ''}<pre class="source-modal">${esc(source.text || source.source?.text || 'Text unavailable. Review the original.')}</pre><button class="btn" id="scan-source-original" type="button">Open original at source</button>`);
       document.getElementById('scan-source-original')?.addEventListener('click', async () => {
         if (!currentSource(context)) return;
         try {

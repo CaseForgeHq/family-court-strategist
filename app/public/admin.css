@@ -35,3 +35,6 @@
 @media(max-height:700px){.admin-dialog{max-height:calc(100dvh - 28px)}.admin-heading{padding:17px 24px 14px}.admin-content{padding:16px 24px}.admin-intro{margin-bottom:14px}.admin-size{gap:7px;padding:12px 14px}.admin-preview{padding-top:12px}.admin-library{margin-top:16px;padding-top:12px}.admin-footer{padding:14px 24px}.admin-demo-list{max-height:115px}}
 @media(max-width:520px){.admin-sizes{gap:8px}.admin-size{padding:12px 10px}.admin-size strong{font-size:29px}.admin-heading,.admin-content,.admin-footer{padding-inline:18px}.admin-footer{flex-wrap:wrap}.admin-dialog .admin-return{max-width:100%}.admin-intro{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.admin-dialog[open],.admin-status.is-busy:before{animation:none}.admin-dialog button,.admin-size{transition:none}}
+
+.admin-sizes { grid-template-columns: repeat(4,minmax(0,1fr)); }
+@media(max-width:540px) { .admin-sizes { grid-template-columns: repeat(2,minmax(0,1fr)); } }

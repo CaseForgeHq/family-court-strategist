@@ -1,0 +1,14 @@
+FICTIONAL TEST RECORD - no real people, accounts, property or case.
+
+Email export
+From: Alex Morgan <alex.morgan@caseforge.example>
+To: Jamie Morgan <jamie.morgan@caseforge.example>
+Sent: 8 September 2026 00:15 AEST (UTC+10)
+Server log timestamp for the same message: 7 September 2026 14:15 UTC
+Subject: Notes from yesterday's discussion
+
+We spoke on Monday 7 September 2026 at 6 pm AEST about collecting the remaining property documents. I will request the mortgage payout statement on Wednesday 9 September. That is my proposed follow-up date, not a deadline set by a court.
+
+You said you would search for the vehicle purchase receipt. I did not understand that as a promise that the receipt would be available immediately. We have not agreed that disclosure is complete.
+
+The export retains both the sender timestamp and the mail server log time. The court location and filing details are not included in this message. The export does not prove delivery or authorship independently.

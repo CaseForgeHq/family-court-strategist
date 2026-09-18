@@ -1,3 +1,4 @@
+import { REVIEW_FIXTURES } from './review-fixtures.js';
 import { randomUUID } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 import { setImmediate as yieldTurn } from 'node:timers/promises';
@@ -10,10 +11,11 @@ import { Calendar } from './calendar.js';
 import { writeNew, caseRoot } from './files.js';
 
 export const DEMO_PRESETS = Object.freeze([
+  { id: 'review', label: 'Review test', files: 10, people: 0, events: 0, tasks: 0, notes: 0, calendar: 0, evidence: 0, patterns: 0 },
   { id: 'small', label: 'Small', files: 10, people: 8, events: 9, tasks: 4, notes: 3, calendar: 3, evidence: 4, patterns: 2 },
   { id: 'medium', label: 'Medium', files: 50, people: 10, events: 30, tasks: 12, notes: 8, calendar: 6, evidence: 15, patterns: 4 },
   { id: 'large', label: 'Large', files: 250, people: 24, events: 120, tasks: 30, notes: 20, calendar: 12, evidence: 40, patterns: 8 },
-].map(item => Object.freeze({ ...item, emailExports: item.files - 5 })));
+].map(item => Object.freeze({ ...item, emailExports: item.id === 'review' ? 0 : item.files - 5 })));
 
 const names = ['Alex Morgan', 'Jamie Morgan', 'Sam Taylor', 'Casey Wilson', 'Robin Ellis', 'Jordan Lee', 'Avery Quinn', 'Riley Shaw', 'Cameron Reed', 'Drew Parker', 'Harper Lane', 'Charlie West', 'Morgan Bell', 'Taylor Green', 'Rowan Fox', 'Finley Blake', 'Hayden Cole', 'Peyton Ross', 'Reese Gray', 'Bailey Stone', 'Skyler Hayes', 'Emerson Dale', 'Dakota Rivers', 'Sage Brooks'];
 const subjects = ['Schedule discussion', 'School update', 'Document request', 'Meeting summary', 'Travel arrangement', 'Appointment update', 'Expense record', 'Follow-up message'];
@@ -28,6 +30,18 @@ export async function generateDemo({ root, size, id = randomUUID(), fileReferenc
   root = caseRoot(root);
   if (readdirSync(root).length) throw new Error('Sample data needs a new, empty demo folder.');
   const assertWritable = () => assertActive();
+  if (size === 'review') {
+    const inbox = new Inbox({ providers: {}, assertWritable, fileReferences });
+    for (const source of REVIEW_FIXTURES) {
+      assertActive();
+      const result=inbox.import(root,source.name,Buffer.from(source.text));
+      await inbox.tail; assertActive();
+      if(inbox.record(root,result.document.id).status !== 'ready')throw new Error('A test document could not be read. Create a fresh review test.');
+    }
+    writeNew(root,'CASE-DETAILS.md',`---\ntype: system\n---\n# Review test - fictional parenting and property records\n\nTen invented source documents. No findings are pre-created. Scan each document to test the review. The evaluator answer key is kept outside this case.\n`);
+    writeNew(root,'.case-forge/demo.json',JSON.stringify({version:1,scenarioVersion:1,scenario:'Mixed review benchmark',id,size,createdAt:now.toISOString(),fictional:true,counts:preset}));
+    return {...preset};
+  }
   const write = (path, data) => { assertActive(); writeNew(root, path, data); };
   const dayParts = new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
   const part = type => dayParts.find(item => item.type === type).value;
