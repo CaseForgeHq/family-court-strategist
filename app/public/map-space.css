@@ -22,6 +22,11 @@ body[data-workspace-view="map"] .content{display:flex;overflow:hidden;padding:9p
 .map-labels .map-node{position:absolute;left:0;top:0;display:flex;align-items:center;gap:7px;pointer-events:auto;width:172px;min-height:34px;padding:7px 10px;background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid color-mix(in srgb,var(--line-2) 60%,transparent);border-radius:8px;box-shadow:0 3px 12px #0b243516,inset 0 1px 0 #ffffff30;backdrop-filter:blur(8px);font:600 12px/1.4 var(--ui);color:var(--ink);text-align:left;cursor:pointer}
 .map-node svg{width:17px;height:17px;flex:none;color:var(--node-color)}.map-node>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .map-node:hover,.map-node:focus-visible,.map-node.is-selected{background:var(--panel);border-color:var(--action)}.map-node.is-selected{box-shadow:0 0 0 1px var(--action),0 3px 12px #0b24351c}
+.map-labels .map-node{border-left:4px solid var(--node-color);background:var(--panel)}
+.map-labels .map-node.is-muted{opacity:.3}
+.map-labels .map-node.is-highlighted,.map-labels .map-node.is-selected,.map-labels .map-node:focus-visible{width:min(340px,calc(100% - 12px));border-color:var(--node-color);box-shadow:0 0 0 2px var(--node-color),0 6px 20px #0005;opacity:1}
+.map-labels .map-node.is-highlighted>span,.map-labels .map-node.is-selected>span,.map-labels .map-node:focus-visible>span{white-space:normal;overflow-wrap:anywhere;overflow:visible;text-overflow:clip}
+.map-labels .map-node:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .map-space-heading{position:absolute;left:18px;top:15px;display:flex;flex-direction:column;gap:3px;pointer-events:none;color:var(--ink-2);font:500 12px/1.5 var(--ui);max-width:calc(100% - 30px)}
 #map-navigation-mode{font:600 11px var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--action)}
 .map-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none;padding:10px 14px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--panel) 73%,transparent)}

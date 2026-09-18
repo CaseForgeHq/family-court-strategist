@@ -28,7 +28,7 @@ export function createMapScene(container, { onSelect, onUnavailable, onModeChang
   const grid = new THREE.PolarGridHelper(600, 12, 5, 100, 0x7d9696, 0x7d9696);
   grid.position.y = -235; grid.material.transparent = true; grid.material.opacity = .13; scene.add(grid);
   const sphere = new THREE.SphereGeometry(8, 24, 16);
-  let points = new Map(), meshes = [], edgeMeshes = [], labelNodes = [], selected = null;
+  let points = new Map(), meshes = [], edgeMeshes = [], labelNodes = [], selected = null, hovered = null;
   let disposed = false, paused = false, frame = 0, previousTime = 0, mode = 'orbit', drag = null;
   let homeDistance = 740, homeTarget = new THREE.Vector3(), selectedPosition = null;
   const keys = new Set(), listeners = [];
@@ -54,16 +54,19 @@ export function createMapScene(container, { onSelect, onUnavailable, onModeChang
       const point = new THREE.Vector3().copy(points.get(node.id));
       const distance = camera.position.distanceTo(point); point.project(camera);
       return { node, element, point, distance, x: (point.x * .5 + .5) * width, y: (-point.y * .5 + .5) * height + 16 };
-    }).sort((a, b) => Number(b.node.id === selected) - Number(a.node.id === selected) || a.distance - b.distance);
+    }).sort((a, b) => Number(b.node.id === (hovered || selected)) - Number(a.node.id === (hovered || selected)) || a.distance - b.distance);
     for (const p of visible) {
-      const w = 172, h = 34;
+      const active = p.node.id === (hovered || selected) || doc.activeElement === p.element;
+      p.element.hidden = false;
+      const w = p.element.offsetWidth, h = p.element.offsetHeight;
+      if (active) { p.x = Math.max(w / 2 + 5, Math.min(width - w / 2 - 5, p.x)); p.y = Math.max(5, Math.min(height - h - 5, p.y)); }
       const box = { x: p.x - w / 2, y: p.y, w, h };
       const clipped = p.point.z < -1 || p.point.z > 1 || box.x < 5 || box.x + w > width - 5 || box.y < 5 || box.y + h > height - 5;
       const overlap = occupied.some(b => box.x < b.x + b.w + 5 && box.x + w + 5 > b.x && box.y < b.y + b.h + 6 && box.y + h + 6 > b.y);
-      p.element.hidden = clipped || (overlap && p.node.id !== selected && doc.activeElement !== p.element);
+      p.element.hidden = clipped || (overlap && !active);
       if (!p.element.hidden) occupied.push(box);
       p.element.style.transform = `translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translateX(-50%)`;
-      p.element.style.zIndex = p.node.id === selected ? '3' : '1';
+      p.element.style.zIndex = active ? '3' : '1';
     }
   }
   function resize() {
@@ -77,7 +80,7 @@ export function createMapScene(container, { onSelect, onUnavailable, onModeChang
     records.clear(); lines.clear(); labels.replaceChildren(); meshes = []; edgeMeshes = []; labelNodes = [];
   }
   function update(graph) {
-    stop(); clearRecords(); points = layoutGraph3D(graph);
+    stop(); hovered = null; clearRecords(); points = layoutGraph3D(graph);
     const positions = [...points.values()];
     const bounds = new THREE.Box3().setFromPoints(positions.map(p => new THREE.Vector3(p.x, p.y, p.z)));
     homeTarget = positions.length ? bounds.getCenter(new THREE.Vector3()) : new THREE.Vector3();
@@ -96,25 +99,44 @@ export function createMapScene(container, { onSelect, onUnavailable, onModeChang
     }
     for (const edge of graph.edges) {
       const a = points.get(edge.source), b = points.get(edge.target); if (!a || !b) continue;
-      const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a.x, a.y, a.z), new THREE.Vector3(b.x, b.y, b.z)]);
-      const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x668382, transparent: true, opacity: .45 }));
+      const start = new THREE.Vector3(a.x, a.y, a.z), end = new THREE.Vector3(b.x, b.y, b.z), delta = end.clone().sub(start);
+      const geometry = new THREE.CylinderGeometry(1, 1, delta.length(), 6);
+      const line = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x668382, transparent: true, opacity: .45, depthWrite: false }));
+      line.position.copy(start).add(end).multiplyScalar(.5);
+      line.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
       line.userData = edge; lines.add(line); edgeMeshes.push(line);
     }
     setSelected(selected); reset();
   }
   function setSelected(id) {
     selected = id; selectedPosition = points.get(id);
+    highlight();
+  }
+  function highlight() {
+    const id = hovered || selected, connected = new Set([id]);
+    for (const edge of edgeMeshes) if (edge.userData.source === id || edge.userData.target === id) { connected.add(edge.userData.source); connected.add(edge.userData.target); }
     const dark = doc.documentElement.dataset.sceneMode === 'dark';
     for (const mesh of meshes) {
       const active = mesh.userData.id === id; mesh.material.emissive.set(active ? palette[graphType(mesh)] : '#000000'); mesh.material.emissiveIntensity = active ? .42 : 0;
+      mesh.material.transparent = true; mesh.material.opacity = !id || connected.has(mesh.userData.id) ? 1 : .2;
+      mesh.scale.setScalar((graphType(mesh) === 'person' ? 1.35 : 1) * (active ? 1.45 : 1));
     }
     for (const edge of edgeMeshes) {
       const active = id && (edge.userData.source === id || edge.userData.target === id);
-      edge.material.color.set(active ? (dark ? '#e7bd8c' : '#915226') : (dark ? '#b6ccca' : '#587675'));
-      edge.material.opacity = active ? .95 : id ? .22 : .55;
+      edge.material.color.set(active ? (dark ? '#ffd9a6' : '#864315') : (dark ? '#b6ccca' : '#587675'));
+      edge.material.opacity = active ? 1 : id ? .07 : .32;
+      edge.scale.set(active ? 2.6 : .85, 1, active ? 2.6 : .85);
     }
-    for (const { node, element } of labelNodes) { element.setAttribute('aria-pressed', String(node.id === id)); element.classList.toggle('is-selected', node.id === id); }
+    for (const { node, element } of labelNodes) {
+      element.setAttribute('aria-pressed', String(node.id === selected)); element.classList.toggle('is-selected', node.id === selected);
+      element.classList.toggle('is-highlighted', node.id === id); element.classList.toggle('is-muted', !!id && !connected.has(node.id));
+    }
     request();
+  }
+  function hover(id) { if (hovered !== id) { hovered = id; highlight(); } }
+  function hitAt(event) {
+    const rect = canvas.getBoundingClientRect(), pointer = new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
+    const ray = new THREE.Raycaster(); ray.setFromCamera(pointer, camera); return ray.intersectObjects(meshes)[0]?.object.userData.id;
   }
   function graphType(mesh) { return labelNodes.find(p => p.node.id === mesh.userData.id)?.node.type || 'note'; }
   function setMode(next) {
@@ -139,6 +161,7 @@ export function createMapScene(container, { onSelect, onUnavailable, onModeChang
     if (mode === 'fly') canvas.setPointerCapture(event.pointerId);
   });
   listen(canvas, 'pointermove', event => {
+    if (!drag) { const id = hitAt(event); hover(id || null); canvas.style.cursor = id ? 'pointer' : ''; }
     if (mode !== 'fly' || !drag) return;
     const rotation = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
     rotation.y -= (event.clientX - drag.previousX) * .004;
@@ -154,6 +177,12 @@ export function createMapScene(container, { onSelect, onUnavailable, onModeChang
     drag = null;
   });
   listen(canvas, 'pointercancel', stop);
+  listen(canvas, 'pointerleave', () => hover(null));
+  listen(labels, 'pointerover', event => { const node = event.target.closest('.map-node'); if (node) hover(node.dataset.mapSelect); });
+  listen(labels, 'pointerout', event => { if (!event.relatedTarget?.closest?.('.map-node')) hover(null); });
+  listen(labels, 'focusin', event => hover(event.target.closest('.map-node')?.dataset.mapSelect || null));
+  listen(labels, 'focusout', () => hover(null));
+  listen(labels, 'dblclick', event => { const id = event.target.closest('.map-node')?.dataset.mapSelect; if (id) { setSelected(id); onSelect?.(id); focus(); } });
   listen(canvas, 'keydown', event => {
     if (event.key === 'Escape' && mode === 'fly') { event.preventDefault(); setMode('orbit'); return; }
     if (event.altKey || event.ctrlKey || event.metaKey || !movementKeys.has(event.code)) return;
@@ -172,7 +201,7 @@ export function createMapScene(container, { onSelect, onUnavailable, onModeChang
     focusCanvas() { canvas.focus({ preventScroll: true }); },
     pause(value) { paused = value; stop(); if (paused && frame) { win.cancelAnimationFrame(frame); frame = 0; } else request(); },
     // Read-only camera state also makes real-renderer regression checks possible.
-    snapshot() { return { position: camera.position.toArray(), target: controls.target.toArray(), mode, nodes: meshes.length, edges: edgeMeshes.length, framePending: !!frame }; },
+    snapshot() { return { position: camera.position.toArray(), target: controls.target.toArray(), mode, nodes: meshes.length, edges: edgeMeshes.length, highlighted: hovered || selected, emphasizedEdges: edgeMeshes.filter(edge => edge.scale.x > 1).length, framePending: !!frame }; },
     dispose() { disposed = true; stop(); win.cancelAnimationFrame(frame); listeners.forEach(remove => remove()); resizeObserver.disconnect(); themeObserver.disconnect(); controls.dispose(); clearRecords(); sphere.dispose(); grid.geometry.dispose(); grid.material.dispose(); renderer.dispose(); renderer.forceContextLoss(); container.replaceChildren(); },
   };
 }

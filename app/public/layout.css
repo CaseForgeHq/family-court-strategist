@@ -116,7 +116,11 @@ body[data-workspace-view="map"] .main > .content {
 /* The paper and map consume the remaining height, not a guessed viewport height. */
 .notebook-workspace { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 16px; padding-bottom: 6px; overflow: hidden; }
 .notebook-workspace .notebook-book { flex: 1; min-height: 0; height: auto; width: 100%; margin: 0 auto; }
-.case-map-shell > .page-purpose { margin: 0 0 6px; }
+.case-map-shell { gap: 8px; }
+.case-map-shell > .page-purpose { margin: 0; }
+.case-map-shell > .page-purpose p { font-size: 13px; line-height: 20px; }
+.case-map-shell .map-tools .map-search-label { flex: 1; width: auto; min-width: 120px; max-width: 400px; height: 38px; }
+.case-map-shell .map-tools > .btn { min-height: 38px; padding-block: 8px; }
 .map-layout:has(#map-details[data-window-mode="right"]:not([hidden])) { padding-right: calc(max(370px, 38vw) + 12px); }
 .map-layout:has(#map-details[data-window-mode="left"]:not([hidden])) { padding-left: calc(max(370px, 38vw) + 12px); }
 
