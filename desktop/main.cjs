@@ -35,14 +35,17 @@ let currentVault, win, server, serverPort, capability;
 let documentExports;
 let demoCases, updates, updateTimer, installingUpdate = false;
 let entryStage = 'configure';
+let lastView = 'dashboard';
+const workspaceViews = new Set(['creator','search','notebook','calendar','dashboard','tasks','timeline','evidence','map','patterns','people','documents','journal','exports','legal','settings']);
 let unlocked = false, setupAuthorized = false, operationBusy = false, switchingFolder = false, lastActivity = Date.now(), lockGeneration = 0;
 const appOrigin = () => serverPort ? `http://127.0.0.1:${serverPort}` : null;
 const appInfo = () => ({ name: 'Case Forge', version: app.isPackaged ? app.getVersion() : require('./package.json').version });
 function validFolder(path) { try { return typeof path === 'string' && statSync(path).isDirectory() ? realpathSync(path) : null; } catch { return null; } }
-function loadVault() { try { return validFolder(JSON.parse(readFileSync(cfgPath, 'utf8')).vault); } catch { return null; } }
+function loadVault() { try { const saved=JSON.parse(readFileSync(cfgPath, 'utf8')); lastView=workspaceViews.has(saved.view) ? saved.view : 'dashboard'; return validFolder(saved.vault); } catch { return null; } }
 function saveVault(value) {
+  if(value !== currentVault) lastView='dashboard';
   const temp = `${cfgPath}.tmp`;
-  writeFileSync(temp, JSON.stringify({ vault: value }), { mode: 0o600 });
+  writeFileSync(temp, JSON.stringify({ vault: value, view: lastView }), { mode: 0o600 });
   renameSync(temp, cfgPath);
 }
 function isFrame(event) { return win && !win.isDestroyed() && event.sender === win.webContents && event.senderFrame === win.webContents.mainFrame; }
@@ -143,7 +146,7 @@ async function startWorkspace(generation) {
     assertCurrent(generation);
     if (server !== startingServer) throw new Error('The workspace locked. Enter your PIN again.');
     serverPort = server.address().port; unlocked = true; setupAuthorized = false; lastActivity = Date.now(); buildMenu();
-    await win.loadURL(appOrigin()); return { ok: true };
+    await win.loadURL(`${appOrigin()}#${lastView}`); return { ok: true };
   } catch (error) { if (server === startingServer) { stopServer(); setupAuthorized = generation === lockGeneration; } throw error; }
 }
 async function enterSetup(generation, stage = 'configure') {
@@ -167,7 +170,7 @@ function unlockToSetup(pin, stage) {
 }
 function unlock(pin) {
   return operation(async (generation) => {
-    security.verify(pin); setupAuthorized = true;
+    security.verify(pin); setupAuthorized = true; win.webContents.send('security:verified');
     if (!validFolder(currentVault)) { currentVault = null; return enterSetup(generation); }
     if (!getWorkspacePreferences().configured) return enterSetup(generation, 'preferences');
     if (!termsAcceptance.get().accepted) return enterSetup(generation, 'preferences');
@@ -345,6 +348,7 @@ else {
     ipcMain.handle('setup:reset', (event) => allowedSender(event, 'lock') || allowedSender(event, 'setup') ? resetAppSetup() : { error: 'Access denied.' });
     ipcMain.handle('security:unlock', (event, pin) => allowedSender(event, 'lock') ? unlock(pin) : { error: 'Access denied.' });
     ipcMain.handle('security:unlock-setup', (event, pin, stage) => allowedSender(event, 'lock') ? unlockToSetup(pin, stage) : { error: 'Access denied.' });
+    ipcMain.handle('workspace:remember-view', (event, view) => { if(!allowedSender(event) || !workspaceViews.has(view)) return false; lastView=view; saveVault(currentVault); return true; });
     ipcMain.handle('security:lock', (event) => allowedSender(event, 'settings') ? lock() : false);
     ipcMain.handle('setup:state', (event) => { if (!allowedSender(event, 'settings')) return { error: 'Access denied.' }; try { return setupState(); } catch (error) { return { error: error.message }; } });
     ipcMain.handle('setup:preferences', (event) => { if (!allowedSender(event, 'settings')) return { error: 'Access denied.' }; try { return getWorkspacePreferences(); } catch (error) { return { error: error.message }; } });

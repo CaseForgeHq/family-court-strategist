@@ -119,7 +119,7 @@ test('Enter unlocks once, validates PIN length, and respects the disabled securi
   const calls = [];
   const dom = openPage('lock', {
     securityStatus: async () => ({ configured: true }),
-    unlockToSetup: async (pin, stage) => { calls.push([pin, stage]); return await new Promise((resolve) => { finishUnlock = resolve; }); },
+    unlock: async (pin) => { calls.push([pin]); return await new Promise((resolve) => { finishUnlock = resolve; }); },
   });
   t.after(() => dom.window.close());
   const document = dom.window.document, field = document.getElementById('pin');
@@ -128,7 +128,7 @@ test('Enter unlocks once, validates PIN length, and respects the disabled securi
   typePin(document, '123'); enter();
   assert.equal(calls.length, 0, 'Invalid-length PIN must not reach the native bridge');
   typePin(document, '739482'); enter(); enter();
-  assert.deepEqual(calls, [['739482', 'preferences']], 'Repeated Enter must not submit twice or skip Preferences');
+  assert.deepEqual(calls, [['739482']], 'Repeated Enter must not submit twice and must use normal unlock');
   assert.equal(document.getElementById('lock-choose-folder').disabled, true, 'Busy authentication blocks changing the folder intent');
   assert.equal(document.body.dataset.entryStage, 'configure');
   assert.equal(field.value, '');
@@ -164,7 +164,7 @@ test('native PIN existence and valid typing never claim that an entered PIN was 
   const calls = [];
   const dom = openPage('lock', {
     securityStatus: async () => new Promise(resolve => { resolveStatus = resolve; }),
-    unlockToSetup: async (...args) => { calls.push(args); return { error: 'That PIN was not recognised.' }; },
+    unlock: async (...args) => { calls.push(args); return { error: 'That PIN was not recognised.' }; },
   });
   t.after(() => dom.window.close());
   const document = dom.window.document, card = document.getElementById('lock-pin-card'), badge = document.getElementById('lock-pin-state');
@@ -188,7 +188,7 @@ test('invalid direct submissions cannot invoke verification and native success i
   const dom = openPage('lock', {
     securityStatus: async () => ({ configured: true }),
     onPinVerified: (callback) => { verified = callback; return () => {}; },
-    unlockToSetup: async (...args) => { calls.push(args); return new Promise(resolve => { finishUnlock = resolve; }); },
+    unlock: async (...args) => { calls.push(args); return new Promise(resolve => { finishUnlock = resolve; }); },
   });
   t.after(() => dom.window.close());
   const document = dom.window.document, card = document.getElementById('lock-pin-card'), form = document.getElementById('pin-form');
@@ -201,7 +201,7 @@ test('invalid direct submissions cannot invoke verification and native success i
   }
   assert.deepEqual(calls, [], 'Even programmatic submission must enforce digit format before IPC');
   typePin(document, '739482'); submit(); submit();
-  assert.deepEqual(calls, [['739482', 'preferences']]);
+  assert.deepEqual(calls, [['739482']]);
   assert.equal(card.dataset.status, 'checking');
   for (const id of ['pin', 'show-pin', 'unlock', 'lock-choose-folder', 'lock-reset-setup']) assert.equal(document.getElementById(id).disabled, true, id + ' must be blocked during verification');
   assert.equal(document.getElementById('pin').value, '');
@@ -219,7 +219,7 @@ test('native throttling blocks PIN, show and folder actions without reporting a 
   const calls = [];
   const dom = openPage('lock', {
     securityStatus: async () => ({ configured: true, retryAfter: 15 }),
-    unlockToSetup: async (...args) => { calls.push(args); return { ok: true }; },
+    unlock: async (...args) => { calls.push(args); return { ok: true }; },
   });
   t.after(() => dom.window.close());
   const document = dom.window.document;

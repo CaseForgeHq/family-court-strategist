@@ -39,3 +39,5 @@ body>footer .reset-app-setup{color:inherit}body>footer .reset-app-setup:hover:no
 @media(max-height:720px) and (min-width:651px){body>header{padding-block:14px}.entry-main,.setup-main{padding:12px 0 20px}.entry-card,.setup-card{min-height:315px;padding:25px}.card-top,.lock-icon{margin-bottom:20px}body>footer{padding-block:8px}}
 @media(max-width:650px){body>header{padding:18px 5vw}.entry-main,.setup-main{padding:20px 0 26px;width:90%}.entry-cards,.setup-cards{grid-template-columns:1fr;grid-template-rows:none;gap:16px}.entry-card,.setup-card{grid-row:auto;grid-template-rows:1fr auto auto;min-height:290px;padding:26px}body>footer{align-items:flex-start;flex-direction:column;gap:4px}}
 :root[data-scene-mode="light"]{color-scheme:light}:root[data-scene-mode="dark"]{color-scheme:dark}
+
+.setup-progress[hidden] { display: none; }

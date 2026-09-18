@@ -268,6 +268,7 @@ const VIEWS = {
 async function go(view) {
   if (!VIEWS[view]) view = "dashboard";
   current = view;
+  void window.strategistDesktop?.rememberView?.(view)?.catch(() => {});
   recordRequest++;
   globalSearch?.close();
   globalSearch?.unmount();

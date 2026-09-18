@@ -70,6 +70,7 @@ contextBridge.exposeInMainWorld('strategistDesktop', Object.freeze({
   configurePin: (value) => ipcRenderer.invoke('security:configure', value),
   resetSession: (value) => ipcRenderer.invoke('session:reset', value),
   openWorkspace: () => ipcRenderer.invoke('setup:open'),
+  rememberView: (view) => ipcRenderer.invoke('workspace:remember-view', view),
   lock: () => ipcRenderer.invoke('security:lock'),
   securityStatus: () => ipcRenderer.invoke('security:status'),
   onPinVerified: (callback) => {

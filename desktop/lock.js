@@ -16,9 +16,9 @@ function render() {
   $('lock-choose-folder').disabled = blocked || typeof security?.unlockToSetup !== 'function';
   $('lock-reset-setup').disabled = busy;
   $('lock-message').textContent = statusError || (retryAfter ? `Please wait ${retryAfter} seconds before trying again.` : inputError);
-  $('pin-entry-feedback').textContent = verified ? 'Confirmed. Opening your settings…' : checking ? 'Checking your PIN…' : !value ? 'Enter 6–12 digits.'
+  $('pin-entry-feedback').textContent = verified ? 'Confirmed. Opening your workspace…' : checking ? 'Checking your PIN…' : !value ? 'Enter 6–12 digits.'
     : /\D/.test(value) ? 'Use numbers only.' : validPin() ? 'Press Enter to confirm.' : `${value.length} digits · at least 6 needed.`;
-  $('lock-title').textContent = 'Create Your PIN';
+  $('lock-title').textContent = 'Unlock Case Forge';
   $('lock-intro').textContent = folderIntent ? 'Confirm your PIN to choose a folder.' : 'Enter your PIN to continue.';
   $('confirm-wrap').hidden = true; $('confirmation').required = false; $('pin-form').hidden = false;
 }
@@ -68,7 +68,7 @@ $('pin-form').addEventListener('submit', async (event) => {
   busy = checking = true; inputError = ''; $('pin').value = ''; $('confirmation').value = '';
   $('pin').type = 'password'; $('show-pin').textContent = 'Show'; $('show-pin').setAttribute('aria-label', 'Show PIN'); render();
   try {
-    const result = await security.unlockToSetup(pin, folderIntent ? 'configure' : 'preferences');
+    const result = folderIntent ? await security.unlockToSetup(pin, 'configure') : await security.unlock(pin);
     if (!result?.ok) throw new Error(result?.error || 'Your PIN could not be checked. Please try again.');
     // Only the native verified event can show confirmation; navigation completes the action.
   } catch (error) {
