@@ -228,3 +228,33 @@
   box-shadow: inset 0 1px 0 var(--surface-shine),0 8px 24px #1031290b;
   backdrop-filter: blur(13px) saturate(125%);
 }
+
+/* Expanded reports read as one continuous document, without nested disclosures. */
+.scan-card-heading { position: static; }
+.scan-card[open] > .scan-card-heading { backdrop-filter: none; }
+.scan-card-list { border-radius: 14px; scrollbar-width: auto; scrollbar-color: auto; overflow-x: hidden; }
+.scan-card-list::-webkit-scrollbar { width: 9px; }
+.scan-card-list::-webkit-scrollbar-track { background: transparent; border-radius: 9px; margin-block: 10px; }
+.scan-card-list::-webkit-scrollbar-thumb { background: color-mix(in srgb,var(--ink-2) 35%,transparent); border: 2px solid transparent; background-clip: padding-box; border-radius: 9px; }
+.scan-card-list::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+.scan-card-body { padding: 0 20px 24px; }
+.scan-report { font: 500 15px/1.65 var(--ui); }
+.scan-report h3, .scan-card-error-box h3 { font: 600 15px/1.5 var(--ui); margin: 0 0 10px; }
+.scan-report h4 { font: 600 15px/1.5 var(--ui); }
+.scan-report p, .scan-summary-text, .scan-review-detail { font-size: 15px; line-height: 1.65; }
+.scan-section { border: 0; border-top: 1px solid var(--surface-edge); border-radius: 0; background: transparent; padding: 22px 0; margin: 0; scroll-margin-top: 16px; }
+.scan-section-body { padding: 0; }
+.scan-section:last-child { padding-bottom: 0; }
+.scan-question-answer p { margin: 0 0 10px; }
+.scan-review-detail { color: var(--ink-2); }
+.scan-review-detail strong { font-weight: 600; margin-right: 6px; }
+.scan-answer-evidence { border: 0; margin-top: 14px; }
+.scan-plan { border: 0; border-bottom: 1px solid var(--surface-edge); border-radius: 0; padding: 10px 0 22px; margin: 0 0 22px; }
+.scan-plan-grid { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; }
+.scan-plan-item { border: 0; border-radius: 0; background: transparent; padding: 0; font: 500 13px/1.6 var(--ui); color: var(--ink-2); }
+.scan-plan-item:hover { color: var(--record-ink); text-decoration: underline; text-underline-offset: 3px; }
+.scan-review-notes { border: 0; border-left: 2px solid var(--action); border-radius: 0; padding: 0 0 0 14px; margin: 20px 0; }
+.scan-report .scan-muted { font-size: 13px; }
+.scan-card-error-box { margin: 12px 0 20px; }
+.scan-card-error-box .scan-warning { margin: 0; }
+@media(max-width:850px) { .scan-card-body { padding-inline: 14px; } }

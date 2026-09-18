@@ -57,18 +57,20 @@ function findingMarkup(finding, id, reportId = '') {
 
 const answerLabels = {answered:'Answered',no_findings:'No finding identified',needs_review:'Needs review',not_applicable:'Not applicable',not_assessed:'Not assessed'};
 export function scanPlan() {
-  return `<details class="scan-plan" open><summary><span class="scan-disclosure">${chevron}</span><strong>What the AI checks</strong><span>13 questions · one answer per question</span></summary><div class="scan-plan-grid">${SCAN_QUESTIONS.map(q=>`<button type="button" class="scan-plan-item" data-question-target="${q.id}" data-group="${q.group}"><span>${q.number}</span><span>${esc(q.title)}</span></button>`).join('')}</div><p class="scan-muted">Each answer includes evidence, limitations and follow-up. These checks apply to one document.</p></details>`;
+  return `<nav class="scan-plan" aria-label="Review points"><h3>What the AI checks</h3><div class="scan-plan-grid">${SCAN_QUESTIONS.map(q=>`<button type="button" class="scan-plan-item" data-question-target="${q.id}">${q.number}. ${esc(q.title)}</button>`).join('')}</div></nav>`;
 }
 function questionAnswer(report, q) {
   const answer = report.questionAnswers?.find(a=>a.id===q.id);
-  return `<div class="scan-question-answer" data-question-id="${q.id}"><p class="scan-question">${esc(q.question)}</p><span class="scan-answer-status">${answer ? esc(answerLabels[answer.status] || 'Not assessed') : 'Answer not recorded'}</span><dl class="scan-answer-fields"><dt>Answer</dt><dd>${esc(answer?.answer || 'This report has no question-by-question answer. Scan again to answer this question.')}</dd><dt>Limitations</dt><dd>${esc(answer?.limitations || (answer ? 'None stated in this answer.' : 'This check has not been explicitly answered.'))}</dd><dt>Follow-up</dt><dd>${esc(answer?.followUp || (answer ? 'None recorded.' : 'Scan again to generate a mapped answer.'))}</dd></dl></div>`;
+  if (!answer) return `<div class="scan-question-answer" data-question-id="${q.id}"><p class="scan-muted">Answer not recorded. Scan again for a review of this point.</p></div>`;
+  return `<div class="scan-question-answer" data-question-id="${q.id}"><p>${esc(answer.answer || answerLabels[answer.status] || 'Not assessed.')}</p>${answer.limitations ? `<p class="scan-review-detail"><strong>Limitations</strong> ${esc(answer.limitations)}</p>` : ''}${answer.followUp ? `<p class="scan-review-detail"><strong>Follow-up</strong> ${esc(answer.followUp)}</p>` : ''}</div>`;
 }
 
 export function reportMarkup(report, id) {
   const questionDetails = (key, title, body, count = '') => {
     const q=SCAN_QUESTIONS.find(q=>q.id===key), answer=report.questionAnswers?.find(a=>a.id===key);
-    if(answer && !['context','output'].includes(key)) body=(report.findings || []).filter(f=>answer.findingIds?.includes(f.id)).map(f=>findingMarkup(f,id,report.id)).join('')+(answer.lawIndexes || []).map(i=>report.laws?.[i]).filter(Boolean).map(l=>`<article class="scan-law"><h4>${esc(l.title)}${l.provision ? ` · ${esc(l.provision)}` : ''}</h4><blockquote>${esc(l.text || 'Provision text unavailable.')}</blockquote><p>${esc(l.relevance)}</p><p class="scan-muted">${esc(l.version || 'Applicable version not confirmed')} · ${esc(words(l.versionStatus || 'needs verification'))}</p>${l.assumptions ? valueMarkup(l.assumptions) : ''}${lawUrl(l.url) ? `<a href="${esc(lawUrl(l.url))}" target="_blank" rel="noopener noreferrer">Official source</a>` : ''}</article>`).join('') || '<p class="scan-muted">No supporting finding or legal reference linked to this answer.</p>';
-    return details(key, `${q.number}. ${q.title}`, questionAnswer(report,q)+`<div class="scan-answer-evidence"><h4>Evidence and detail</h4>${body}</div>`, answer ? answerLabels[answer.status] : 'Answer not recorded').replace('class="scan-section"',`class="scan-section" data-group="${q.group}"`);
+    if(answer && !['context','output'].includes(key)) body=(report.findings || []).filter(f=>answer.findingIds?.includes(f.id)).map(f=>findingMarkup(f,id,report.id)).join('')+(answer.lawIndexes || []).map(i=>report.laws?.[i]).filter(Boolean).map(l=>`<article class="scan-law"><h4>${esc(l.title)}${l.provision ? ` · ${esc(l.provision)}` : ''}</h4><blockquote>${esc(l.text || 'Provision text unavailable.')}</blockquote><p>${esc(l.relevance)}</p><p class="scan-muted">${esc(l.version || 'Applicable version not confirmed')} · ${esc(words(l.versionStatus || 'needs verification'))}</p>${l.assumptions ? valueMarkup(l.assumptions) : ''}${lawUrl(l.url) ? `<a href="${esc(lawUrl(l.url))}" target="_blank" rel="noopener noreferrer">Official source</a>` : ''}</article>`).join('') || '';
+    if (answer && ['context','output'].includes(key)) body = '';
+    return `<section class="scan-section" data-section="${q.id}" aria-labelledby="review-${esc(id)}-${q.id}"><h3 id="review-${esc(id)}-${q.id}" tabindex="-1">${q.number}. ${esc(q.title)}</h3><div class="scan-section-body">${questionAnswer(report,q)}${body ? `<div class="scan-answer-evidence">${body}</div>` : ''}</div></section>`;
   };
   const findings = report.findings || [];
   const law = (report.laws || []).map(item => `<article class="scan-law"><h4>${esc(item.title)}${item.provision ? ` · ${esc(item.provision)}` : ''}</h4><blockquote>${esc(item.text || 'Provision text unavailable.')}</blockquote><p>${esc(item.relevance || '')}</p><p class="scan-muted">${esc(item.version || 'Applicable version not confirmed')} · ${esc(words(item.versionStatus || 'needs verification'))}</p>${item.assumptions ? valueMarkup(item.assumptions) : ''}${lawUrl(item.url) ? `<a class="record-link" href="${esc(lawUrl(item.url))}" target="_blank" rel="noopener noreferrer">Official source ↗</a>` : '<p class="scan-warning">Official source link unavailable.</p>'}</article>`).join('') || '<p class="scan-muted">No verified legal match recorded.</p>';
@@ -78,7 +80,7 @@ export function reportMarkup(report, id) {
   });
   rows.splice(3, 0, questionDetails('laws', '5. Relevant law', law + (report.legalLimitations?.length ? valueMarkup(report.legalLimitations) : ''), (report.laws || []).length));
   const unknown = findings.filter(finding => !SECTIONS.some(([, , kinds]) => kinds.includes(finding.kind)));
-  return `<section class="scan-report">${report.legacy ? '<p class="scan-warning">Legacy analysis — retained from the previous workflow. This is not a new completed scan.</p>' : ''}${scanPlan()}<h3>Document summary</h3><p class="scan-summary-text">${esc(report.summary || 'No summary was recorded.')}</p>${report.attention?.length ? `<details class="scan-review-notes"><summary>${chevron} Review notes · ${report.attention.length}</summary>${valueMarkup([...new Set(report.attention)])}</details>` : ''}<p class="scan-muted">Findings describe this document only. A source match confirms a quotation exists, not that an allegation is true.</p>${questionDetails('context', '1. Context and jurisdiction', valueMarkup(report.context) + '<h4>Jurisdiction</h4>' + valueMarkup(report.jurisdiction))}${rows.join('')}${questionDetails('output', '13. Saved output and coverage', `${unknown.map(finding => findingMarkup(finding, id)).join('')}<h4>Coverage</h4>${valueMarkup(report.coverage)}<h4>Model and usage</h4><p>${esc(report.model || (report.legacy ? 'Legacy provider' : 'GPT-6 Astra'))}${report.effort ? ` · ${esc(report.effort)}` : ''}</p>${valueMarkup(report.usage)}<p>Saved within Files &amp; AI. No records are automatically added to other case tools.</p>`)}</section>`;
+  return `<section class="scan-report">${report.legacy ? '<p class="scan-warning">Legacy analysis — retained from the previous workflow. This is not a new completed scan.</p>' : ''}${scanPlan()}<h3>Document summary</h3><p class="scan-summary-text">${esc(report.summary || 'No summary was recorded.')}</p>${report.attention?.length ? `<section class="scan-review-notes"><h3>Review notes</h3>${valueMarkup([...new Set(report.attention)])}</section>` : ''}<p class="scan-muted">Findings describe this document only. A source match confirms a quotation exists, not that an allegation is true.</p>${questionDetails('context', '1. Context and jurisdiction', valueMarkup(report.context) + '<h4>Jurisdiction</h4>' + valueMarkup(report.jurisdiction))}${rows.join('')}${questionDetails('output', '13. Saved output and coverage', `${unknown.map(finding => findingMarkup(finding, id)).join('')}<h4>Coverage</h4>${valueMarkup(report.coverage)}<h4>Model and usage</h4><p>${esc(report.model || (report.legacy ? 'Legacy provider' : 'GPT-6 Astra'))}${report.effort ? ` · ${esc(report.effort)}` : ''}</p>${valueMarkup(report.usage)}<p>Saved within Files &amp; AI. No records are automatically added to other case tools.</p>`)}</section>`;
 }
 
 export function createInbox({ api, getSession, updateSession, showModal, onOpenScan, desktop = () => globalThis.window?.strategistDesktop }) {
@@ -217,7 +219,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       let card = [...list.children].find(node => node.dataset.documentId === d.id);
       if (!card) {
         card = document.createElement('details'); card.className = 'scan-card'; card.dataset.documentId = d.id;
-        card.innerHTML = `<summary class="scan-card-heading"><span class="scan-card-icon">${icon('file')}</span><span class="scan-card-name"><span class="file-reference"></span><strong></strong><span class="scan-card-status"></span></span><span class="scan-card-type"></span><span class="scan-card-chevron">${chevron}</span></summary><div class="scan-card-body"><div class="scan-card-controls"></div><details class="scan-card-error-box" hidden><summary>Scan needs attention</summary><p class="scan-card-error scan-warning" role="status" hidden></p></details><div class="scan-card-report"><p class="scan-muted">Expand this card to read its saved findings.</p></div></div>`;
+        card.innerHTML = `<summary class="scan-card-heading"><span class="scan-card-icon">${icon('file')}</span><span class="scan-card-name"><span class="file-reference"></span><strong></strong><span class="scan-card-status"></span></span><span class="scan-card-type"></span><span class="scan-card-chevron">${chevron}</span></summary><div class="scan-card-body"><div class="scan-card-controls"></div><div class="scan-card-error-box" hidden><h3>Scan needs attention</h3><p class="scan-card-error scan-warning" role="status" hidden></p></div><div class="scan-card-report"><p class="scan-muted">Expand this card to read its saved findings.</p></div></div>`;
         list.append(card);
       }
       card.querySelector('.file-reference').textContent = d.reference || '';
@@ -260,7 +262,6 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       if (!host || generation !== revision || mode !== 'scans') return;
       const card = [...find('#scan-card-list').children].find(node => node.dataset.documentId === id); if (!card) return;
       const container = card.querySelector('.scan-card-report');
-      const planOpen = container.querySelector('.scan-plan')?.open;
       const openSections = [...container.querySelectorAll('details[open]')].map(node => node.dataset.section);
       const active = container.contains(document.activeElement) ? document.activeElement.closest('[data-section]')?.dataset.section : null;
       const report = detail.reports?.[0] || (detail.draft ? { ...detail.draft, legacy: true } : null);
@@ -268,9 +269,8 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
       if (container.scanMarkup !== content) {
         const scroll = find('#scan-card-list').scrollTop;
         container.innerHTML = content; container.scanMarkup = content;
-        if (planOpen !== undefined && container.querySelector('.scan-plan')) container.querySelector('.scan-plan').open=planOpen;
         container.querySelectorAll('[data-section]').forEach(node => { if (openSections.includes(node.dataset.section)) node.open = true; });
-        if (active) [...container.querySelectorAll('[data-section]')].find(node => node.dataset.section === active)?.querySelector('summary')?.focus({ preventScroll: true });
+        if (active) [...container.querySelectorAll('[data-section]')].find(node => node.dataset.section === active)?.querySelector('h3, summary')?.focus({ preventScroll: true });
         find('#scan-card-list').scrollTop = scroll;
       }
       loaded.set(id, { signature, loading: false });
@@ -299,7 +299,7 @@ export function createInbox({ api, getSession, updateSession, showModal, onOpenS
     const question=event.target.closest('[data-question-target]');
     if(question) {
       const card=question.closest('.scan-card'), target=card?.querySelector(`[data-section="${question.dataset.questionTarget}"]`), list=find('#scan-card-list');
-      if(target && list) { target.open=true; list.scrollTop+=target.getBoundingClientRect().top-list.getBoundingClientRect().top-(card.querySelector('.scan-card-heading')?.getBoundingClientRect().height || 0)-12; target.querySelector('summary').focus({preventScroll:true}); }
+      if(target && list) { list.scrollTop+=target.getBoundingClientRect().top-list.getBoundingClientRect().top-16; target.querySelector('h3').focus({preventScroll:true}); }
       return;
     }
 

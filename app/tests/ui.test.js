@@ -225,16 +225,16 @@ test('native open failure is displayed in the file register', async t => {
   await until(() => /No default app/.test(f.document.querySelector('#inbox-message').textContent));
 });
 
-test('checklist jumps to its matching answer without scanning and preserves collapse on refresh', async t => {
+test('review navigation focuses the matching visible review without scanning', async t => {
   const f=setup(t,{docs:[{...record('done',{state:'completed'}),latestReportId:'report-1'}]});
   f.inbox.mount(f.host); await f.inbox.open('done');
   await until(()=>f.document.querySelector('.scan-plan-item'));
   assert.equal(f.document.querySelectorAll('.scan-plan-item').length,13);
   f.document.querySelector('[data-question-target="contradictions"]').click();
-  assert.equal(f.document.querySelector('[data-section="contradictions"]').open,true);
-  assert.equal(f.document.activeElement,f.document.querySelector('[data-section="contradictions"] > summary'));
+  assert.equal(f.document.querySelectorAll('.scan-report details').length,0);
+  assert.equal(f.document.activeElement,f.document.querySelector('[data-section="contradictions"] > h3'));
   assert.match(f.document.querySelector('[data-question-id="contradictions"]').textContent,/Answer not recorded/);
   assert.equal(f.calls.some(c=>c.request.method==='POST'),false);
-  f.document.querySelector('.scan-plan').open=false; await f.inbox.refresh(true);
-  assert.equal(f.document.querySelector('.scan-plan').open,false);
+  await f.inbox.refresh(true);
+  assert.equal(f.document.querySelectorAll('.scan-report > .scan-section').length,13);
 });
